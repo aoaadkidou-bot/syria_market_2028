@@ -7416,20 +7416,21 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
             tooltip: 'تغيير المظهر',
             onPressed: widget.onToggleTheme,
           ),
-          // أيقونة غرفة الإدارة والعمليات للأدمن
-          IconButton(
-            icon: const Icon(Icons.admin_panel_settings,
-                color: Color(0xFFD4AF37), size: 24),
-            tooltip: 'غرفة الإدارة والعمليات',
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (ctx) => const OperationsAdminPanelScreen(),
-                ),
-              );
-            },
-          ),
+          // أيقونة غرفة الإدارة والعمليات للأدمن والمشرفين فقط
+          if (_manager.isModerator || _manager.isAdmin)
+            IconButton(
+              icon: const Icon(Icons.admin_panel_settings,
+                  color: Color(0xFFD4AF37), size: 24),
+              tooltip: 'غرفة العمليات والإدارة',
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (ctx) => const FullAdminPanelScreen(),
+                  ),
+                );
+              },
+            ),
           const SizedBox(width: 4),
         ],
       ),
