@@ -14496,7 +14496,7 @@ void main() {
 class SouqSyriaApp extends StatefulWidget {
   const SouqSyriaApp({Key? key}) : super(key: key);
 
-  @override
+ @override
   State<SouqSyriaApp> createState() => _SouqSyriaAppState();
 }
 
@@ -14509,32 +14509,29 @@ class _SouqSyriaAppState extends State<SouqSyriaApp> {
     });
   }
 
-  @override@override
+  @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: _manager.scaffoldBgColor,
-      body: SafeArea(
-        child: _currentNavIndex == 0
-            ? _buildHomeFeedTab() // 👈 هذا السطر الذي يفتح الصفحة الرئيسية والإعلانات والبانوراما وأسعار الذهب والصرف!
-            : _currentNavIndex == 1
-                ? _buildCategoriesHorizontalBar()
-                : _currentNavIndex == 2
-                    ? _buildFavoritesTab()
-                    : _buildProfileTab(),
+    return MaterialApp(
+      title: 'سوق سوريا الشامل',
+      debugShowCheckedModeBanner: false,
+      locale: const Locale('ar', 'SY'),
+      themeMode: _isDarkMode ? ThemeMode.dark : ThemeMode.light,
+      theme: ThemeData(
+        brightness: Brightness.light,
+        primaryColor: const Color(0xFF0F172A),
+        scaffoldBackgroundColor: const Color(0xFFF8FAFC),
+        fontFamily: 'Cairo',
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _currentNavIndex,
-        onTap: (i) => setState(() => _currentNavIndex = i),
-        type: BottomNavigationBarType.fixed,
-        backgroundColor: _manager.appBarColor,
-        selectedItemColor: _manager.secondaryColor,
-        unselectedItemColor: Colors.white60,
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'الرئيسية'),
-          BottomNavigationBarItem(icon: Icon(Icons.explore), label: 'الأقسام'),
-          BottomNavigationBarItem(icon: Icon(Icons.favorite), label: 'المفضلة'),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'حسابي'),
-        ],
+      darkTheme: ThemeData(
+        brightness: Brightness.dark,
+        primaryColor: const Color(0xFF0F172A),
+        scaffoldBackgroundColor: const Color(0xFF0B1120),
+        fontFamily: 'Cairo',
+      ),
+      home: MainDashboardScreen(
+        isDarkMode: _isDarkMode,
+        onToggleTheme: _toggleTheme,
       ),
     );
   }
+}
