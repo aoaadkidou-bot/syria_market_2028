@@ -4744,50 +4744,72 @@ class _FullAdDetailsScreenState extends State<FullAdDetailsScreen> {
     final text = _commentController.text.trim();
     if (text.isEmpty) return;
 
+    // اسم المستخدم
+    final userName = _manager.currentUserName.isNotEmpty
+        ? _manager.currentUserName
+        : (_manager.currentUserPhone.isNotEmpty
+            ? _manager.currentUserPhone
+            : 'مستخدم السوق');
+
+    final tempId = 'cm_${DateTime.now().millisecondsSinceEpoch}';
+
     final commentMap = {
-      'id': 'cm_${DateTime.now().millisecondsSinceEpoch}',
+      'id': tempId,
       'ad_id': _currentAd.id,
       'user_id': _manager.currentUserId.isNotEmpty
           ? _manager.currentUserId
           : 'guest_${DateTime.now().millisecondsSinceEpoch % 10000}',
-      'user_name': _manager.currentUserName.isNotEmpty
-          ? _manager.currentUserName
-          : 'مستخدم',
+      'user_name': userName,
       'user_phone': _manager.currentUserPhone,
       'content': text,
       'comment': text,
       'created_at': DateTime.now().toIso8601String(),
     };
 
+    // 1. تفريغ الحقل فوراً وإخفاء الكيبورد
     _commentController.clear();
     FocusScope.of(context).unfocus();
 
-    try {
-      await Supabase.instance.client
-          .from('ad_comments')
-          .insert(commentMap)
-          .timeout(const Duration(seconds: 8));
+    // 2. إظهار التعليق فوراً أمام عين المستخدم بدون انتظار السيرفر!
+    setState(() {
+      _adComments.insert(0, AdCommentItem.fromMap(commentMap));
+    });
 
-      if (!_adComments.any((c) => c.id == commentMap['id'])) {
-        setState(() {
-          _adComments.add(AdCommentItem.fromMap(commentMap));
-        });
-      }
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('تم إرسال تعليقك بنجاح ✅'),
+        backgroundColor: Color(0xFF16A34A),
+        duration: Duration(seconds: 2),
+      ),
+    );
+
+    // 3. الحفظ في Supabase بأمان في الخلفية
+    try {
+      await Supabase.instance.client.from('ad_comments').insert({
+        'ad_id': _currentAd.id,
+        'user_id':
+            _manager.currentUserId.isNotEmpty ? _manager.currentUserId : null,
+        'user_name': userName,
+        'user_phone': _manager.currentUserPhone,
+        'content': text,
+        'comment': text,
+        'created_at': DateTime.now().toIso8601String(),
+      });
     } catch (e) {
-      debugPrint('Comment insert error: $e');
+      debugPrint('Comment insert error in Supabase: $e');
     }
   }
 
   void _zoomIn() {
     setState(() {
-      _currentScale = (_currentScale + 0.5).clamp(1.0, 4.0);
+      _currentScale = (_currentScale + 0.5).clamp(1.0, 5.0);
       _zoomController.value = Matrix4.identity()..scale(_currentScale);
     });
   }
 
   void _zoomOut() {
     setState(() {
-      _currentScale = (_currentScale - 0.5).clamp(1.0, 4.0);
+      _currentScale = (_currentScale - 0.5).clamp(1.0, 5.0);
       _zoomController.value = Matrix4.identity();
     });
   }
@@ -4799,28 +4821,43 @@ class _FullAdDetailsScreenState extends State<FullAdDetailsScreen> {
     });
   }
 
+  // معاينة الصورة الفخمة على كامل أبعاد الشاشة بدون أي انكماش
   void _openFullScreenImage(int index) {
     final images =
         _currentAd.imageUrls.isNotEmpty ? _currentAd.imageUrls : [''];
+
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (ctx) => Scaffold(
           backgroundColor: Colors.black,
           appBar: AppBar(
-            backgroundColor: Colors.black,
+            backgroundColor: Colors.black.withOpacity(0.85),
+            elevation: 0,
             leading: IconButton(
-              icon: const Icon(Icons.close, color: Colors.white),
+              icon: const Icon(Icons.close, color: Colors.white, size: 26),
               onPressed: () => Navigator.pop(ctx),
             ),
+            title: Text(
+              'صورة ${index + 1} من ${images.length}',
+              style: const TextStyle(color: Colors.white, fontSize: 14),
+            ),
+            centerTitle: true,
           ),
-          body: Center(
+          body: SizedBox.expand(
             child: InteractiveViewer(
+              panEnabled: true,
+              boundaryMargin: const EdgeInsets.all(20),
               minScale: 0.5,
-              maxScale: 5.0,
-              child: AppSmartImage(
-                imageUrl: images[index],
-                fit: BoxFit.contain,
+              maxScale: 5.0, // تكبير فائق الوضوح حتى 5 أضعاف باللمس
+              child: Center(
+                child: AppSmartImage(
+                  imageUrl: images[index],
+                  fit: BoxFit
+                      .contain, // يحافظ على كامل الصورة طولاً وعرضاً بدون قص أو مط
+                  width: double.infinity,
+                  height: double.infinity,
+                ),
               ),
             ),
           ),
@@ -7379,14 +7416,50 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
             tooltip: 'تغيير المظهر',
             onPressed: widget.onToggleTheme,
           ),
+          // أيقونة غرفة الإدارة والعمليات للأدمن
           IconButton(
-            icon: const Icon(Icons.add_circle,
-                color: Color(0xFF22C55E), size: 26),
-            tooltip: 'نشر إعلان جديد',
-            onPressed: _openAddAdScreen,
+            icon: const Icon(Icons.admin_panel_settings,
+                color: Color(0xFFD4AF37), size: 24),
+            tooltip: 'غرفة الإدارة والعمليات',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (ctx) => const OperationsAdminPanelScreen(),
+                ),
+              );
+            },
           ),
           const SizedBox(width: 4),
         ],
+      ),
+      // زر نشر الإعلان الكبير والفخم البارز للعين
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
+      floatingActionButton: Container(
+        height: 48,
+        margin: const EdgeInsets.only(bottom: 8),
+        child: ElevatedButton.icon(
+          onPressed: _openAddAdScreen,
+          icon: const Icon(Icons.add_circle, color: Colors.white, size: 22),
+          label: const Text(
+            'أضف إعلانك الآن مجاناً',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: const Color(0xFF16A34A), // أخضر ملكي واضح جداً
+            elevation: 6,
+            shadowColor: Colors.black54,
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(30),
+              side: const BorderSide(color: Color(0xFF86EFAC), width: 1.5),
+            ),
+          ),
+        ),
       ),
       body: SafeArea(
         child: _currentNavIndex == 0
@@ -9423,17 +9496,19 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // ================== قسم الصورة (يملأ معظم الكرت لمنع الفراغ) ==================
+            // ================== قسم الصورة (يحافظ على كامل الزوايا بدون مط) ==================
             Expanded(
               flex: cardDesignOption == 1 ? 8 : (cardDesignOption == 2 ? 6 : 7),
               child: Stack(
                 fit: StackFit.expand,
                 children: [
                   Container(
-                    color: Colors.grey.shade900,
+                    color: const Color(0xFF0B1120),
+                    alignment: Alignment.center,
                     child: AppSmartImage(
                       imageUrl: displayImg,
-                      fit: BoxFit.cover,
+                      fit: BoxFit
+                          .contain, // 👈 الصورة تظهر كاملة بدون أي مط أو قص للأطراف
                     ),
                   ),
 
@@ -9453,7 +9528,6 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
                       ),
                     ),
                   ),
-
                   // شارات الحالة (قيد المراجعة / مرفوض / VIP)
                   if (ad.status == 'pending')
                     Positioned(
