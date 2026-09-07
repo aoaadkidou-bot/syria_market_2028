@@ -7342,15 +7342,57 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
   final ImagePicker _picker = ImagePicker();
   int _currentNavIndex = 0;
 
- @override
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: _manager.scaffoldBgColor,
+      appBar: AppBar(
+        backgroundColor: const Color(0xFF0F172A),
+        elevation: 0,
+        title: const Row(
+          children: [
+            SyrianIndependenceFlag(width: 22, height: 14),
+            SizedBox(width: 8),
+            Text(
+              'سوق سوريا الشامل 2028',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 15,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.headset_mic_outlined,
+                color: Color(0xFFD4AF37), size: 20),
+            tooltip: 'تواصل مع الإدارة',
+            onPressed: _showContactAdminDialog,
+          ),
+          IconButton(
+            icon: Icon(
+              widget.isDarkMode ? Icons.light_mode : Icons.dark_mode,
+              color: Colors.white,
+              size: 20,
+            ),
+            tooltip: 'تغيير المظهر',
+            onPressed: widget.onToggleTheme,
+          ),
+          IconButton(
+            icon: const Icon(Icons.add_circle,
+                color: Color(0xFF22C55E), size: 26),
+            tooltip: 'نشر إعلان جديد',
+            onPressed: _openAddAdScreen,
+          ),
+          const SizedBox(width: 4),
+        ],
+      ),
       body: SafeArea(
         child: _currentNavIndex == 0
             ? _buildHomeFeedTab()
             : _currentNavIndex == 1
-                ? _buildCategoriesHorizontalBar()
+                ? _buildDepartmentsTab()
                 : _currentNavIndex == 2
                     ? _buildFavoritesTab()
                     : _buildProfileTab(),
@@ -7369,6 +7411,107 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
           BottomNavigationBarItem(icon: Icon(Icons.person), label: 'حسابي'),
         ],
       ),
+    );
+  }
+
+// ===========================================================================
+  // ويدجت شاشة الأقسام الكاملة مع أسعار الذهب والبانوراما والإعلانات
+  // ===========================================================================
+  Widget _buildDepartmentsTab() {
+    final adsList = _manager.ads.where((a) {
+      final matchesCat =
+          _selectedCategoryId == null || a.categoryId == _selectedCategoryId;
+      final matchesSub =
+          _selectedSubcategory == null || a.subcategory == _selectedSubcategory;
+      return matchesCat && matchesSub;
+    }).toList();
+
+    return Column(
+      children: [
+        // 1. شريط أسعار الصرف والذهب
+        LiveCurrencyExchangeTicker(
+          usdRate: _manager.exchangeRateUsdToSyp,
+          gold21kPrice: _manager.goldPrice21kSyp,
+          onRefresh: _initLiveAdsFromSupabase,
+        ),
+        // 2. شريط الأخبار العاجلة
+        _buildCustomNewsTickerWidget(),
+        // 3. شريط البانوراما الإعلانية
+        _buildRoyalBannersSection(),
+        const SizedBox(height: 6),
+        // 4. شريط الأقسام وفروعها
+        _buildCategoriesHorizontalBar(),
+        const SizedBox(height: 6),
+        // 5. عنوان وتفاصيل القسم المختار
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                _selectedCategoryId == null
+                    ? 'كافة أقسام وفروع السوق 🌳'
+                    : 'إعلانات قسم: $_selectedCategoryId 📂',
+                style: TextStyle(
+                  fontSize: 12.5,
+                  fontWeight: FontWeight.bold,
+                  color: _manager.titleTextColor,
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                decoration: BoxDecoration(
+                  color: _manager.secondaryColor.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  '${adsList.length} إعلان',
+                  style: TextStyle(
+                    color: _manager.secondaryColor,
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        // 6. شبكة منشورات القسم
+        Expanded(
+          child: adsList.isEmpty
+              ? Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.category_outlined,
+                          size: 48, color: Colors.grey.shade600),
+                      const SizedBox(height: 8),
+                      Text(
+                        _selectedCategoryId == null
+                            ? 'اختر قسماً من القائمة أعلاه'
+                            : 'لا توجد إعلانات حالياً في قسم ($_selectedCategoryId)',
+                        style:
+                            const TextStyle(color: Colors.grey, fontSize: 12),
+                      ),
+                    ],
+                  ),
+                )
+              : GridView.builder(
+                  physics: const BouncingScrollPhysics(),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2,
+                    childAspectRatio: 0.70,
+                    crossAxisSpacing: 6,
+                    mainAxisSpacing: 6,
+                  ),
+                  itemCount: adsList.length,
+                  itemBuilder: (ctx, idx) =>
+                      _buildCompactFacingGridAdCard(adsList[idx]),
+                ),
+        ),
+      ],
     );
   }
 
