@@ -11042,11 +11042,6 @@ class FullChatNegotiationScreen extends StatefulWidget {
     required this.productTitle,
     required this.initialPrice,
   }) : super(key: key);
-
-  @override
-  State<FullChatNegotiationScreen> createState() =>
-      _FullChatNegotiationScreenState();
-}
   @override
   State<FullChatNegotiationScreen> createState() =>
       _FullChatNegotiationScreenState();
@@ -14496,7 +14491,7 @@ void main() {
 class SouqSyriaApp extends StatefulWidget {
   const SouqSyriaApp({Key? key}) : super(key: key);
 
- @override
+  @override
   State<SouqSyriaApp> createState() => _SouqSyriaAppState();
 }
 
