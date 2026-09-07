@@ -7342,16 +7342,18 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
   final ImagePicker _picker = ImagePicker();
   int _currentNavIndex = 0;
 
-  @override
+ @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: _manager.scaffoldBgColor,
       body: SafeArea(
-        child: _currentNavIndex == 2
-            ? _buildFavoritesTab()
-            : _currentNavIndex == 3
-                ? _buildProfileTab()
-                : const Center(child: Text('سوق سوريا الشامل')),
+        child: _currentNavIndex == 0
+            ? _buildHomeFeedTab()
+            : _currentNavIndex == 1
+                ? _buildCategoriesHorizontalBar()
+                : _currentNavIndex == 2
+                    ? _buildFavoritesTab()
+                    : _buildProfileTab(),
       ),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentNavIndex,
