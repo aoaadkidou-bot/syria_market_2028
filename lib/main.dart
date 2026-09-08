@@ -7989,7 +7989,6 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
 // [القسم الأول: الثوابت، النماذج، ومستودع السحابة مع المزامنة اللحظية Real-Time Sync]
 // ==============================================================================
 
-import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
@@ -17061,7 +17060,8 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
       },
     );
   }
-// ================= شريط الوصول السريع الذكي (الخدمات الرئيسية والمكاتب) =================
+
+  // ================= شريط الوصول السريع الذكي (الخدمات الرئيسية والمكاتب) =================
   Widget _buildQuickAccessServicesBar() {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
@@ -17130,157 +17130,6 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
                 _filterMaxPrice = null;
               });
             },
-          ),
-        ],
-      ),
-    );
-  }
-
-  // 🌟 شريط أفرع القسم المختار مع زر العودة للرئيسية والكل
-  Widget _buildSelectedCategorySubcategoriesBar() {
-    if (_selectedCategoryId == null) return const SizedBox.shrink();
-
-    // استخراج أفرع القسم المختار من قائمة الأقسام
-    final currentCat = _manager.categories.firstWhere(
-      (c) => c.id == _selectedCategoryId,
-      orElse: () => CategoryItem(id: '', name: '', subcategories: []),
-    );
-
-    final subcats = currentCat.subcategories;
-
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-      padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
-      decoration: BoxDecoration(
-        color: const Color(0xFF1E293B),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFD4AF37).withOpacity(0.4)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // عنوان القسم المختار وزر العودة
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Row(
-                children: [
-                  const Icon(Icons.folder_open, color: Color(0xFFD4AF37), size: 18),
-                  const SizedBox(width: 6),
-                  Text(
-                    'قسم: ${currentCat.name}',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 13,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
-              ),
-              InkWell(
-                onTap: () {
-                  setState(() {
-                    _selectedCategoryId = null;
-                    _selectedSubcategory = null;
-                  });
-                },
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                  decoration: BoxDecoration(
-                    color: Colors.red.withOpacity(0.15),
-                    borderRadius: BorderRadius.circular(6),
-                    border: Border.all(color: Colors.red.withOpacity(0.3)),
-                  ),
-                  child: const Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.arrow_back, color: Colors.redAccent, size: 14),
-                      SizedBox(width: 4),
-                      Text(
-                        'عرض كل الأقسام',
-                        style: TextStyle(
-                          color: Colors.redAccent,
-                          fontSize: 11,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-
-          // قائمة الأفرع الأفقية القابلة للتمرير
-          SizedBox(
-            height: 34,
-            child: ListView(
-              scrollDirection: Axis.horizontal,
-              physics: const BouncingScrollPhysics(),
-              children: [
-                // زر عرض الكل لهذا القسم
-                InkWell(
-                  onTap: () => setState(() => _selectedSubcategory = null),
-                  child: Container(
-                    margin: const EdgeInsets.only(left: 6),
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: _selectedSubcategory == null
-                          ? const Color(0xFFD4AF37)
-                          : const Color(0xFF0F172A),
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(
-                        color: _selectedSubcategory == null
-                            ? const Color(0xFFD4AF37)
-                            : Colors.white24,
-                      ),
-                    ),
-                    child: Text(
-                      'الكل (${currentCat.name})',
-                      style: TextStyle(
-                        color: _selectedSubcategory == null
-                            ? Colors.black
-                            : Colors.white70,
-                        fontSize: 11,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ),
-
-                // أفرع القسم المختار
-                ...subcats.map((sub) {
-                  final isSubSelected = _selectedSubcategory == sub;
-                  return InkWell(
-                    onTap: () => setState(() => _selectedSubcategory = sub),
-                    child: Container(
-                      margin: const EdgeInsets.only(left: 6),
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: isSubSelected
-                            ? const Color(0xFFD4AF37)
-                            : const Color(0xFF0F172A),
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(
-                          color: isSubSelected
-                              ? const Color(0xFFD4AF37)
-                              : Colors.white24,
-                        ),
-                      ),
-                      child: Text(
-                        sub,
-                        style: TextStyle(
-                          color: isSubSelected ? Colors.black : Colors.white70,
-                          fontSize: 11,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  );
-                }).toList(),
-              ],
-            ),
           ),
         ],
       ),
@@ -17442,6 +17291,7 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
       },
     );
   }
+
   Widget _buildHomeFeedTab() {
     var filteredAds = _manager.ads.where((ad) {
       final matchesGov = _selectedGovernorate == 'كل المحافظات' ||
