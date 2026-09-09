@@ -25,15 +25,34 @@ class _AddAdViewState extends State<AddAdView> {
   String _condition = 'مستعمل';
   bool _allowComments = true;
   final List<String> _selectedTags = [];
-  final List<String> _imageUrls = ['https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=600'];
+  final List<String> _imageUrls = [
+    'https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=600'
+  ];
 
   final List<String> _governorates = [
-    'دمشق', 'ريف دمشق', 'حلب', 'حمص', 'حماة', 'اللاذقية', 'طرطوس',
-    'إدلب', 'درعا', 'السويداء', 'القنيطرة', 'دير الزور', 'الرقة', 'الحسكة'
+    'دمشق',
+    'ريف دمشق',
+    'حلب',
+    'حمص',
+    'حماة',
+    'اللاذقية',
+    'طرطوس',
+    'إدلب',
+    'درعا',
+    'السويداء',
+    'القنيطرة',
+    'دير الزور',
+    'الرقة',
+    'الحسكة'
   ];
 
   final List<String> _availableTags = [
-    'جاهز للتسليم', 'سعر مغري جداً', 'قابل للتفاوض', 'طابو أخضر', 'كفالة وسند', 'جديد بالكرتونة'
+    'جاهز للتسليم',
+    'سعر مغري جداً',
+    'قابل للتفاوض',
+    'طابو أخضر',
+    'كفالة وسند',
+    'جديد بالكرتونة'
   ];
 
   @override
@@ -59,12 +78,16 @@ class _AddAdViewState extends State<AddAdView> {
         categoryId: _selectedCategory,
         subcategory: _selectedSubcategory,
         governorate: _selectedGov,
-        neighborhood: _neighborhoodController.text.trim().isEmpty ? 'وسط المدينة' : _neighborhoodController.text.trim(),
+        neighborhood: _neighborhoodController.text.trim().isEmpty
+            ? 'وسط المدينة'
+            : _neighborhoodController.text.trim(),
         condition: _condition,
         tags: _selectedTags,
         imageUrls: _imageUrls,
         publisherName: 'سامر عواد',
-        publisherPhone: _phoneController.text.trim().isEmpty ? '0944000111' : _phoneController.text.trim(),
+        publisherPhone: _phoneController.text.trim().isEmpty
+            ? '0944000111'
+            : _phoneController.text.trim(),
         publisherEmail: 'sameraoaad@gmail.com',
         allowComments: _allowComments,
         createdAt: DateTime.now(),
@@ -85,7 +108,11 @@ class _AddAdViewState extends State<AddAdView> {
       child: Scaffold(
         appBar: AppBar(
           backgroundColor: syriaGreen,
-          title: const Text('أضف إعلانك في سوق سوريا', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+          title: const Text('أضف إعلانك في سوق سوريا',
+              style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16)),
           leading: IconButton(
             icon: const Icon(Icons.arrow_back, color: Colors.white),
             onPressed: () => Navigator.pop(context),
@@ -102,9 +129,12 @@ class _AddAdViewState extends State<AddAdView> {
                 decoration: InputDecoration(
                   labelText: 'عنوان الإعلان *',
                   hintText: 'مثال: سيارة كيا فورتي 2020 بحالة ممتازة',
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10)),
                 ),
-                validator: (val) => val == null || val.trim().isEmpty ? 'يرجى كتابة عنوان واضح للإعلان' : null,
+                validator: (val) => val == null || val.trim().isEmpty
+                    ? 'يرجى كتابة عنوان واضح للإعلان'
+                    : null,
               ),
               const SizedBox(height: 14),
 
@@ -117,8 +147,10 @@ class _AddAdViewState extends State<AddAdView> {
                       keyboardType: TextInputType.number,
                       decoration: InputDecoration(
                         labelText: 'السعر (\$ USD)',
-                        prefixIcon: const Icon(Icons.attach_money, color: syriaGreen),
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                        prefixIcon:
+                            const Icon(Icons.attach_money, color: syriaGreen),
+                        border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10)),
                       ),
                     ),
                   ),
@@ -129,7 +161,8 @@ class _AddAdViewState extends State<AddAdView> {
                       keyboardType: TextInputType.number,
                       decoration: InputDecoration(
                         labelText: 'السعر (ل.س)',
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                        border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10)),
                       ),
                     ),
                   ),
@@ -145,9 +178,13 @@ class _AddAdViewState extends State<AddAdView> {
                       value: _selectedGov,
                       decoration: InputDecoration(
                         labelText: 'المحافظة *',
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                        border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10)),
                       ),
-                      items: _governorates.map((gov) => DropdownMenuItem(value: gov, child: Text(gov))).toList(),
+                      items: _governorates
+                          .map((gov) =>
+                              DropdownMenuItem(value: gov, child: Text(gov)))
+                          .toList(),
                       onChanged: (val) {
                         if (val != null) setState(() => _selectedGov = val);
                       },
@@ -160,7 +197,8 @@ class _AddAdViewState extends State<AddAdView> {
                       decoration: InputDecoration(
                         labelText: 'المنطقة / الحي *',
                         hintText: 'المزة، الشهباء...',
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                        border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10)),
                       ),
                     ),
                   ),
@@ -176,14 +214,18 @@ class _AddAdViewState extends State<AddAdView> {
                 decoration: InputDecoration(
                   labelText: 'وصف وتفاصيل الإعلان *',
                   hintText: 'اكتب مواصفات السلعة وحالتها بدقة...',
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10)),
                 ),
-                validator: (val) => val == null || val.trim().isEmpty ? 'يرجى كتابة تفاصيل الإعلان' : null,
+                validator: (val) => val == null || val.trim().isEmpty
+                    ? 'يرجى كتابة تفاصيل الإعلان'
+                    : null,
               ),
               const SizedBox(height: 10),
 
               // 5. الوسوم السريعة
-              const Text('الوسوم الترويجية السريعة:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+              const Text('الوسوم الترويجية السريعة:',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
               const SizedBox(height: 6),
               Wrap(
                 spacing: 8,
@@ -195,7 +237,9 @@ class _AddAdViewState extends State<AddAdView> {
                     selectedColor: syriaGreen.withOpacity(0.15),
                     onSelected: (selected) {
                       setState(() {
-                        selected ? _selectedTags.add(tag) : _selectedTags.remove(tag);
+                        selected
+                            ? _selectedTags.add(tag)
+                            : _selectedTags.remove(tag);
                       });
                     },
                   );
@@ -212,16 +256,22 @@ class _AddAdViewState extends State<AddAdView> {
               ),
               const SizedBox(height: 20),
 
-              // 7. زر النشر
+              // 7. زر النشر (تم تصحيحها هنا بنجاح)
               SizedBox(
                 height: 50,
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
                     backgroundColor: syriaGreen,
-                    shape: RoundedCornerShape(12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                   ),
                   onPressed: _submitAd,
-                  child: const Text('نشر الإعلان الآن مجاناً ✓', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15)),
+                  child: const Text('نشر الإعلان الآن مجاناً ✓',
+                      style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 15)),
                 ),
               ),
             ],

@@ -34,7 +34,11 @@ class _AdDetailsViewState extends State<AdDetailsView> {
       child: Scaffold(
         appBar: AppBar(
           backgroundColor: syriaGreen,
-          title: const Text('تفاصيل الإعلان', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+          title: const Text('تفاصيل الإعلان',
+              style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16)),
           leading: IconButton(
             icon: const Icon(Icons.arrow_back, color: Colors.white),
             onPressed: () => Navigator.pop(context),
@@ -76,14 +80,18 @@ class _AdDetailsViewState extends State<AdDetailsView> {
                         child: Transform.rotate(
                           angle: -0.15,
                           child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 24, vertical: 10),
                             decoration: BoxDecoration(
                               color: Colors.red.shade700,
                               borderRadius: BorderRadius.circular(10),
                             ),
                             child: const Text(
                               '✓ تـــم الـبـيــع مـن خـلال سـوق سـوريـا',
-                              style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18),
+                              style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 18),
                             ),
                           ),
                         ),
@@ -99,7 +107,9 @@ class _AdDetailsViewState extends State<AdDetailsView> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(ad.title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                  Text(ad.title,
+                      style: const TextStyle(
+                          fontSize: 18, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 10),
 
                   // بطاقة السعر المزدوج
@@ -115,23 +125,41 @@ class _AdDetailsViewState extends State<AdDetailsView> {
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text('السعر المطلوب:', style: TextStyle(fontSize: 11, color: Colors.grey)),
+                            const Text('السعر المطلوب:',
+                                style: TextStyle(
+                                    fontSize: 11, color: Colors.grey)),
                             Row(
                               children: [
                                 if (ad.priceUsd != null)
-                                  Text('\$${ad.priceUsd!.toStringAsFixed(0)}', style: const TextStyle(color: syriaGreen, fontSize: 20, fontWeight: FontWeight.bold)),
-                                if (ad.priceUsd != null && ad.priceSyp != null) const SizedBox(width: 10),
+                                  Text('\$${ad.priceUsd!.toStringAsFixed(0)}',
+                                      style: const TextStyle(
+                                          color: syriaGreen,
+                                          fontSize: 20,
+                                          fontWeight: FontWeight.bold)),
+                                if (ad.priceUsd != null && ad.priceSyp != null)
+                                  const SizedBox(width: 10),
                                 if (ad.priceSyp != null)
-                                  Text('${ad.priceSyp!.toStringAsFixed(0)} ل.س', style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.blueGrey)),
+                                  Text('${ad.priceSyp!.toStringAsFixed(0)} ل.س',
+                                      style: const TextStyle(
+                                          fontSize: 15,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.blueGrey)),
                               ],
                             ),
                           ],
                         ),
                         if (ad.isFeatured)
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                            decoration: BoxDecoration(color: syriaGold, borderRadius: BorderRadius.circular(6)),
-                            child: const Text('إعلان مميز ★', style: TextStyle(color: syriaGreen, fontWeight: FontWeight.bold, fontSize: 11)),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                                color: syriaGold,
+                                borderRadius: BorderRadius.circular(6)),
+                            child: const Text('إعلان مميز ★',
+                                style: TextStyle(
+                                    color: syriaGreen,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 11)),
                           ),
                       ],
                     ),
@@ -144,20 +172,30 @@ class _AdDetailsViewState extends State<AdDetailsView> {
                     children: [
                       Row(
                         children: [
-                          const Icon(Icons.location_on, color: syriaGreen, size: 16),
+                          const Icon(Icons.location_on,
+                              color: syriaGreen, size: 16),
                           const SizedBox(width: 4),
-                          Text('${ad.governorate} - ${ad.neighborhood}', style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+                          Text('${ad.governorate} - ${ad.neighborhood}',
+                              style: const TextStyle(
+                                  fontWeight: FontWeight.w600, fontSize: 13)),
                         ],
                       ),
-                      Text('الحالة: ${ad.condition}', style: const TextStyle(color: Colors.grey, fontSize: 12)),
+                      Text('الحالة: ${ad.condition}',
+                          style: const TextStyle(
+                              color: Colors.grey, fontSize: 12)),
                     ],
                   ),
                   const Divider(height: 24),
 
                   // الوصف
-                  const Text('تفاصيل ووصف الإعلان:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: syriaGreen)),
+                  const Text('تفاصيل ووصف الإعلان:',
+                      style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 15,
+                          color: syriaGreen)),
                   const SizedBox(height: 6),
-                  Text(ad.description, style: const TextStyle(fontSize: 14, height: 1.6)),
+                  Text(ad.description,
+                      style: const TextStyle(fontSize: 14, height: 1.6)),
                   const Divider(height: 24),
 
                   // بطاقة المعلن
@@ -177,8 +215,12 @@ class _AdDetailsViewState extends State<AdDetailsView> {
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(ad.publisherName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-                            const Text('معلن موثق في سوق سوريا', style: TextStyle(fontSize: 11, color: Colors.grey)),
+                            Text(ad.publisherName,
+                                style: const TextStyle(
+                                    fontWeight: FontWeight.bold, fontSize: 14)),
+                            const Text('معلن موثق في سوق سوريا',
+                                style: TextStyle(
+                                    fontSize: 11, color: Colors.grey)),
                           ],
                         ),
                       ],
@@ -186,21 +228,28 @@ class _AdDetailsViewState extends State<AdDetailsView> {
                   ),
                   const SizedBox(height: 14),
 
-                  // أزرار الاتصال وواتساب المباشر
+                  // أزرار الاتصال وواتساب المباشر (تم تصحيح شكل الأزرار هنا بنجاح)
                   Row(
                     children: [
                       Expanded(
                         child: ElevatedButton.icon(
                           style: ElevatedButton.styleFrom(
                             backgroundColor: syriaGreen,
-                            shape: RoundedCornerShape(10),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
                             padding: const EdgeInsets.symmetric(vertical: 12),
                           ),
                           icon: const Icon(Icons.call, color: Colors.white),
-                          label: const Text('اتصال هاتفي', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                          label: const Text('اتصال هاتفي',
+                              style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold)),
                           onPressed: () {
                             ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text('📞 جاري الاتصال بالرقم: ${ad.publisherPhone}')),
+                              SnackBar(
+                                  content: Text(
+                                      '📞 جاري الاتصال بالرقم: ${ad.publisherPhone}')),
                             );
                           },
                         ),
@@ -210,14 +259,21 @@ class _AdDetailsViewState extends State<AdDetailsView> {
                         child: ElevatedButton.icon(
                           style: ElevatedButton.styleFrom(
                             backgroundColor: const Color(0xFF25D366),
-                            shape: RoundedCornerShape(10),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
                             padding: const EdgeInsets.symmetric(vertical: 12),
                           ),
                           icon: const Icon(Icons.chat, color: Colors.white),
-                          label: const Text('محادثة واتساب', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                          label: const Text('محادثة واتساب',
+                              style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold)),
                           onPressed: () {
                             ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text('💬 فتح واتساب مع: ${ad.publisherPhone}')),
+                              SnackBar(
+                                  content: Text(
+                                      '💬 فتح واتساب مع: ${ad.publisherPhone}')),
                             );
                           },
                         ),
@@ -228,7 +284,11 @@ class _AdDetailsViewState extends State<AdDetailsView> {
                   // قسم التعليقات (إذا كانت مفعلة)
                   if (ad.allowComments) ...[
                     const Divider(height: 30),
-                    Text('الاستفسارات والتعليقات (${_commentsList.length}):', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: syriaGreen)),
+                    Text('الاستفسارات والتعليقات (${_commentsList.length}):',
+                        style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 15,
+                            color: syriaGreen)),
                     const SizedBox(height: 10),
                     Row(
                       children: [
@@ -237,8 +297,10 @@ class _AdDetailsViewState extends State<AdDetailsView> {
                             controller: _commentController,
                             decoration: InputDecoration(
                               hintText: 'اكتب سؤالك أو استفسارك للمعلن...',
-                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                              border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(10)),
+                              contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 12, vertical: 10),
                             ),
                           ),
                         ),
@@ -248,7 +310,8 @@ class _AdDetailsViewState extends State<AdDetailsView> {
                           onPressed: () {
                             if (_commentController.text.trim().isNotEmpty) {
                               setState(() {
-                                _commentsList.add(_commentController.text.trim());
+                                _commentsList
+                                    .add(_commentController.text.trim());
                                 _commentController.clear();
                               });
                             }
@@ -257,14 +320,17 @@ class _AdDetailsViewState extends State<AdDetailsView> {
                       ],
                     ),
                     const SizedBox(height: 12),
-                    ..._commentsList.map((c) => Card(
-                      color: Colors.grey.withOpacity(0.06),
-                      margin: const EdgeInsets.only(bottom: 6),
-                      child: Padding(
-                        padding: const EdgeInsets.all(10),
-                        child: Text(c, style: const TextStyle(fontSize: 13)),
-                      ),
-                    )).toList(),
+                    ..._commentsList
+                        .map((c) => Card(
+                              color: Colors.grey.withOpacity(0.06),
+                              margin: const EdgeInsets.only(bottom: 6),
+                              child: Padding(
+                                padding: const EdgeInsets.all(10),
+                                child: Text(c,
+                                    style: const TextStyle(fontSize: 13)),
+                              ),
+                            ))
+                        .toList(),
                   ],
                 ],
               ),

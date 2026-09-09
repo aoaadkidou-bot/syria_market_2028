@@ -7,10 +7,14 @@ class SupabaseMarketService {
   final SupabaseClient _client = Supabase.instance.client;
 
   // جلب الإعلانات مع الفلترة حسب المحافظة والقسم
-  Future<List<AdModel>> fetchAds({String? governorate, String? categoryId, String? subcategory}) async {
-    var query = _client.from('ads').select('*').order('created_at', ascending: false);
-    
-    if (governorate != null && governorate != 'all' && governorate != 'كل المحافظات') {
+  Future<List<AdModel>> fetchAds(
+      {String? governorate, String? categoryId, String? subcategory}) async {
+    // نبدأ الاستعلام بدون order أولاً لحتى يضل نوع البناء يقبل الفلاتر (.eq) بدون أخطاء
+    var query = _client.from('ads').select('*');
+
+    if (governorate != null &&
+        governorate != 'all' &&
+        governorate != 'كل المحافظات') {
       query = query.eq('governorate', governorate);
     }
     if (categoryId != null && categoryId.isNotEmpty) {
@@ -20,7 +24,8 @@ class SupabaseMarketService {
       query = query.eq('subcategory', subcategory);
     }
 
-    final response = await query;
+    // بنرتب النتائج بالآخر وبننفذ الاستعلام نهائياً
+    final response = await query.order('created_at', ascending: false);
     return (response as List).map((map) => AdModel.fromMap(map)).toList();
   }
 
@@ -31,7 +36,9 @@ class SupabaseMarketService {
 
   // وسم الإعلان (تم البيع)
   Future<void> toggleAdSold(String adId, bool currentStatus) async {
-    await _client.from('ads').update({'is_sold': !currentStatus}).eq('id', adId);
+    await _client
+        .from('ads')
+        .update({'is_sold': !currentStatus}).eq('id', adId);
   }
 
   // حذف إعلان (لصاحبه أو للأدمن)
@@ -41,12 +48,19 @@ class SupabaseMarketService {
 
   // جلب إعدادات النظام وغرفة العمليات
   Future<SystemConfigModel> fetchSystemConfig() async {
-    final response = await _client.from('system_config').select().eq('id', 'global_config').single();
+    final response = await _client
+        .from('system_config')
+        .select()
+        .eq('id', 'global_config')
+        .single();
     return SystemConfigModel.fromMap(response);
   }
 
   // تحديث إعدادات النظام وغرفة العمليات (للأدمن فقط)
   Future<void> updateSystemConfig(Map<String, dynamic> updates) async {
-    await _client.from('system_config').update(updates).eq('id', 'global_config');
+    await _client
+        .from('system_config')
+        .update(updates)
+        .eq('id', 'global_config');
   }
 }
