@@ -12502,7 +12502,7 @@ class _FullAdminPanelScreenState extends State<FullAdminPanelScreen>
         backgroundColor: const Color(0xFF0F172A),
         title: const Text(
           'غرفة العمليات والإشراف المركزي 🛡️',
-          style: TextStyle(
+          style: const TextStyle(
             color: Colors.white,
             fontSize: 15,
             fontWeight: FontWeight.bold,
@@ -12544,30 +12544,37 @@ class _FullAdminPanelScreenState extends State<FullAdminPanelScreen>
     );
   }
 
+  // متغيرات محلية مباشرة لضمان عدم حدوث أي خطأ
+  bool _isSlot1Active = true;
+  bool _isSlot2Active = true;
+
+  // =========================================================================
+  // 🌟 تبويب إدارة البانوراما والتحكم بالسيرفر لجميع الأجهزة (غرفة العمليات)
+  // =========================================================================
   Widget _buildBannersManagementTab() {
-    final rightBanners = _manager.banners.where((b) => b.slot == 1).toList();
-    final leftBanners = _manager.banners.where((b) => b.slot == 2).toList();
+    final topBanners = _manager.banners.where((b) => b.slot == 1).toList();
+    final bottomBanners = _manager.banners.where((b) => b.slot == 2).toList();
 
     return ListView(
       physics: const BouncingScrollPhysics(),
       padding: const EdgeInsets.all(16),
       children: [
+        // 1. بطاقة المفاتيح والتحكم السحابي الفوري
         Card(
           color: const Color(0xFF0F172A),
           shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           child: Padding(
-            padding: const EdgeInsets.all(14),
+            padding: const EdgeInsets.all(16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Row(
                   children: [
-                    Icon(Icons.view_carousel,
-                        color: Color(0xFFD4AF37), size: 22),
+                    Icon(Icons.cloud_sync, color: Color(0xFFD4AF37), size: 22),
                     SizedBox(width: 8),
                     Text(
-                      'شكل عرض البانوراما في الرئيسية',
+                      'غرفة العمليات • التحكم المباشر بجميع الأجهزة',
                       style: TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.bold,
@@ -12576,76 +12583,155 @@ class _FullAdminPanelScreenState extends State<FullAdminPanelScreen>
                     ),
                   ],
                 ),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Expanded(
-                      child: ChoiceChip(
-                        label: const Text('مربعين منفصلين 🔲🔲',
-                            style: TextStyle(fontSize: 11)),
-                        selected: _manager.bannerDisplayMode ==
-                            BannerDisplayLayoutMode.dualGrid,
-                        selectedColor: const Color(0xFFD4AF37),
-                        onSelected: (val) async {
-                          if (val) {
-                            setState(() => _manager.bannerDisplayMode =
-                                BannerDisplayLayoutMode.dualGrid);
-                            _manager.notifyListeners();
-                            try {
-                              await Supabase.instance.client
-                                  .from('app_settings')
-                                  .upsert({
-                                'key': 'banner_settings',
-                                'mode': 'dualGrid',
-                                'interval_seconds':
-                                    _manager.bannerDefaultIntervalSeconds,
+                const SizedBox(height: 14),
+
+                // مفتاح البانوراما العلوية (Slot 1)
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF1E293B),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.white10),
+                  ),
+                  child: Column(
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Row(
+                            children: [
+                              Text(_isSlot1Active ? '🟢' : '🔴',
+                                  style: const TextStyle(fontSize: 14)),
+                              const SizedBox(width: 8),
+                              const Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'البانوراما العلوية (Slot 1)',
+                                    style: TextStyle(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 12),
+                                  ),
+                                  Text(
+                                    'شريط عريض كامل أعلى الشاشة',
+                                    style: TextStyle(
+                                        color: Colors.white54, fontSize: 10),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                          ElevatedButton(
+                            onPressed: () async {
+                              setState(() {
+                                _isSlot1Active = !_isSlot1Active;
                               });
-                            } catch (_) {}
-                          }
-                        },
+                              _manager.notifyListeners();
+                              await _syncBannerSettingsToCloud();
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: _isSlot1Active
+                                  ? const Color(0xFF059669)
+                                  : const Color(0xFFE11D48),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 10, vertical: 6),
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8)),
+                            ),
+                            child: Text(
+                              _isSlot1Active ? 'ظاهرة 🟢' : 'مخفية 🔴',
+                              style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                        ],
                       ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: ChoiceChip(
-                        label: const Text('دمج شريط كامل 🖼️',
-                            style: TextStyle(fontSize: 11)),
-                        selected: _manager.bannerDisplayMode ==
-                            BannerDisplayLayoutMode.fullPanorama,
-                        selectedColor: const Color(0xFFD4AF37),
-                        onSelected: (val) async {
-                          if (val) {
-                            setState(() => _manager.bannerDisplayMode =
-                                BannerDisplayLayoutMode.fullPanorama);
-                            _manager.notifyListeners();
-                            try {
-                              await Supabase.instance.client
-                                  .from('app_settings')
-                                  .upsert({
-                                'key': 'banner_settings',
-                                'mode': 'fullPanorama',
-                                'interval_seconds':
-                                    _manager.bannerDefaultIntervalSeconds,
+                      const Divider(color: Colors.white10, height: 16),
+                      // مفتاح البانوراما السفلية (Slot 2)
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Row(
+                            children: [
+                              Text(_isSlot2Active ? '🟢' : '🔴',
+                                  style: const TextStyle(fontSize: 14)),
+                              const SizedBox(width: 8),
+                              const Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'البانوراما السفلية (Slot 2)',
+                                    style: TextStyle(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 12),
+                                  ),
+                                  Text(
+                                    'شريط عريض كامل تحته مباشرة',
+                                    style: TextStyle(
+                                        color: Colors.white54, fontSize: 10),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                          ElevatedButton(
+                            onPressed: () async {
+                              setState(() {
+                                _isSlot2Active = !_isSlot2Active;
                               });
-                            } catch (_) {}
-                          }
-                        },
+                              _manager.notifyListeners();
+                              await _syncBannerSettingsToCloud();
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: _isSlot2Active
+                                  ? const Color(0xFF0284C7)
+                                  : const Color(0xFFE11D48),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 10, vertical: 6),
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8)),
+                            ),
+                            child: Text(
+                              _isSlot2Active ? 'ظاهرة 🟢' : 'مخفية 🔴',
+                              style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                        ],
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
+
                 const SizedBox(height: 16),
+
+                // شريط سرعة تقليب الصور
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text('سرعة تقليب الصور:',
+                    const Text('سرعة تقليب الصور بالسيرفر:',
                         style: TextStyle(color: Colors.white70, fontSize: 12)),
-                    Text(
-                      '${_manager.bannerDefaultIntervalSeconds} ثوانٍ',
-                      style: const TextStyle(
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFD4AF37).withOpacity(0.15),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        '${_manager.bannerDefaultIntervalSeconds} ثوانٍ',
+                        style: const TextStyle(
                           color: Color(0xFFD4AF37),
                           fontWeight: FontWeight.bold,
-                          fontSize: 13),
+                          fontSize: 12,
+                        ),
+                      ),
                     ),
                   ],
                 ),
@@ -12663,84 +12749,135 @@ class _FullAdminPanelScreenState extends State<FullAdminPanelScreen>
                   },
                   onChangeEnd: (v) async {
                     _manager.notifyListeners();
-                    try {
-                      await Supabase.instance.client
-                          .from('app_settings')
-                          .upsert({
-                        'key': 'banner_settings',
-                        'mode': _manager.bannerDisplayMode ==
-                                BannerDisplayLayoutMode.fullPanorama
-                            ? 'fullPanorama'
-                            : 'dualGrid',
-                        'interval_seconds': v.toInt(),
-                      });
-                    } catch (_) {}
+                    await _syncBannerSettingsToCloud();
                   },
                 ),
               ],
             ),
           ),
         ),
+
         const SizedBox(height: 14),
-        ElevatedButton.icon(
-          style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFF0284C7),
-            padding: const EdgeInsets.symmetric(vertical: 12),
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-          ),
-          icon: const Icon(Icons.add_photo_alternate, color: Colors.white),
-          label: const Text(
-            'رفع بانوراما جديدة (حتى 15 صورة) 🚀',
-            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-          ),
-          onPressed: () => _showAddCustomBannerDialog(),
+
+        // أزرار الرفع المستقلة (رفع مخصص للعلوية أو السفلية)
+        Row(
+          children: [
+            Expanded(
+              child: ElevatedButton.icon(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFD4AF37),
+                  foregroundColor: Colors.black,
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10)),
+                ),
+                icon: const Icon(Icons.upload, size: 18),
+                label: const Text('رفع للعلوية (1) 🚀',
+                    style:
+                        TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                onPressed: () => _showAddCustomBannerDialog(targetSlot: 1),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: ElevatedButton.icon(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF0284C7),
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10)),
+                ),
+                icon: const Icon(Icons.upload, size: 18),
+                label: const Text('رفع للسفلية (2) 🚀',
+                    style:
+                        TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                onPressed: () => _showAddCustomBannerDialog(targetSlot: 2),
+              ),
+            ),
+          ],
         ),
+
         const SizedBox(height: 16),
+
+        // قائمة إعلانات البانوراما العلوية (Slot 1)
         Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Icon(Icons.view_sidebar, size: 18, color: Color(0xFFD4AF37)),
-            const SizedBox(width: 6),
+            Row(
+              children: [
+                const Icon(Icons.view_headline,
+                    size: 18, color: Color(0xFFD4AF37)),
+                const SizedBox(width: 6),
+                Text(
+                  'إعلانات البانوراما العلوية (Slot 1) (${topBanners.length}):',
+                  style: const TextStyle(
+                      fontWeight: FontWeight.bold, fontSize: 13),
+                ),
+              ],
+            ),
             Text(
-              'بنرات القسم الأيمن (Slot 1) (${rightBanners.length}):',
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+              _isSlot1Active ? '🟢 معروضة' : '🔴 مخفية',
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.bold,
+                color: _isSlot1Active ? Colors.green : Colors.red,
+              ),
             ),
           ],
         ),
         const SizedBox(height: 6),
-        if (rightBanners.isEmpty)
+        if (topBanners.isEmpty)
           const Padding(
             padding: EdgeInsets.symmetric(vertical: 8),
-            child: Text('لا توجد إعلانات في القسم الأيمن حالياً.',
+            child: Text('لا توجد إعلانات في البانوراما العلوية حالياً.',
                 style: TextStyle(color: Colors.grey, fontSize: 11)),
           )
         else
-          ...rightBanners.map((b) => _buildBannerAdminItemCard(b)).toList(),
-        const SizedBox(height: 14),
+          ...topBanners.map((b) => _buildBannerAdminItemCard(b)).toList(),
+
+        const SizedBox(height: 16),
+
+        // قائمة إعلانات البانوراما السفلية (Slot 2)
         Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Icon(Icons.view_sidebar_outlined,
-                size: 18, color: Color(0xFF0284C7)),
-            const SizedBox(width: 6),
+            Row(
+              children: [
+                const Icon(Icons.view_agenda,
+                    size: 18, color: Color(0xFF0284C7)),
+                const SizedBox(width: 6),
+                Text(
+                  'إعلانات البانوراما السفلية (Slot 2) (${bottomBanners.length}):',
+                  style: const TextStyle(
+                      fontWeight: FontWeight.bold, fontSize: 13),
+                ),
+              ],
+            ),
             Text(
-              'بنرات القسم الأيسر (Slot 2) (${leftBanners.length}):',
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+              _isSlot2Active ? '🟢 معروضة' : '🔴 مخفية',
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.bold,
+                color: _isSlot2Active ? Colors.green : Colors.red,
+              ),
             ),
           ],
         ),
         const SizedBox(height: 6),
-        if (leftBanners.isEmpty)
+        if (bottomBanners.isEmpty)
           const Padding(
             padding: EdgeInsets.symmetric(vertical: 8),
-            child: Text('لا توجد إعلانات في القسم الأيسر حالياً.',
+            child: Text('لا توجد إعلانات في البانوراما السفلية حالياً.',
                 style: TextStyle(color: Colors.grey, fontSize: 11)),
           )
         else
-          ...leftBanners.map((b) => _buildBannerAdminItemCard(b)).toList(),
+          ...bottomBanners.map((b) => _buildBannerAdminItemCard(b)).toList(),
       ],
     );
   }
 
+  // بطاقة الإعلان مع زر النقل المباشر وزر الحذف السحابي
   Widget _buildBannerAdminItemCard(BannerItem b) {
     final remaining = b.expiresAt.difference(DateTime.now());
     final days = remaining.inDays;
@@ -12757,8 +12894,8 @@ class _FullAdminPanelScreenState extends State<FullAdminPanelScreen>
             ClipRRect(
               borderRadius: BorderRadius.circular(8),
               child: SizedBox(
-                width: 50,
-                height: 50,
+                width: 52,
+                height: 52,
                 child: AppSmartImage(imageUrl: b.imageUrl, fit: BoxFit.cover),
               ),
             ),
@@ -12777,7 +12914,7 @@ class _FullAdminPanelScreenState extends State<FullAdminPanelScreen>
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    'القسم: ${b.slot == 1 ? "الأيمن (1)" : "الأيسر (2)"} • الصور: ${b.imageUrls.length} • المدة: ${b.displayDurationSeconds}ث',
+                    'القسم: ${b.slot == 1 ? "العلوي (1)" : "السفلي (2)"} • الصور: ${b.imageUrls.length} • السرعة: ${b.displayDurationSeconds}ث',
                     style: const TextStyle(fontSize: 10, color: Colors.grey),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -12796,6 +12933,35 @@ class _FullAdminPanelScreenState extends State<FullAdminPanelScreen>
                 ],
               ),
             ),
+            // زر نقل الإعلان بين البانوراما العلوية والسفلية (بلمسة واحدة)
+            IconButton(
+              icon: const Icon(Icons.swap_vert,
+                  color: Color(0xFFD4AF37), size: 24),
+              tooltip: b.slot == 1
+                  ? 'نقل للبانوراما السفلية'
+                  : 'نقل للبانوراما العلوية',
+              onPressed: () async {
+                final newSlot = b.slot == 1 ? 2 : 1;
+                try {
+                  await Supabase.instance.client
+                      .from('banners')
+                      .update({'slot': newSlot}).eq('id', b.id);
+
+                  // إعادة جلب البنرات المحدثة من السيرفر مباشرة لتحديث كل الأجهزة
+                  final updatedData =
+                      await Supabase.instance.client.from('banners').select();
+                  setState(() {
+                    _manager.banners = (updatedData as List)
+                        .map((json) => BannerItem.fromMap(json))
+                        .toList();
+                  });
+                  _manager.saveBannersToOfflineCache(_manager.banners);
+                } catch (e) {
+                  debugPrint('Error updating slot: $e');
+                }
+              },
+            ),
+            // زر الحذف السحابي المباشر
             IconButton(
               icon:
                   const Icon(Icons.delete_outline, color: Colors.red, size: 20),
@@ -12818,7 +12984,23 @@ class _FullAdminPanelScreenState extends State<FullAdminPanelScreen>
     );
   }
 
-  void _showAddCustomBannerDialog() {
+  // مزامنة إعدادات البانوراما في السيرفر مع كل الأجهزة
+  Future<void> _syncBannerSettingsToCloud() async {
+    try {
+      await Supabase.instance.client.from('app_settings').upsert({
+        'key': 'banner_settings',
+        'is_slot1_visible': _isSlot1Active,
+        'is_slot2_visible': _isSlot2Active,
+        'interval_seconds': _manager.bannerDefaultIntervalSeconds,
+        'updated_at': DateTime.now().toIso8601String(),
+      });
+    } catch (e) {
+      debugPrint('Sync banner settings error: $e');
+    }
+  }
+
+  // نافذة رفع البانوراما مع تحديد القسم (العلوي 1 أو السفلي 2)
+  void _showAddCustomBannerDialog({int targetSlot = 1}) {
     final titleController = TextEditingController(text: 'عرض VIP خاص');
     final subtitleController = TextEditingController(text: 'سوق سوريا الشامل');
     final descriptionController = TextEditingController();
@@ -12831,6 +13013,7 @@ class _FullAdminPanelScreenState extends State<FullAdminPanelScreen>
     final telegramController = TextEditingController();
     final youtubeController = TextEditingController();
 
+    int selectedSlot = targetSlot;
     int subscriptionDays = 7;
     List<Uint8List> selectedImages = [];
     bool isUploading = false;
@@ -12856,9 +13039,11 @@ class _FullAdminPanelScreenState extends State<FullAdminPanelScreen>
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('إضافة بانوراما إعلانية بمواصفات خاصة 🌟',
-                        style: TextStyle(
-                            fontWeight: FontWeight.bold, fontSize: 16)),
+                    Text(
+                      'إضافة بانوراما جديدة (${selectedSlot == 1 ? "العلوية Slot 1" : "السفلية Slot 2"}) 🌟',
+                      style: const TextStyle(
+                          fontWeight: FontWeight.bold, fontSize: 16),
+                    ),
                     const SizedBox(height: 12),
                     TextField(
                       controller: titleController,
@@ -13049,6 +13234,7 @@ class _FullAdminPanelScreenState extends State<FullAdminPanelScreen>
 
                                   final newBanner = BannerItem(
                                     id: 'bn_${DateTime.now().millisecondsSinceEpoch}',
+                                    slot: selectedSlot,
                                     imageUrls: urls,
                                     title: titleController.text.trim(),
                                     subtitle: subtitleController.text.trim(),
