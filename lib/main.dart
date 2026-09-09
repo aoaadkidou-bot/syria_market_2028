@@ -1724,6 +1724,35 @@ class AppStateManager extends ChangeNotifier {
     }
   }
 
+  void _initDefaultDepartments() {
+    departments = [
+      DepartmentNode(
+        id: 'dep_cars',
+        nameAr: 'سيارات ومركبات',
+        nameEn: 'Vehicles',
+        iconName: 'DirectionsCar',
+        themeColor: const Color(0xFF0284C7),
+        activeAdsCount: 0,
+      ),
+      DepartmentNode(
+        id: 'dep_realestate',
+        nameAr: 'عقارات وأراضي',
+        nameEn: 'Real Estate',
+        iconName: 'Home',
+        themeColor: const Color(0xFF16A34A),
+        activeAdsCount: 0,
+      ),
+      DepartmentNode(
+        id: 'dep_solar',
+        nameAr: 'طاقة شمسية وبطاريات',
+        nameEn: 'Solar Energy',
+        iconName: 'WbSunny',
+        themeColor: const Color(0xFFD4AF37),
+        activeAdsCount: 0,
+      ),
+    ];
+  }
+
   Future<void> loadCachedDataOffline() async {
     _initDefaultCategories();
     _initDefaultDepartments();
