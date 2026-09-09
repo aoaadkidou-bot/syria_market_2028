@@ -2148,8 +2148,7 @@ class AppStateManager extends ChangeNotifier {
           .from('ad_comments')
           .select()
           .eq('ad_id', adId)
-          .order('created_at', ascending: true)
-          .timeout(const Duration(seconds: 8));
+          .order('created_at', ascending: true);
 
       if (res is List) {
         return res
@@ -2165,6 +2164,7 @@ class AppStateManager extends ChangeNotifier {
   Future<AdCommentItem?> addAdComment({
     required String adId,
     required String commentText,
+    String? userAvatar,
   }) async {
     final comment = AdCommentItem(
       id: 'cmt_${DateTime.now().millisecondsSinceEpoch}',
@@ -2176,92 +2176,33 @@ class AppStateManager extends ChangeNotifier {
     );
 
     try {
-      await Supabase.instance.client
-          .from('ad_comments')
-          .insert(comment.toMap())
-          .timeout(const Duration(seconds: 8));
+      final payload = {
+        'id': comment.id,
+        'ad_id': adId,
+        'user_id': comment.userId,
+        'user_name': comment.userName,
+        'comment_text': comment.commentText,
+        'created_at': comment.createdAt.toIso8601String(),
+      };
+
+      await Supabase.instance.client.from('ad_comments').insert(payload);
       return comment;
     } catch (e) {
       debugPrint('Error adding comment to Supabase: $e');
+      // محاولة الإرسال بدون id إذا كان السيرفر يولد id تلقائياً uuid
+      try {
+        await Supabase.instance.client.from('ad_comments').insert({
+          'ad_id': adId,
+          'user_id': comment.userId,
+          'user_name': comment.userName,
+          'comment_text': comment.commentText,
+        });
+        return comment;
+      } catch (e2) {
+        debugPrint('Second attempt comment error: $e2');
+      }
       return comment;
     }
-  }
-
-  void _initDefaultDepartments() {
-    departments = [
-      DepartmentNode(
-        id: 'dep_cars',
-        nameAr: 'سيارات ومركبات',
-        nameEn: 'Vehicles',
-        iconName: 'DirectionsCar',
-        themeColor: const Color(0xFF0284C7),
-        activeAdsCount: 0,
-        subBranches: [
-          DepartmentNode(
-            id: 'dep_cars_sale',
-            nameAr: 'سيارات سياحية للبيع',
-            parentId: 'dep_cars',
-            activeAdsCount: 0,
-          ),
-          DepartmentNode(
-            id: 'dep_cars_rent',
-            nameAr: 'سيارات للإيجار',
-            parentId: 'dep_cars',
-            activeAdsCount: 0,
-          ),
-          DepartmentNode(
-            id: 'dep_cars_parts',
-            nameAr: 'قطع غيار وإكسسوارات',
-            parentId: 'dep_cars',
-            activeAdsCount: 0,
-          ),
-        ],
-      ),
-      DepartmentNode(
-        id: 'dep_realestate',
-        nameAr: 'عقارات وأراضي',
-        nameEn: 'Real Estate',
-        iconName: 'Home',
-        themeColor: const Color(0xFF16A34A),
-        activeAdsCount: 0,
-        subBranches: [
-          DepartmentNode(
-            id: 'dep_re_apartments',
-            nameAr: 'شقق وفلل للبيع',
-            parentId: 'dep_realestate',
-            activeAdsCount: 0,
-          ),
-          DepartmentNode(
-            id: 'dep_re_rent',
-            nameAr: 'شقق للإيجار',
-            parentId: 'dep_realestate',
-            activeAdsCount: 0,
-          ),
-        ],
-      ),
-      DepartmentNode(
-        id: 'dep_solar',
-        nameAr: 'طاقة شمسية وبطاريات',
-        nameEn: 'Solar Energy',
-        iconName: 'WbSunny',
-        themeColor: const Color(0xFFD4AF37),
-        activeAdsCount: 0,
-        subBranches: [
-          DepartmentNode(
-            id: 'dep_solar_batteries',
-            nameAr: 'بطاريات ليثيوم LiFePO4',
-            parentId: 'dep_solar',
-            activeAdsCount: 0,
-          ),
-          DepartmentNode(
-            id: 'dep_solar_inverters',
-            nameAr: 'إنفرترات ومحولات ذكية',
-            parentId: 'dep_solar',
-            activeAdsCount: 0,
-          ),
-        ],
-      ),
-    ];
   }
 
   void _initDefaultCategories() {
@@ -6707,43 +6648,65 @@ class _FullAdDetailsScreenState extends State<FullAdDetailsScreen> {
                 else
                   ..._adComments.map(
                     (c) => Container(
-                      margin: const EdgeInsets.only(bottom: 6),
-                      padding: const EdgeInsets.all(10),
+                      margin: const EdgeInsets.only(bottom: 8),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 8),
                       decoration: BoxDecoration(
                         color: Colors.white,
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: Colors.grey.shade200),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: Colors.grey.shade300),
                       ),
-                      child: Column(
+                      child: Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Row(
-                                children: [
-                                  const Icon(Icons.verified,
-                                      size: 14, color: Colors.blueAccent),
-                                  const SizedBox(width: 4),
-                                  Text(c.userName,
-                                      style: const TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 12)),
-                                ],
-                              ),
-                              Text(
-                                '${c.createdAt.hour}:${c.createdAt.minute.toString().padLeft(2, '0')}',
-                                style: const TextStyle(
-                                    fontSize: 10, color: Colors.grey),
-                              ),
-                            ],
+                          CircleAvatar(
+                            radius: 16,
+                            backgroundColor: Colors.blue.shade100,
+                            child: const Icon(Icons.person,
+                                size: 18, color: Colors.blue),
                           ),
-                          const SizedBox(height: 4),
-                          // عرض نص التعليق الصريح بدون أن يكون فارغاً
-                          Text(
-                            c.commentText.isNotEmpty ? c.commentText : '...',
-                            style: const TextStyle(
-                                fontSize: 12, color: Colors.black87),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        Text(
+                                          c.userName,
+                                          style: const TextStyle(
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 13),
+                                        ),
+                                        const SizedBox(width: 4),
+                                        const Icon(Icons.verified,
+                                            size: 14, color: Colors.blueAccent),
+                                      ],
+                                    ),
+                                    Text(
+                                      '${c.createdAt.hour}:${c.createdAt.minute.toString().padLeft(2, '0')}',
+                                      style: const TextStyle(
+                                          fontSize: 10, color: Colors.grey),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  c.commentText.isNotEmpty
+                                      ? c.commentText
+                                      : '...',
+                                  style: const TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.black87,
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                         ],
                       ),
@@ -8376,8 +8339,140 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
         ),
         // 2. شريط الأخبار العاجلة
         _buildCustomNewsTickerWidget(),
-        // 3. شريط البانوراما الإعلانية
-        _buildRoyalBannersSection(),
+        // 3. شريط البانوراما العلوية والسفلية (واحدة فوق وواحدة تحت بكامل العرض) مع التقليب التلقائي
+        Builder(
+          builder: (context) {
+            final topBanners =
+                _manager.banners.where((b) => b.slot == 1).toList();
+            final bottomBanners =
+                _manager.banners.where((b) => b.slot == 2).toList();
+
+            if (topBanners.isEmpty && bottomBanners.isEmpty) {
+              return const SizedBox.shrink();
+            }
+
+            return Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              child: Column(
+                children: [
+                  // البانوراما العلوية (Slot 1) بكامل عرض الشاشة
+                  if (topBanners.isNotEmpty) ...[
+                    SizedBox(
+                      height: 126,
+                      width: double.infinity,
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(12),
+                        child: PageView.builder(
+                          controller: _topBannerController,
+                          itemCount: topBanners.length,
+                          physics: const BouncingScrollPhysics(),
+                          itemBuilder: (ctx, idx) {
+                            final b = topBanners[idx];
+                            return GestureDetector(
+                              onTap: () => _showBannerDetailsSheet(b),
+                              child: Stack(
+                                fit: StackFit.expand,
+                                children: [
+                                  AppSmartImage(
+                                      imageUrl: b.imageUrl, fit: BoxFit.cover),
+                                  Container(
+                                    decoration: BoxDecoration(
+                                      gradient: LinearGradient(
+                                        begin: Alignment.topCenter,
+                                        end: Alignment.bottomCenter,
+                                        colors: [
+                                          Colors.transparent,
+                                          Colors.black.withOpacity(0.8)
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                  Positioned(
+                                    bottom: 8,
+                                    left: 12,
+                                    right: 12,
+                                    child: Text(
+                                      b.title,
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 13,
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                  ],
+
+                  // البانوراما السفلية (Slot 2) بكامل عرض الشاشة وتحتها مباشرة
+                  if (bottomBanners.isNotEmpty) ...[
+                    SizedBox(
+                      height: 126,
+                      width: double.infinity,
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(12),
+                        child: PageView.builder(
+                          controller: _bottomBannerController,
+                          itemCount: bottomBanners.length,
+                          physics: const BouncingScrollPhysics(),
+                          itemBuilder: (ctx, idx) {
+                            final b = bottomBanners[idx];
+                            return GestureDetector(
+                              onTap: () => _showBannerDetailsSheet(b),
+                              child: Stack(
+                                fit: StackFit.expand,
+                                children: [
+                                  AppSmartImage(
+                                      imageUrl: b.imageUrl, fit: BoxFit.cover),
+                                  Container(
+                                    decoration: BoxDecoration(
+                                      gradient: LinearGradient(
+                                        begin: Alignment.topCenter,
+                                        end: Alignment.bottomCenter,
+                                        colors: [
+                                          Colors.transparent,
+                                          Colors.black.withOpacity(0.8)
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                  Positioned(
+                                    bottom: 8,
+                                    left: 12,
+                                    right: 12,
+                                    child: Text(
+                                      b.title,
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 13,
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                  ],
+                ],
+              ),
+            );
+          },
+        ),
         const SizedBox(height: 8),
         // 4. قائمة الأقسام الرئيسية
         Padding(
@@ -8604,6 +8699,11 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
     });
   }
 
+  int _topBannerCurrentIndex = 0;
+  int _bottomBannerCurrentIndex = 0;
+  final PageController _topBannerController = PageController();
+  final PageController _bottomBannerController = PageController();
+
   void _startBannerCarouselTimer() {
     _bannerAutoScrollTimer?.cancel();
     final interval = _manager.bannerDefaultIntervalSeconds > 0
@@ -8612,18 +8712,31 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
 
     _bannerAutoScrollTimer =
         Timer.periodic(Duration(seconds: interval), (timer) {
-      if (mounted &&
-          !_isBannerUserInteracting &&
-          _manager.isBannerAutoScrollEnabled &&
-          _manager.banners.length > 1 &&
-          _bannerCarouselController.hasClients) {
-        final nextIndex = (_currentBannerIndex + 1) % _manager.banners.length;
-        _bannerCarouselController.animateToPage(
-          nextIndex,
-          duration: const Duration(milliseconds: 700),
-          curve: Curves.easeInOutCubic,
+      if (!mounted) return;
+
+      final topBanners = _manager.banners.where((b) => b.slot == 1).toList();
+      final bottomBanners = _manager.banners.where((b) => b.slot == 2).toList();
+
+      // 1. تقليب البانوراما العلوية تلقائياً بحركة انسيابية
+      if (topBanners.length > 1 && _topBannerController.hasClients) {
+        _topBannerCurrentIndex =
+            (_topBannerCurrentIndex + 1) % topBanners.length;
+        _topBannerController.animateToPage(
+          _topBannerCurrentIndex,
+          duration: const Duration(milliseconds: 750),
+          curve: Curves.fastOutSlowIn,
         );
-        setState(() => _currentBannerIndex = nextIndex);
+      }
+
+      // 2. تقليب البانوراما السفلية تلقائياً بحركة انسيابية
+      if (bottomBanners.length > 1 && _bottomBannerController.hasClients) {
+        _bottomBannerCurrentIndex =
+            (_bottomBannerCurrentIndex + 1) % bottomBanners.length;
+        _bottomBannerController.animateToPage(
+          _bottomBannerCurrentIndex,
+          duration: const Duration(milliseconds: 750),
+          curve: Curves.fastOutSlowIn,
+        );
       }
     });
   }
@@ -9729,7 +9842,10 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
     } else {
       filteredAds.sort((a, b) => b.createdAt.compareTo(a.createdAt));
     }
-
+    final topBanners = _manager.banners.where((b) => b.slot == 1).toList();
+    final bottomBanners = _manager.banners.where((b) => b.slot == 2).toList();
+    final bool showTop = topBanners.isNotEmpty;
+    final bool showBottom = bottomBanners.isNotEmpty;
     return Column(
       children: [
         LiveCurrencyExchangeTicker(
@@ -9738,7 +9854,91 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
           onRefresh: _initLiveAdsFromSupabase,
         ),
         _buildCustomNewsTickerWidget(),
-        _buildRoyalBannersSection(),
+// شريط البانوراما العلوية
+        if (_manager.banners.any((b) => b.slot == 1))
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            child: SizedBox(
+              height: 126,
+              width: double.infinity,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: PageView.builder(
+                  controller: _topBannerController,
+                  itemCount: _manager.banners.where((b) => b.slot == 1).length,
+                  physics: const BouncingScrollPhysics(),
+                  itemBuilder: (ctx, idx) {
+                    final b = _manager.banners
+                        .where((b) => b.slot == 1)
+                        .toList()[idx];
+                    return GestureDetector(
+                      onTap: () => _showBannerDetailsSheet(b),
+                      child: AppSmartImage(
+                          imageUrl: b.imageUrl, fit: BoxFit.cover),
+                    );
+                  },
+                ),
+              ),
+            ),
+          ),
+
+        // شريط البانوراما السفلية
+        if (_manager.banners.any((b) => b.slot == 2))
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            child: SizedBox(
+              height: 126,
+              width: double.infinity,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: PageView.builder(
+                  controller: _bottomBannerController,
+                  itemCount: _manager.banners.where((b) => b.slot == 2).length,
+                  physics: const BouncingScrollPhysics(),
+                  itemBuilder: (ctx, idx) {
+                    final b = _manager.banners
+                        .where((b) => b.slot == 2)
+                        .toList()[idx];
+                    return GestureDetector(
+                      onTap: () => _showBannerDetailsSheet(b),
+                      child: AppSmartImage(
+                          imageUrl: b.imageUrl, fit: BoxFit.cover),
+                    );
+                  },
+                ),
+              ),
+            ),
+          ),
+        // =====================================================================
+        // 🌟 منظومة البانوراما العلوية والسفلية (واحدة فوق وواحدة تحت بكامل العرض)
+        // مع التقليب التلقائي الانسيابي والتوسع الفوري للمنشورات إذا تم إخفاؤها
+        // =====================================================================
+        if (showTop || showBottom)
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            child: Column(
+              children: [
+                // 1. البانوراما العلوية (Slot 1)
+                if (showTop) ...[
+                  _buildSinglePanoramaViewWidget(
+                    banners: topBanners,
+                    borderColor: const Color(0xFFD4AF37),
+                  ),
+                  const SizedBox(height: 6),
+                ],
+
+                // 2. البانوراما السفلية (Slot 2)
+                if (showBottom) ...[
+                  _buildSinglePanoramaViewWidget(
+                    banners: bottomBanners,
+                    borderColor: const Color(0xFF0284C7),
+                  ),
+                  const SizedBox(height: 6),
+                ],
+              ],
+            ),
+          ),
+
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
           child: Row(
@@ -9786,7 +9986,7 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
               ),
             ],
           ),
-        ), // ================= شريط الخدمات السريعة الفاخر بديل الزحمة =================
+        ),
         _buildQuickAccessServicesBar(),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
@@ -9891,6 +10091,117 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
           ),
         ),
       ],
+    );
+  }
+
+  // =========================================================================
+  // دالة مساعدة داخلية لعرض شريط البانوراما العريض (بدون كلاسات منفصلة)
+  // =========================================================================
+  Widget _buildSinglePanoramaViewWidget({
+    required List<BannerItem> banners,
+    required Color borderColor,
+  }) {
+    return Container(
+      width: double.infinity,
+      height: 126,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: borderColor.withOpacity(0.55), width: 1.5),
+        boxShadow: [
+          BoxShadow(
+            color: borderColor.withOpacity(0.12),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child: PageView.builder(
+          itemCount: banners.length,
+          physics: const BouncingScrollPhysics(),
+          itemBuilder: (ctx, idx) {
+            final b = banners[idx];
+            return GestureDetector(
+              onTap: () => _showBannerDetailsSheet(b),
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  AppSmartImage(imageUrl: b.imageUrl, fit: BoxFit.cover),
+                  Container(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          Colors.transparent,
+                          Colors.black.withOpacity(0.80)
+                        ],
+                      ),
+                    ),
+                  ),
+                  Positioned(
+                    bottom: 8,
+                    left: 12,
+                    right: 12,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                b.title,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 13,
+                                  shadows: [
+                                    Shadow(color: Colors.black, blurRadius: 4)
+                                  ],
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              if (b.subtitle.isNotEmpty)
+                                Text(
+                                  b.subtitle,
+                                  style: TextStyle(
+                                    color: borderColor,
+                                    fontSize: 10.5,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                            ],
+                          ),
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: Colors.black54,
+                            borderRadius: BorderRadius.circular(6),
+                            border: Border.all(color: Colors.white24),
+                          ),
+                          child: Text(
+                            '${idx + 1}/${banners.length}',
+                            style: const TextStyle(
+                                color: Colors.white70, fontSize: 9.5),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        ),
+      ),
     );
   }
 
