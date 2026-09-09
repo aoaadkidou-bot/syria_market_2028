@@ -7995,7 +7995,7 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
             ),
           );
         },
-        onOpenPlans: () {
+      onOpenPlans: () {
           showModalBottomSheet(
             context: context,
             isScrollControlled: true,
@@ -8368,142 +8368,8 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
         ),
         // 2. شريط الأخبار العاجلة
         _buildCustomNewsTickerWidget(),
-        // 3. شريط البانوراما العلوية والسفلية (واحدة فوق وواحدة تحت بكامل العرض) مع التقليب التلقائي
-        Builder(
-          builder: (context) {
-            final topBanners =
-                _manager.banners.where((b) => b.slot == 1).toList();
-            final bottomBanners =
-                _manager.banners.where((b) => b.slot == 2).toList();
-
-            if (topBanners.isEmpty && bottomBanners.isEmpty) {
-              return const SizedBox.shrink();
-            }
-
-            return Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              child: Column(
-                children: [
-                  // البانوراما العلوية (Slot 1) بكامل عرض الشاشة
-                  if (topBanners.isNotEmpty) ...[
-                    SizedBox(
-                      height: 126,
-                      width: double.infinity,
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(12),
-                        child: PageView.builder(
-                          controller: _topBannerController,
-                          itemCount: topBanners.length,
-                          physics: const BouncingScrollPhysics(),
-                          itemBuilder: (ctx, idx) {
-                            final b = topBanners[idx];
-                            return GestureDetector(
-                              onTap: () => _showBannerDetailsSheet(b),
-                              child: Stack(
-                                fit: StackFit.expand,
-                                children: [
-                                  AppSmartImage(
-                                      imageUrl: b.imageUrl, fit: BoxFit.cover),
-                                  Container(
-                                    decoration: BoxDecoration(
-                                      gradient: LinearGradient(
-                                        begin: Alignment.topCenter,
-                                        end: Alignment.bottomCenter,
-                                        colors: [
-                                          Colors.transparent,
-                                          Colors.black.withOpacity(0.8)
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                                  Positioned(
-                                    bottom: 8,
-                                    left: 12,
-                                    right: 12,
-                                    child: Text(
-                                      b.title,
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 13,
-                                      ),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            );
-                          },
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                  ],
-
-                  // البانوراما السفلية (Slot 2) بكامل عرض الشاشة وتحتها مباشرة
-                  if (bottomBanners.isNotEmpty) ...[
-                    SizedBox(
-                      height: 126,
-                      width: double.infinity,
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(12),
-                        child: PageView.builder(
-                          controller: _bottomBannerController,
-                          itemCount: bottomBanners.length,
-                          physics: const BouncingScrollPhysics(),
-                          itemBuilder: (ctx, idx) {
-                            final b = bottomBanners[idx];
-                            return GestureDetector(
-                              onTap: () => _showBannerDetailsSheet(b),
-                              child: Stack(
-                                fit: StackFit.expand,
-                                children: [
-                                  AppSmartImage(
-                                      imageUrl: b.imageUrl, fit: BoxFit.cover),
-                                  Container(
-                                    decoration: BoxDecoration(
-                                      gradient: LinearGradient(
-                                        begin: Alignment.topCenter,
-                                        end: Alignment.bottomCenter,
-                                        colors: [
-                                          Colors.transparent,
-                                          Colors.black.withOpacity(0.8)
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                                  Positioned(
-                                    bottom: 8,
-                                    left: 12,
-                                    right: 12,
-                                    child: Text(
-                                      b.title,
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 13,
-                                      ),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            );
-                          },
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                  ],
-                ],
-              ),
-            );
-          },
-        ),
         const SizedBox(height: 8),
-        // 4. قائمة الأقسام الرئيسية
+        // 3. قائمة الأقسام الرئيسية
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
           child: Row(
@@ -8536,7 +8402,7 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
           ),
         ),
         const SizedBox(height: 6),
-        // 5. شبكة بطاقات الأقسام
+        // 4. شبكة بطاقات الأقسام
         Expanded(
           child: ListView.builder(
             physics: const BouncingScrollPhysics(),
@@ -10123,29 +9989,25 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
     );
   }
 
-  // =========================================================================
-  // دالة مساعدة داخلية لعرض شريط البانوراما العريض (بدون كلاسات منفصلة)
+// =========================================================================
+  // دالة مساعدة داخلية لعرض شريط البانوراما العريض (نظيفة وخالية من التكرار)
   // =========================================================================
   Widget _buildSinglePanoramaViewWidget({
     required List<BannerItem> banners,
     required Color borderColor,
   }) {
+    if (banners.isEmpty) return const SizedBox.shrink();
+
     return Container(
       width: double.infinity,
       height: 126,
+      margin: const EdgeInsets.only(bottom: 6),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: borderColor.withOpacity(0.55), width: 1.5),
-        boxShadow: [
-          BoxShadow(
-            color: borderColor.withOpacity(0.12),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: borderColor.withOpacity(0.3), width: 1),
       ),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(11),
         child: PageView.builder(
           itemCount: banners.length,
           physics: const BouncingScrollPhysics(),
@@ -10157,74 +10019,32 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
                 fit: StackFit.expand,
                 children: [
                   AppSmartImage(imageUrl: b.imageUrl, fit: BoxFit.cover),
-                  Container(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [
-                          Colors.transparent,
-                          Colors.black.withOpacity(0.80)
-                        ],
+                  if (b.title.isNotEmpty)
+                    Positioned(
+                      bottom: 0,
+                      left: 0,
+                      right: 0,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [Colors.transparent, Colors.black.withOpacity(0.65)],
+                          ),
+                        ),
+                        child: Text(
+                          b.title,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 12,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ),
                     ),
-                  ),
-                  Positioned(
-                    bottom: 8,
-                    left: 12,
-                    right: 12,
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(
-                                b.title,
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 13,
-                                  shadows: [
-                                    Shadow(color: Colors.black, blurRadius: 4)
-                                  ],
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                              if (b.subtitle.isNotEmpty)
-                                Text(
-                                  b.subtitle,
-                                  style: TextStyle(
-                                    color: borderColor,
-                                    fontSize: 10.5,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                            ],
-                          ),
-                        ),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 6, vertical: 2),
-                          decoration: BoxDecoration(
-                            color: Colors.black54,
-                            borderRadius: BorderRadius.circular(6),
-                            border: Border.all(color: Colors.white24),
-                          ),
-                          child: Text(
-                            '${idx + 1}/${banners.length}',
-                            style: const TextStyle(
-                                color: Colors.white70, fontSize: 9.5),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
                 ],
               ),
             );
