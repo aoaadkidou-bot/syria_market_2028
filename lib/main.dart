@@ -4948,7 +4948,7 @@ class _FullAdDetailsScreenState extends State<FullAdDetailsScreen> {
 
     if (mounted) {
       if (serverSuccess) {
-        // لا نضيف التعليق إلا إذا قبله السيرفر فعلياً
+        // إضافة التعليق للشاشة مباشرة دون أي رسالة خضراء
         final savedComment = AdCommentItem(
           id: 'cm_${now.millisecondsSinceEpoch}',
           adId: _currentAd.id.toString(),
@@ -4960,14 +4960,6 @@ class _FullAdDetailsScreenState extends State<FullAdDetailsScreen> {
         setState(() {
           _adComments.add(savedComment);
         });
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('تم إرسال تعليقك وحفظه على السيرفر بنجاح ✅'),
-            backgroundColor: Color(0xFF16A34A),
-            duration: Duration(seconds: 2),
-          ),
-        );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -5226,8 +5218,11 @@ class _FullAdDetailsScreenState extends State<FullAdDetailsScreen> {
     if (!_manager.isLoggedIn) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-            content: Text(
-                '⚠️ يرجى تسجيل الدخول أولاً لبدء المحادثة والتفاوض المباشر.')),
+          content: Text(
+              '⚠️ خاصية الدردشة والتفاوض متاحة فقط للأعضاء المسجلين! يرجى تسجيل الدخول أولاً.'),
+          backgroundColor: Colors.orange,
+          duration: Duration(seconds: 3),
+        ),
       );
       return;
     }
@@ -5237,7 +5232,9 @@ class _FullAdDetailsScreenState extends State<FullAdDetailsScreen> {
       MaterialPageRoute(
         builder: (ctx) => FullChatNegotiationScreen(
           adId: _currentAd.id,
-          partnerName: _currentAd.userName,
+          partnerName: _currentAd.userName.isNotEmpty
+              ? _currentAd.userName
+              : 'صاحب الإعلان',
           productTitle: _currentAd.title,
           initialPrice: _currentAd.priceUsd ?? _currentAd.priceSyp ?? 0,
         ),
@@ -8336,7 +8333,7 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
                 : _buildProfileTab(),
       ),
 
-      // 🌟 الشريط السفلي المطور باللغة العربية الواضحة لجميع فئات المستخدمين
+// 🌟 الشريط السفلي المطور باللغة العربية الواضحة لجميع فئات المستخدمين
       bottomNavigationBar: BottomAppBar(
         shape: const CircularNotchedRectangle(),
         notchMargin: 6.0,
@@ -8387,9 +8384,7 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
                 child: InkWell(
                   onTap: () {
                     // فتح نموذج إضافة الإعلان المعتاد في التطبيق
-                    if (Navigator.canPop(context)) Navigator.pop(context);
-                    // إذا كان التنقل عبر الفهرس:
-                    setState(() => _currentNavIndex = 2);
+                    Navigator.pushNamed(context, '/add_ad');
                   },
                   borderRadius: BorderRadius.circular(30),
                   child: Container(
@@ -9885,26 +9880,34 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
         _buildCustomNewsTickerWidget(),
 
         // =====================================================================
-        // 🌟 منظومة البانوراما السيادية: قسمين فوق بعضهما تماماً بكامل العرض
+        // 🌟 منظومة البانوراما السيادية: قسمين فوق بعضهما تماماً بكامل العرض مع حركات سينمائية
         // =====================================================================
         if (showTop || showBottom)
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
             child: Column(
               children: [
-                // 1. البانوراما العلوية (Slot 1)
+                // 1. البانوراما العلوية (Slot 1) - تصميم سينمائي فخم
                 if (showTop) ...[
                   Container(
                     width: double.infinity,
-                    height: 125,
+                    height: 135,
                     decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(14),
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFFD4AF37).withOpacity(0.25),
+                          blurRadius: 10,
+                          offset: const Offset(0, 3),
+                        ),
+                      ],
                       border: Border.all(
-                          color: const Color(0xFFD4AF37).withOpacity(0.5),
-                          width: 1.2),
+                        color: const Color(0xFFD4AF37).withOpacity(0.6),
+                        width: 1.4,
+                      ),
                     ),
                     child: ClipRRect(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(15),
                       child: PageView.builder(
                         itemCount: topBanners.length,
                         physics: const BouncingScrollPhysics(),
@@ -9915,16 +9918,61 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
                             child: Stack(
                               fit: StackFit.expand,
                               children: [
-                                AppSmartImage(
-                                    imageUrl: b.imageUrl, fit: BoxFit.cover),
+                                // صورة البانوراما الذكية بتعبئة فخمة
+                                AnimatedScale(
+                                  scale: 1.0,
+                                  duration: const Duration(milliseconds: 600),
+                                  curve: Curves.easeOutCubic,
+                                  child: AppSmartImage(
+                                    imageUrl: b.imageUrl,
+                                    fit: BoxFit.cover,
+                                  ),
+                                ),
+                                // تدرج سينمائي خفيف يبرز جمالية الألوان
                                 Container(
                                   decoration: BoxDecoration(
                                     gradient: LinearGradient(
                                       begin: Alignment.topCenter,
                                       end: Alignment.bottomCenter,
                                       colors: [
+                                        Colors.black.withOpacity(0.1),
                                         Colors.transparent,
-                                        Colors.black.withOpacity(0.8)
+                                        Colors.black.withOpacity(0.85),
+                                      ],
+                                      stops: const [0.0, 0.45, 1.0],
+                                    ),
+                                  ),
+                                ),
+                                // شريط العنوان الأنيق وشارة VIP
+                                Positioned(
+                                  top: 8,
+                                  right: 10,
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 8, vertical: 2.5),
+                                    decoration: BoxDecoration(
+                                      color: Colors.black.withOpacity(0.65),
+                                      borderRadius: BorderRadius.circular(8),
+                                      border: Border.all(
+                                        color: const Color(0xFFD4AF37)
+                                            .withOpacity(0.8),
+                                        width: 0.8,
+                                      ),
+                                    ),
+                                    child: const Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Icon(Icons.stars_rounded,
+                                            color: Color(0xFFD4AF37), size: 12),
+                                        SizedBox(width: 4),
+                                        Text(
+                                          'إعلان مميز',
+                                          style: TextStyle(
+                                            color: Color(0xFFD4AF37),
+                                            fontSize: 9.5,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
                                       ],
                                     ),
                                   ),
@@ -9939,6 +9987,13 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
                                       color: Colors.white,
                                       fontWeight: FontWeight.bold,
                                       fontSize: 13,
+                                      shadows: [
+                                        Shadow(
+                                          offset: Offset(0, 1),
+                                          blurRadius: 4,
+                                          color: Colors.black87,
+                                        ),
+                                      ],
                                     ),
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
@@ -9951,22 +10006,30 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
                       ),
                     ),
                   ),
-                  const SizedBox(height: 6),
+                  const SizedBox(height: 8),
                 ],
 
-                // 2. البانوراما السفلية (Slot 2)
+                // 2. البانوراما السفلية (Slot 2) - لمسات زرقاء سماوية راقية
                 if (showBottom) ...[
                   Container(
                     width: double.infinity,
-                    height: 125,
+                    height: 135,
                     decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(14),
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFF0284C7).withOpacity(0.25),
+                          blurRadius: 10,
+                          offset: const Offset(0, 3),
+                        ),
+                      ],
                       border: Border.all(
-                          color: const Color(0xFF0284C7).withOpacity(0.5),
-                          width: 1.2),
+                        color: const Color(0xFF0284C7).withOpacity(0.6),
+                        width: 1.4,
+                      ),
                     ),
                     child: ClipRRect(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(15),
                       child: PageView.builder(
                         itemCount: bottomBanners.length,
                         physics: const BouncingScrollPhysics(),
@@ -9977,16 +10040,58 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
                             child: Stack(
                               fit: StackFit.expand,
                               children: [
-                                AppSmartImage(
-                                    imageUrl: b.imageUrl, fit: BoxFit.cover),
+                                AnimatedScale(
+                                  scale: 1.0,
+                                  duration: const Duration(milliseconds: 600),
+                                  curve: Curves.easeOutCubic,
+                                  child: AppSmartImage(
+                                    imageUrl: b.imageUrl,
+                                    fit: BoxFit.cover,
+                                  ),
+                                ),
                                 Container(
                                   decoration: BoxDecoration(
                                     gradient: LinearGradient(
                                       begin: Alignment.topCenter,
                                       end: Alignment.bottomCenter,
                                       colors: [
+                                        Colors.black.withOpacity(0.1),
                                         Colors.transparent,
-                                        Colors.black.withOpacity(0.8)
+                                        Colors.black.withOpacity(0.85),
+                                      ],
+                                      stops: const [0.0, 0.45, 1.0],
+                                    ),
+                                  ),
+                                ),
+                                Positioned(
+                                  top: 8,
+                                  right: 10,
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 8, vertical: 2.5),
+                                    decoration: BoxDecoration(
+                                      color: Colors.black.withOpacity(0.65),
+                                      borderRadius: BorderRadius.circular(8),
+                                      border: Border.all(
+                                        color: const Color(0xFF0284C7)
+                                            .withOpacity(0.8),
+                                        width: 0.8,
+                                      ),
+                                    ),
+                                    child: const Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Icon(Icons.bolt_rounded,
+                                            color: Color(0xFF0284C7), size: 12),
+                                        SizedBox(width: 4),
+                                        Text(
+                                          'عرض حصري',
+                                          style: TextStyle(
+                                            color: Color(0xFF0284C7),
+                                            fontSize: 9.5,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
                                       ],
                                     ),
                                   ),
@@ -10001,6 +10106,13 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
                                       color: Colors.white,
                                       fontWeight: FontWeight.bold,
                                       fontSize: 13,
+                                      shadows: [
+                                        Shadow(
+                                          offset: Offset(0, 1),
+                                          blurRadius: 4,
+                                          color: Colors.black87,
+                                        ),
+                                      ],
                                     ),
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
@@ -10013,7 +10125,7 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
                       ),
                     ),
                   ),
-                  const SizedBox(height: 6),
+                  const SizedBox(height: 8),
                 ],
               ],
             ),
@@ -10251,10 +10363,10 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
       return notExpired && geoMatch && b.slot == 2;
     }).toList();
 
-    final showTop =
-        _manager.isBannerAutoScrollEnabled; // مفتاح التحكم بالبانوراما العلوية
+    // فحص إظهار البانوراما: تختفي فوراً إذا تم إطفاؤها أو كانت فارغة
+    final showTop = _manager.isBannerAutoScrollEnabled && topBanners.isNotEmpty;
     final showBottom =
-        _manager.isBannerAutoScrollEnabled; // مفتاح التحكم بالبانوراما السفلية
+        _manager.isBannerAutoScrollEnabled && bottomBanners.isNotEmpty;
 
     // إذا تم إخفاء الاثنين من غرفة الإدارة لتوسيع مساحة المنشورات
     if (!showTop && !showBottom) {
@@ -10264,47 +10376,35 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        // 1️⃣ البانوراما العلوية (Slot 1) - عرض كامل وفخم
+        // 1️⃣ البانوراما العلوية (Slot 1) - تختفي تماماً إذا أطفأتها
         if (showTop)
           Container(
             margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
             height: 98,
-            child: topBanners.isNotEmpty
-                ? PageView.builder(
-                    controller: _bannerCarouselController,
-                    physics: const BouncingScrollPhysics(),
-                    itemCount: topBanners.length,
-                    itemBuilder: (ctx, idx) => _buildAnimatedPanoramaCard(
-                      topBanners[idx],
-                      badgeTitle: 'بانوراما علوية VIP ★',
-                    ),
-                  )
-                : _buildEmptySlotBannerCard(
-                    _manager.isAdmin
-                        ? 'مساحة البانوراما العلوية (Slot 1)\n(اضغط للإدارة ورفع الصور كمسؤول ⚙️)'
-                        : 'مساحة إعلانية مميزة (القسم العلوي) 🌟\nاحجز إعلانك في واجهة السوق',
-                  ),
+            child: PageView.builder(
+              controller: _bannerCarouselController,
+              physics: const BouncingScrollPhysics(),
+              itemCount: topBanners.length,
+              itemBuilder: (ctx, idx) => _buildAnimatedPanoramaCard(
+                topBanners[idx],
+                badgeTitle: 'بانوراما علوية VIP ★',
+              ),
+            ),
           ),
 
-        // 2️⃣ البانوراما السفلية (Slot 2) - تحتها مباشرة ومستقلة تماماً
+        // 2️⃣ البانوراما السفلية (Slot 2) - تختفي تماماً إذا أطفأتها
         if (showBottom)
           Container(
             margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
             height: 98,
-            child: bottomBanners.isNotEmpty
-                ? PageView.builder(
-                    physics: const BouncingScrollPhysics(),
-                    itemCount: bottomBanners.length,
-                    itemBuilder: (ctx, idx) => _buildAnimatedPanoramaCard(
-                      bottomBanners[idx],
-                      badgeTitle: 'عروض مميزة 🚀',
-                    ),
-                  )
-                : _buildEmptySlotBannerCard(
-                    _manager.isAdmin
-                        ? 'مساحة البانوراما السفلية (Slot 2)\n(اضغط للإدارة ورفع الصور كمسؤول ⚙️)'
-                        : 'مساحة إعلانية إضافية (القسم السفلي) 📢\nسوق سوريا الشامل 2028',
-                  ),
+            child: PageView.builder(
+              physics: const BouncingScrollPhysics(),
+              itemCount: bottomBanners.length,
+              itemBuilder: (ctx, idx) => _buildAnimatedPanoramaCard(
+                bottomBanners[idx],
+                badgeTitle: 'عروض مميزة 🚀',
+              ),
+            ),
           ),
       ],
     );
@@ -14387,6 +14487,10 @@ class _FullAdminPanelScreenState extends State<FullAdminPanelScreen>
               final goldUsd = double.tryParse(goldUsdCtrl.text.trim()) ?? 0;
               final sponsorName = sponsorNameCtrl.text.trim();
 
+              bool savedSuccessfully = false;
+              String lastError = '';
+
+              // محاولة 1: الحقول الكاملة مع فحص الأعمدة
               try {
                 await Supabase.instance.client.from('exchange_rates').upsert({
                   'id': 'current_rates',
@@ -14399,24 +14503,59 @@ class _FullAdminPanelScreenState extends State<FullAdminPanelScreen>
                   'gold_usd': goldUsd,
                   'sponsor_name': sponsorName,
                   'is_sponsor_visible': isSponsorActive,
-                  'updated_at': DateTime.now().toIso8601String(),
                 });
+                savedSuccessfully = true;
+              } catch (e1) {
+                lastError = e1.toString();
+                // محاولة 2: بدون الأعمدة التي قد لا تكون مضافة في جدولك
+                try {
+                  await Supabase.instance.client.from('exchange_rates').upsert({
+                    'id': 'current_rates',
+                    'usd_rate': usdBuy,
+                    'usd_buy': usdBuy,
+                    'usd_sell': usdSell,
+                    'try_buy': tryBuy,
+                    'try_sell': trySell,
+                    'gold_price': goldSyp,
+                    'sponsor_name': sponsorName,
+                  });
+                  savedSuccessfully = true;
+                } catch (e2) {
+                  lastError = e2.toString();
+                  // محاولة 3: الأساسية القديمة 100% التي كانت تعمل معك دائماً
+                  try {
+                    await Supabase.instance.client
+                        .from('exchange_rates')
+                        .upsert({
+                      'id': 'current_rates',
+                      'usd_rate': usdBuy,
+                      'usd_buy': usdBuy,
+                      'usd_sell': usdSell,
+                      'try_buy': tryBuy,
+                      'try_sell': trySell,
+                      'gold_price': goldSyp,
+                    });
+                    savedSuccessfully = true;
+                  } catch (e3) {
+                    lastError = e3.toString();
+                  }
+                }
+              }
 
-                if (mounted) {
+              if (mounted) {
+                if (savedSuccessfully) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
                       content: Text(
-                          '✅ تم حفظ ونشر أسعار العملات والذهب واسم الصراف لجميع الأجهزة بالسيرفر!'),
+                          '✅ تم حفظ ونشر أسعار العملات والذهب لجميع الأجهزة بالسيرفر بنجاح!'),
                       backgroundColor: Colors.green,
                       duration: Duration(seconds: 3),
                     ),
                   );
-                }
-              } catch (e) {
-                if (mounted) {
+                } else {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content: Text('⚠️ حدث خطأ في السيرفر: $e'),
+                      content: Text('⚠️ حدث خطأ في السيرفر: $lastError'),
                       backgroundColor: Colors.red,
                     ),
                   );
