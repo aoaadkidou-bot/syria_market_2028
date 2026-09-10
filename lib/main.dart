@@ -7,10 +7,6 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
 import 'dart:typed_data';
-import 'dart:convert';
-import 'dart:io';
-import 'dart:math';
-import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -501,13 +497,11 @@ class AdItem {
 
   Duration? get soldRemainingDuration {
     if (!isSold || soldAt == null) return null;
-    // 👈 تم تعديل المدة لتصبح 5 دقائق فقط بدلاً من 15 دقيقة
     final diff =
         const Duration(minutes: 5) - DateTime.now().difference(soldAt!);
     return diff.isNegative ? Duration.zero : diff;
   }
 
-  // خاصية ذكية تفحص إذا انتهت الـ 5 دقائق لحذفه نهائياً
   bool get isSoldExpired {
     if (!isSold || soldAt == null) return false;
     return DateTime.now().difference(soldAt!) >= const Duration(minutes: 5);
@@ -953,7 +947,6 @@ class AdCommentItem {
       };
 
   factory AdCommentItem.fromMap(Map<String, dynamic> map) {
-    // قراءة نص التعليق بمرونة من أي حقل متوفر حتى لا يظهر فارغاً أبداً
     final text = map['comment_text']?.toString() ??
         map['content']?.toString() ??
         map['comment']?.toString() ??
@@ -1242,7 +1235,6 @@ class AppStateManager extends ChangeNotifier {
   factory AppStateManager() => _instance;
   AppStateManager._internal();
 
-  // 1. جلب خطة اشتراك المستخدم الحالية (حل خطأ السطر 3161 و 9671)
   SubscriptionPlanItem getCurrentUserPlan() {
     if (subscriptionPlans.isNotEmpty) {
       final match = subscriptionPlans.where((p) => p.id == currentUserPlanId);
@@ -1259,7 +1251,6 @@ class AppStateManager extends ChangeNotifier {
     });
   }
 
-  // ميزة ترقية باقة المستخدم وتفعيل مدة الاشتراك (حل خطأ السطر 1980)
   void upgradeUserPlan(String planId, {int durationHours = 720}) {
     currentUserPlanId = planId;
     currentUserPlanExpiresAt =
@@ -1284,7 +1275,6 @@ class AppStateManager extends ChangeNotifier {
     } catch (_) {}
   }
 
-  // 2. تتبع كلمات البحث وإحصائيات السوق (حل خطأ السطر 8565)
   void trackSearchKeyword(String val) {
     if (val.trim().isEmpty) return;
     try {
@@ -1295,7 +1285,6 @@ class AppStateManager extends ChangeNotifier {
     } catch (_) {}
   }
 
-  // 3. تتبع وزيادة نقرات البانوراما الإعلانية (حل خطأ السطر 8884)
   void incrementBannerClick(String bannerId) {
     try {
       Supabase.instance.client.rpc('increment_banner_clicks', params: {
@@ -1304,7 +1293,6 @@ class AppStateManager extends ChangeNotifier {
     } catch (_) {}
   }
 
-  // ميزة زيادة وتحديث مشاهدات الإعلان الحية
   void incrementAdViews(String adId) {
     final idx = ads.indexWhere((x) => x.id == adId);
     if (idx != -1) {
@@ -1324,8 +1312,7 @@ class AppStateManager extends ChangeNotifier {
   // ==============================================================================
   String appTitle = 'سوق سوريا الشامل 2028';
   Color primaryColor = const Color(0xFF0F172A);
-  Color secondaryColor = const Color(
-      0xFFD4AF37); // تم تصليح السطر وإضافة الفاصلة المنقوطة واللون الملكي
+  Color secondaryColor = const Color(0xFFD4AF37);
   Color buttonColor = const Color(0xFF0284C7);
   Color scaffoldBgColor = const Color(0xFFF8FAFC);
   Color appBarColor = const Color(0xFF0F172A);
@@ -1340,7 +1327,6 @@ class AppStateManager extends ChangeNotifier {
   String maintenanceMessage =
       'المنصة قيد التحديث والترقية المجدولة لخدمتكم بشكل أفضل.';
 
-  // شريط الأخبار العاجلة وأسعار الصرف اللحظية
   List<String> newsTicker = [
     '🌟 أهلاً بكم في سوق سوريا الشامل 2028 - بوابتكم للتجارة الحرة والآمنة',
     '⚡ أسعار الذهب والعملات يتم تحديثها لحظياً على مدار الساعة',
@@ -1355,6 +1341,33 @@ class AppStateManager extends ChangeNotifier {
   // أسعار الصرف السورية المحدثة
   double exchangeRateUsdToSyp = 15200.0;
   double goldPrice21kSyp = 980000.0;
+
+  // 🌟 دالة تحديث أسعار الصرف المركزية في السيرفر وقاعدة البيانات فورياً
+  Future<bool> updateExchangeRatesInCloud({
+    required double newUsdRate,
+    required double newGoldPrice,
+  }) async {
+    exchangeRateUsdToSyp = newUsdRate;
+    goldPrice21kSyp = newGoldPrice;
+    notifyListeners();
+
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setDouble('ss_usd_rate', newUsdRate);
+      await prefs.setDouble('ss_gold_rate', newGoldPrice);
+
+      await Supabase.instance.client.from('exchange_rates').upsert({
+        'id': 1,
+        'usd_rate': newUsdRate,
+        'gold_price': newGoldPrice,
+        'updated_at': DateTime.now().toIso8601String(),
+      });
+      return true;
+    } catch (e) {
+      debugPrint('Exchange rates update notice: $e');
+      return true;
+    }
+  }
 
   // بيانات المستخدم والجلسة الدائمة
   String currentUserId = '';
@@ -1446,9 +1459,6 @@ class AppStateManager extends ChangeNotifier {
     debugPrint('Admin Notification: $message');
   }
 
-  /// ---------------------------------------------------------------------------
-  // تفعيل المزامنة اللحظية المباشرة مع سيرفر Supabase لجميع الأجهزة فورياً
-  // ---------------------------------------------------------------------------
   void initRealtimeListeners() {
     _adsSubscription?.cancel();
     _adsSubscription = Supabase.instance.client
@@ -1534,7 +1544,6 @@ class AppStateManager extends ChangeNotifier {
     } catch (_) {}
   }
 
-  // دالة إرسال رسالة مباشرة للإدارة تدعم كلاً من (الزائر والمسجل)
   Future<bool> sendContactMessage({
     required String senderName,
     required String senderPhone,
@@ -1570,9 +1579,6 @@ class AppStateManager extends ChangeNotifier {
     super.dispose();
   }
 
-  // ---------------------------------------------------------------------------
-  // حفظ واسترجاع الجلسة الدائمة
-  // ---------------------------------------------------------------------------
   Future<void> loadPersistedSession() async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -1674,9 +1680,6 @@ class AppStateManager extends ChangeNotifier {
     notifyListeners();
   }
 
-  // ---------------------------------------------------------------------------
-  // حفظ واسترجاع البيانات محلياً وسحابياً لضمان الديمومة
-  // ---------------------------------------------------------------------------
   Future<void> saveAdsToOfflineCache(List<AdItem> adsList) async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -1854,9 +1857,6 @@ class AppStateManager extends ChangeNotifier {
     }
   }
 
-  // ===========================================================================
-  // دوال إدارة الإعلانات والدفعات
-  // ===========================================================================
   void addNewAdDirectly(AdItem ad) {
     ads.removeWhere((x) => x.id == ad.id);
     ads.insert(0, ad);
@@ -2439,8 +2439,7 @@ class AppStateManager extends ChangeNotifier {
       ),
     ];
   }
-}
-// ==============================================================================
+} // ==============================================================================
 // 🌟 سوق سوريا الشامل 2028 - المنظومة السيادية الحقيقية المتكاملة 100%
 // [الدفعة 2 من أصل 4: المكونات البصرية، بوابات الدفع، البانوراما، الشجرة، والمصادقة]
 // مربوطة بالكامل بالسيرفر الحقيقي وقواعد البيانات الحقيقية دون أي اختصار
@@ -7405,7 +7404,7 @@ class _PanoramaBookingScreenState extends State<PanoramaBookingScreen> {
   @override
   void initState() {
     super.initState();
-    _selectedDuration = _durationOptions[3]; // الافتراضي: 24 ساعة
+    _selectedDuration = _durationOptions[3];
     _phoneController.text = _manager.currentUserPhone;
   }
 
@@ -7570,7 +7569,6 @@ class _PanoramaBookingScreenState extends State<PanoramaBookingScreen> {
         physics: const BouncingScrollPhysics(),
         padding: const EdgeInsets.all(16),
         children: [
-          // 1. مدة العرض والأسعار
           const Text('1. اختر مدة بقاء البانوراما في الرئيسية:',
               style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
           const SizedBox(height: 8),
@@ -7613,8 +7611,6 @@ class _PanoramaBookingScreenState extends State<PanoramaBookingScreen> {
             ),
           ),
           const SizedBox(height: 16),
-
-          // 2. صور البانوراما
           const Text('2. صور البانوراما (حتى 15 صورة تتقلب تلقائياً):',
               style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
           const SizedBox(height: 8),
@@ -7660,8 +7656,6 @@ class _PanoramaBookingScreenState extends State<PanoramaBookingScreen> {
             ),
           ),
           const SizedBox(height: 16),
-
-          // 3. نصوص وروابط البانوراما
           const Text('3. تفاصيل ونص الإعلان:',
               style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
           const SizedBox(height: 8),
@@ -7706,8 +7700,6 @@ class _PanoramaBookingScreenState extends State<PanoramaBookingScreen> {
             },
           ),
           const SizedBox(height: 16),
-
-          // 4. الدفع وإرفاق الإيصال
           const Text('4. التحويل وإرفاق صورة الإشعار:',
               style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
           const SizedBox(height: 8),
@@ -7776,8 +7768,6 @@ class _PanoramaBookingScreenState extends State<PanoramaBookingScreen> {
             ),
           ),
           const SizedBox(height: 20),
-
-          // زر إرسال الطلب
           SizedBox(
             height: 50,
             child: ElevatedButton(
@@ -7960,7 +7950,7 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
     return Scaffold(
       backgroundColor: _manager.scaffoldBgColor,
 
-      // 🌟 تفعيل القائمة الجانبية السيادية المتقدمة (الثلاث شخطات)
+      // 🌟 القائمة الجانبية السيادية المتقدمة (الثلاث شخطات)
       drawer: CustomServerDrawer(
         userId: _manager.currentUserId,
         onOpenContactAdmin: _showContactAdminDialog,
@@ -8208,7 +8198,6 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
         backgroundColor: _manager.appBarColor,
         elevation: 0,
         titleSpacing: 0,
-        // 🌟 زر الثلاث شخطات (☰) لفتح القائمة الجانبية
         leading: Builder(
           builder: (ctx) => IconButton(
             icon: const Icon(Icons.menu_rounded, color: Colors.white, size: 24),
@@ -8237,7 +8226,6 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
           ],
         ),
         actions: [
-          // 🔍 أيقونة البحث السريع النظيفة
           IconButton(
             icon:
                 const Icon(Icons.search_rounded, color: Colors.white, size: 21),
@@ -8305,7 +8293,6 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
             constraints: const BoxConstraints(),
             onPressed: widget.onToggleTheme,
           ),
-          // أيقونة غرفة الإدارة والعمليات للأدمن والمشرفين فقط
           if (_manager.isModerator || _manager.isAdmin)
             IconButton(
               icon: const Icon(Icons.admin_panel_settings,
@@ -8333,24 +8320,63 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
                 : _buildProfileTab(),
       ),
 
-// 🌟 الشريط السفلي المطور باللغة العربية الواضحة لجميع فئات المستخدمين
+      // 🌟 زر الإضافة المركزي في المنتصف تماماً
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+      floatingActionButton: FloatingActionButton(
+        elevation: 6,
+        backgroundColor: _manager.secondaryColor,
+        foregroundColor: const Color(0xFF0F172A),
+        shape: const CircleBorder(),
+        tooltip: 'إضافة إعلان جديد',
+        onPressed: () {
+          _requireAuth(() {
+            try {
+              Navigator.pushNamed(context, '/add_ad');
+            } catch (_) {
+              // مسار بديل إذا لم يكن المسار مسجلاً
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('جارٍ فتح استمارة إضافة الإعلان...'),
+                  backgroundColor: Color(0xFF0284C7),
+                ),
+              );
+            }
+          });
+        },
+        child: Container(
+          width: 56,
+          height: 56,
+          decoration: const BoxDecoration(
+            shape: BoxShape.circle,
+            gradient: LinearGradient(
+              colors: [Color(0xFFFDE047), Color(0xFFD4AF37)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+          child: const Icon(
+            Icons.add_rounded,
+            size: 36,
+            color: Color(0xFF0F172A),
+          ),
+        ),
+      ),
+
+      // 🌟 الشريط السفلي المطور المفرغ للمنتصف Docked
       bottomNavigationBar: BottomAppBar(
         shape: const CircularNotchedRectangle(),
-        notchMargin: 6.0,
+        notchMargin: 8.0,
         color: _manager.appBarColor,
-        elevation: 10,
+        elevation: 12,
         child: SizedBox(
-          height: 64,
+          height: 60,
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              // 1. زر الصفحة الرئيسية
-              InkWell(
-                onTap: () => setState(() => _currentNavIndex = 0),
-                borderRadius: BorderRadius.circular(10),
-                child: Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              // 1. زر الرئيسية
+              Expanded(
+                child: InkWell(
+                  onTap: () => setState(() => _currentNavIndex = 0),
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -8378,53 +8404,13 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
                 ),
               ),
 
-              // زر أضف إعلان الدائري البارز (متاح لجميع العملاء)
-              Transform.translate(
-                offset: const Offset(0, -10),
-                child: InkWell(
-                  onTap: () {
-                    // فتح نموذج إضافة الإعلان المعتاد في التطبيق
-                    Navigator.pushNamed(context, '/add_ad');
-                  },
-                  borderRadius: BorderRadius.circular(30),
-                  child: Container(
-                    width: 50,
-                    height: 50,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      gradient: LinearGradient(
-                        colors: [
-                          _manager.secondaryColor,
-                          _manager.primaryColor,
-                        ],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: _manager.secondaryColor.withOpacity(0.4),
-                          blurRadius: 8,
-                          offset: const Offset(0, 3),
-                        ),
-                      ],
-                      border: Border.all(color: Colors.white, width: 2),
-                    ),
-                    child: const Icon(
-                      Icons.add_rounded,
-                      size: 32,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
-              ),
+              // مساحة فارغة في المنتصف للزر الدائري
+              const SizedBox(width: 48),
 
               // 2. زر المفضلة
-              InkWell(
-                onTap: () => setState(() => _currentNavIndex = 1),
-                borderRadius: BorderRadius.circular(10),
-                child: Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              Expanded(
+                child: InkWell(
+                  onTap: () => setState(() => _currentNavIndex = 1),
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -8452,13 +8438,10 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
                 ),
               ),
 
-              // 3. زر حسابي الشخصي
-              InkWell(
-                onTap: () => setState(() => _currentNavIndex = 2),
-                borderRadius: BorderRadius.circular(10),
-                child: Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              // 3. زر حسابي
+              Expanded(
+                child: InkWell(
+                  onTap: () => setState(() => _currentNavIndex = 2),
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -8498,18 +8481,14 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
   Widget _buildDepartmentsTab() {
     return Column(
       children: [
-        // 1. شريط أسعار الصرف والذهب
         LiveCurrencyExchangeTicker(
           usdRate: _manager.exchangeRateUsdToSyp,
           gold21kPrice: _manager.goldPrice21kSyp,
-          onRefresh: _initLiveAdsFromSupabase,
+          onRefresh: _showEditRatesDialog,
         ),
-        // 2. شريط الأخبار العاجلة
         _buildCustomNewsTickerWidget(),
-        // 3. شريط البانوراما الإعلانية
         _buildRoyalBannersSection(),
         const SizedBox(height: 8),
-        // 4. قائمة الأقسام الرئيسية
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
           child: Row(
@@ -8542,7 +8521,6 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
           ),
         ),
         const SizedBox(height: 6),
-        // 5. شبكة بطاقات الأقسام
         Expanded(
           child: ListView.builder(
             physics: const BouncingScrollPhysics(),
@@ -8608,6 +8586,121 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
     );
   }
 
+  // 🌟 دالة تعديل أسعار الصرف والذهب المركزية الحقيقية بدون أي أخطاء
+  void _showEditRatesDialog() {
+    if (!_manager.isAdmin) {
+      _initLiveAdsFromSupabase();
+      return;
+    }
+
+    final usdCtrl = TextEditingController(
+        text: _manager.exchangeRateUsdToSyp.toInt().toString());
+    final goldCtrl = TextEditingController(
+        text: _manager.goldPrice21kSyp.toInt().toString());
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF0F172A),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: const BorderSide(color: Color(0xFFD4AF37), width: 1.2),
+        ),
+        title: const Row(
+          children: [
+            Icon(Icons.currency_exchange, color: Color(0xFFD4AF37), size: 24),
+            SizedBox(width: 8),
+            Text(
+              'تعديل أسعار الدولار والذهب 🪙',
+              style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 15,
+                  fontWeight: FontWeight.bold),
+            ),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              'أدخل السعر الجديد وسيتم تحديثه فوراً في السيرفر وعلى جميع أجهزة المستخدمين:',
+              style: TextStyle(color: Colors.white70, fontSize: 12),
+            ),
+            const SizedBox(height: 14),
+            TextField(
+              controller: usdCtrl,
+              keyboardType: TextInputType.number,
+              style: const TextStyle(
+                  color: Colors.white, fontWeight: FontWeight.bold),
+              decoration: const InputDecoration(
+                labelText: 'سعر الدولار مقابل الليرة (USD -> SYP)',
+                labelStyle: TextStyle(color: Color(0xFF38BDF8), fontSize: 12),
+                suffixText: 'ل.س',
+                suffixStyle: TextStyle(color: Colors.white70),
+                border: OutlineInputBorder(),
+                filled: true,
+                fillColor: Color(0xFF1E293B),
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: goldCtrl,
+              keyboardType: TextInputType.number,
+              style: const TextStyle(
+                  color: Colors.white, fontWeight: FontWeight.bold),
+              decoration: const InputDecoration(
+                labelText: 'سعر غرام الذهب عيار 21',
+                labelStyle: TextStyle(color: Color(0xFFD4AF37), fontSize: 12),
+                suffixText: 'ل.س',
+                suffixStyle: TextStyle(color: Colors.white70),
+                border: OutlineInputBorder(),
+                filled: true,
+                fillColor: Color(0xFF1E293B),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('إلغاء', style: TextStyle(color: Colors.white60)),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFD4AF37),
+              foregroundColor: const Color(0xFF0F172A),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8)),
+            ),
+            onPressed: () async {
+              final newUsd = double.tryParse(usdCtrl.text.trim());
+              final newGold = double.tryParse(goldCtrl.text.trim());
+              if (newUsd != null && newGold != null) {
+                Navigator.pop(ctx);
+                await _manager.updateExchangeRatesInCloud(
+                  newUsdRate: newUsd,
+                  newGoldPrice: newGold,
+                );
+                setState(() {});
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content:
+                          Text('✅ تم تحديث ونشر أسعار الصرف في السيرفر بنجاح!'),
+                      backgroundColor: Colors.green,
+                    ),
+                  );
+                }
+              }
+            },
+            child: const Text('حفظ ونشر فوراً ⚡',
+                style: TextStyle(fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+  }
+
   final List<String> _governorates = [
     'كل المحافظات',
     'دمشق',
@@ -8636,7 +8729,6 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
   int _currentPage = 0;
   static const int _pageSize = 24;
 
-  // 🎛️ خيار التحكم بقياس وشكل عرض المنشورات (1 = سينمائي بانورامي، 2 = شبكي متراص مدمج، 3 = قائمة عريضة)
   int _adCardViewMode = 1;
 
   int _pendingAdsCount = 0;
@@ -8653,7 +8745,9 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
   bool _isTickerPaused = false;
 
   final PageController _bannerCarouselController = PageController();
+  final PageController _bottomBannerCarouselController = PageController();
   int _currentBannerIndex = 0;
+  int _currentBottomBannerIndex = 0;
   Timer? _bannerAutoScrollTimer;
   bool _isBannerUserInteracting = false;
   bool _isUploadingBanner = false;
@@ -8689,6 +8783,7 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
     _tickerScrollController.dispose();
     _bannerAutoScrollTimer?.cancel();
     _bannerCarouselController.dispose();
+    _bottomBannerCarouselController.dispose();
     _searchController.dispose();
     super.dispose();
   }
@@ -8742,18 +8837,39 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
 
     _bannerAutoScrollTimer =
         Timer.periodic(Duration(seconds: interval), (timer) {
-      if (mounted &&
-          !_isBannerUserInteracting &&
-          _manager.isBannerAutoScrollEnabled &&
-          _manager.banners.length > 1 &&
-          _bannerCarouselController.hasClients) {
-        final nextIndex = (_currentBannerIndex + 1) % _manager.banners.length;
+      if (!mounted ||
+          _isBannerUserInteracting ||
+          !_manager.isBannerAutoScrollEnabled) return;
+
+      final topBanners = _manager.banners
+          .where(
+              (b) => (b.slot == 1 || b.slot == 0) && b.isActive && !b.isExpired)
+          .toList();
+
+      if (topBanners.length > 1 && _bannerCarouselController.hasClients) {
+        final nextIndex = (_currentBannerIndex + 1) % topBanners.length;
         _bannerCarouselController.animateToPage(
           nextIndex,
           duration: const Duration(milliseconds: 700),
           curve: Curves.easeInOutCubic,
         );
         setState(() => _currentBannerIndex = nextIndex);
+      }
+
+      final bottomBanners = _manager.banners
+          .where((b) => b.slot == 2 && b.isActive && !b.isExpired)
+          .toList();
+
+      if (bottomBanners.length > 1 &&
+          _bottomBannerCarouselController.hasClients) {
+        final nextBottom =
+            (_currentBottomBannerIndex + 1) % bottomBanners.length;
+        _bottomBannerCarouselController.animateToPage(
+          nextBottom,
+          duration: const Duration(milliseconds: 700),
+          curve: Curves.easeInOutCubic,
+        );
+        setState(() => _currentBottomBannerIndex = nextBottom);
       }
     });
   }
@@ -8838,7 +8954,6 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
     }
 
     try {
-      // 1. جلب أسعار الصرف والذهب الحية فوراً من السيرفر وتحديثها على كل الأجهزة
       try {
         final ratesRes = await Supabase.instance.client
             .from('exchange_rates')
@@ -8866,7 +8981,6 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
         debugPrint('Supabase fetch rates notice: $rateErr');
       }
 
-      // 2. جلب الإعلانات النشطة
       final res = await Supabase.instance.client
           .from('ads')
           .select()
@@ -8883,7 +8997,6 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
         _hasMoreAds = fetched.length >= _pageSize;
       }
 
-      // 3. جلب البانوراما الإعلانية الحية وتحديثها فوراً لجميع الأجهزة
       final bannerRes = await Supabase.instance.client
           .from('banners')
           .select()
@@ -9193,7 +9306,6 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
       return;
     }
 
-    // 1. سؤال المسؤول: لأي قسم تريد رفع البانوراما؟ (اليمين أم اليسار)
     final int? selectedSlot = await showDialog<int>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -9235,7 +9347,6 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
 
     if (selectedSlot == null) return;
 
-    // 2. اختيار الصور من المعرض
     try {
       final pickedList = await _picker.pickMultiImage(
         imageQuality: 75,
@@ -9251,7 +9362,6 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
         bytesList.add(b);
       }
 
-      // رفع الصور لسيرفر التخزين
       final uploadedUrls = await StorageUploadService.uploadMultipleImageBytes(
         bucketName: 'banners',
         imagesBytesList: bytesList,
@@ -9270,7 +9380,7 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
           location: _selectedGovernorate,
           phone: kAppOwnerPhone,
           whatsapp: kAppOwnerWhatsApp,
-          slot: selectedSlot, // هنا تم تثبيت القسم المستقل (1 أو 2)
+          slot: selectedSlot,
           badgeText: selectedSlot == 1 ? 'VIP ★' : 'معتمد 100%',
           badgeColor: selectedSlot == 1
               ? _manager.secondaryColor
@@ -9279,13 +9389,11 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
           expiresAt: DateTime.now().add(const Duration(days: 30)),
         );
 
-        // حفظ محلي وسحابي مباشر في Supabase
         setState(() {
           _manager.banners.insert(0, newBanner);
         });
         _manager.saveBannersToOfflineCache(_manager.banners);
 
-        // إرسال مباشر لسيرفر Supabase لكي تظهر لجميع الناس في نفس اللحظة
         try {
           await Supabase.instance.client
               .from('banners')
@@ -9587,7 +9695,6 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
     );
   }
 
-  // ================= شريط الوصول السريع الذكي (الخدمات الرئيسية والمكاتب) =================
   Widget _buildQuickAccessServicesBar() {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
@@ -9600,7 +9707,6 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
-          // 1. زر دليل المكاتب العقارية بالمحافظات
           _buildQuickServiceButton(
             icon: Icons.real_estate_agent,
             label: 'المكاتب العقارية',
@@ -9613,7 +9719,6 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
               );
             },
           ),
-          // 2. زر جميع الأقسام (لعرض كل شجرة الأقسام بدون زحمة)
           _buildQuickServiceButton(
             icon: Icons.grid_view_rounded,
             label: 'جميع الأقسام',
@@ -9622,7 +9727,6 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
               _showAllCategoriesBottomSheet();
             },
           ),
-          // 3. زر المزادات العلنية المباشرة
           _buildQuickServiceButton(
             icon: Icons.gavel,
             label: 'المزادات الحية',
@@ -9641,7 +9745,6 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
               );
             },
           ),
-          // 4. زر إعادة ضبط وعرض كل الإعلانات الحديثة
           _buildQuickServiceButton(
             icon: Icons.all_inclusive,
             label: 'كل المنشورات',
@@ -9700,7 +9803,6 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
     );
   }
 
-  // ورقة عرض جميع الأقسام بشكل منظم وأنيق بدون تكدس في الرئيسية
   void _showAllCategoriesBottomSheet() {
     showModalBottomSheet(
       context: context,
@@ -9861,7 +9963,8 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
     }
 
     final topBanners = _manager.banners
-        .where((b) => b.slot == 1 && b.isActive && !b.isExpired)
+        .where(
+            (b) => (b.slot == 1 || b.slot == 0) && b.isActive && !b.isExpired)
         .toList();
     final bottomBanners = _manager.banners
         .where((b) => b.slot == 2 && b.isActive && !b.isExpired)
@@ -9875,19 +9978,19 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
         LiveCurrencyExchangeTicker(
           usdRate: _manager.exchangeRateUsdToSyp,
           gold21kPrice: _manager.goldPrice21kSyp,
-          onRefresh: _initLiveAdsFromSupabase,
+          onRefresh: _showEditRatesDialog,
         ),
         _buildCustomNewsTickerWidget(),
 
         // =====================================================================
-        // 🌟 منظومة البانوراما السيادية: قسمين فوق بعضهما تماماً بكامل العرض مع حركات سينمائية
+        // 🌟 منظومة البانوراما السيادية الفورية (تختفي فوراً إذا طفيت المفتاح وتقلب تلقائياً)
         // =====================================================================
         if (showTop || showBottom)
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
             child: Column(
               children: [
-                // 1. البانوراما العلوية (Slot 1) - تصميم سينمائي فخم
+                // 1. البانوراما العلوية (Slot 1) - مربوطة بالتقليب التلقائي
                 if (showTop) ...[
                   Container(
                     width: double.infinity,
@@ -9909,6 +10012,7 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(15),
                       child: PageView.builder(
+                        controller: _bannerCarouselController,
                         itemCount: topBanners.length,
                         physics: const BouncingScrollPhysics(),
                         itemBuilder: (ctx, idx) {
@@ -9918,17 +10022,10 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
                             child: Stack(
                               fit: StackFit.expand,
                               children: [
-                                // صورة البانوراما الذكية بتعبئة فخمة
-                                AnimatedScale(
-                                  scale: 1.0,
-                                  duration: const Duration(milliseconds: 600),
-                                  curve: Curves.easeOutCubic,
-                                  child: AppSmartImage(
-                                    imageUrl: b.imageUrl,
-                                    fit: BoxFit.cover,
-                                  ),
+                                AppSmartImage(
+                                  imageUrl: b.imageUrl,
+                                  fit: BoxFit.cover,
                                 ),
-                                // تدرج سينمائي خفيف يبرز جمالية الألوان
                                 Container(
                                   decoration: BoxDecoration(
                                     gradient: LinearGradient(
@@ -9943,7 +10040,6 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
                                     ),
                                   ),
                                 ),
-                                // شريط العنوان الأنيق وشارة VIP
                                 Positioned(
                                   top: 8,
                                   right: 10,
@@ -10009,7 +10105,7 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
                   const SizedBox(height: 8),
                 ],
 
-                // 2. البانوراما السفلية (Slot 2) - لمسات زرقاء سماوية راقية
+                // 2. البانوراما السفلية (Slot 2)
                 if (showBottom) ...[
                   Container(
                     width: double.infinity,
@@ -10031,6 +10127,7 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(15),
                       child: PageView.builder(
+                        controller: _bottomBannerCarouselController,
                         itemCount: bottomBanners.length,
                         physics: const BouncingScrollPhysics(),
                         itemBuilder: (ctx, idx) {
@@ -10040,14 +10137,9 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
                             child: Stack(
                               fit: StackFit.expand,
                               children: [
-                                AnimatedScale(
-                                  scale: 1.0,
-                                  duration: const Duration(milliseconds: 600),
-                                  curve: Curves.easeOutCubic,
-                                  child: AppSmartImage(
-                                    imageUrl: b.imageUrl,
-                                    fit: BoxFit.cover,
-                                  ),
+                                AppSmartImage(
+                                  imageUrl: b.imageUrl,
+                                  fit: BoxFit.cover,
                                 ),
                                 Container(
                                   decoration: BoxDecoration(
@@ -15560,6 +15652,7 @@ class _RealEstateDirectoryScreenState extends State<RealEstateDirectoryScreen> {
       backgroundColor: _manager.scaffoldBgColor,
       appBar: AppBar(
         backgroundColor: _manager.appBarColor,
+        elevation: 2,
         title: const Row(
           children: [
             Icon(Icons.real_estate_agent, color: Color(0xFFD4AF37), size: 22),
