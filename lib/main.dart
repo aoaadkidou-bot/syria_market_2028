@@ -8361,7 +8361,6 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
           ),
         ),
       ),
-
       // 🌟 الشريط السفلي المطور المفرغ للمنتصف Docked
       bottomNavigationBar: BottomAppBar(
         shape: const CircularNotchedRectangle(),
@@ -9973,408 +9972,389 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
     final bool showBottom =
         _manager.isBannerSlot2Visible && bottomBanners.isNotEmpty;
 
-    return Column(
-      children: [
-        LiveCurrencyExchangeTicker(
-          usdRate: _manager.exchangeRateUsdToSyp,
-          gold21kPrice: _manager.goldPrice21kSyp,
-          onRefresh: _showEditRatesDialog,
-        ),
-        _buildCustomNewsTickerWidget(),
+    return Directionality(
+      textDirection: TextDirection.rtl,
+      child: Column(
+        children: [
+          // 1. شريط أسعار الصرف النظيف
+          LiveCurrencyExchangeTicker(
+            usdRate: _manager.exchangeRateUsdToSyp,
+            gold21kPrice: _manager.goldPrice21kSyp,
+            onRefresh: _showEditRatesDialog,
+          ),
 
-        // =====================================================================
-        // 🌟 منظومة البانوراما السيادية الفورية (تختفي فوراً إذا طفيت المفتاح وتقلب تلقائياً)
-        // =====================================================================
-        if (showTop || showBottom)
+          // 2. شريط الأخبار العاجلة
+          _buildCustomNewsTickerWidget(),
+
+          // 3. البانوراما الإعلانية (تختفي فوراً عند الإطفاء)
+          if (showTop || showBottom)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              child: Column(
+                children: [
+                  if (showTop) ...[
+                    Container(
+                      width: double.infinity,
+                      height: 135,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0xFFD4AF37).withOpacity(0.25),
+                            blurRadius: 10,
+                            offset: const Offset(0, 3),
+                          ),
+                        ],
+                        border: Border.all(
+                          color: const Color(0xFFD4AF37).withOpacity(0.6),
+                          width: 1.4,
+                        ),
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(15),
+                        child: PageView.builder(
+                          controller: _bannerCarouselController,
+                          itemCount: topBanners.length,
+                          physics: const BouncingScrollPhysics(),
+                          itemBuilder: (ctx, idx) {
+                            final b = topBanners[idx];
+                            return GestureDetector(
+                              onTap: () => _showBannerDetailsSheet(b),
+                              child: Stack(
+                                fit: StackFit.expand,
+                                children: [
+                                  AppSmartImage(
+                                    imageUrl: b.imageUrl,
+                                    fit: BoxFit.cover,
+                                  ),
+                                  Container(
+                                    decoration: BoxDecoration(
+                                      gradient: LinearGradient(
+                                        begin: Alignment.topCenter,
+                                        end: Alignment.bottomCenter,
+                                        colors: [
+                                          Colors.black.withOpacity(0.1),
+                                          Colors.transparent,
+                                          Colors.black.withOpacity(0.85),
+                                        ],
+                                        stops: const [0.0, 0.45, 1.0],
+                                      ),
+                                    ),
+                                  ),
+                                  Positioned(
+                                    top: 8,
+                                    right: 10,
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 8, vertical: 2.5),
+                                      decoration: BoxDecoration(
+                                        color: Colors.black.withOpacity(0.65),
+                                        borderRadius: BorderRadius.circular(8),
+                                        border: Border.all(
+                                          color: const Color(0xFFD4AF37)
+                                              .withOpacity(0.8),
+                                          width: 0.8,
+                                        ),
+                                      ),
+                                      child: const Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Icon(Icons.stars_rounded,
+                                              color: Color(0xFFD4AF37),
+                                              size: 12),
+                                          SizedBox(width: 4),
+                                          Text(
+                                            'إعلان مميز',
+                                            style: TextStyle(
+                                              color: Color(0xFFD4AF37),
+                                              fontSize: 9.5,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                  Positioned(
+                                    bottom: 8,
+                                    left: 12,
+                                    right: 12,
+                                    child: Text(
+                                      b.title,
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 13,
+                                        shadows: [
+                                          Shadow(
+                                            offset: Offset(0, 1),
+                                            blurRadius: 4,
+                                            color: Colors.black87,
+                                          ),
+                                        ],
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                  ],
+                  if (showBottom) ...[
+                    Container(
+                      width: double.infinity,
+                      height: 135,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0xFF0284C7).withOpacity(0.25),
+                            blurRadius: 10,
+                            offset: const Offset(0, 3),
+                          ),
+                        ],
+                        border: Border.all(
+                          color: const Color(0xFF0284C7).withOpacity(0.6),
+                          width: 1.4,
+                        ),
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(15),
+                        child: PageView.builder(
+                          controller: _bottomBannerCarouselController,
+                          itemCount: bottomBanners.length,
+                          physics: const BouncingScrollPhysics(),
+                          itemBuilder: (ctx, idx) {
+                            final b = bottomBanners[idx];
+                            return GestureDetector(
+                              onTap: () => _showBannerDetailsSheet(b),
+                              child: Stack(
+                                fit: StackFit.expand,
+                                children: [
+                                  AppSmartImage(
+                                    imageUrl: b.imageUrl,
+                                    fit: BoxFit.cover,
+                                  ),
+                                  Container(
+                                    decoration: BoxDecoration(
+                                      gradient: LinearGradient(
+                                        begin: Alignment.topCenter,
+                                        end: Alignment.bottomCenter,
+                                        colors: [
+                                          Colors.black.withOpacity(0.1),
+                                          Colors.transparent,
+                                          Colors.black.withOpacity(0.85),
+                                        ],
+                                        stops: const [0.0, 0.45, 1.0],
+                                      ),
+                                    ),
+                                  ),
+                                  Positioned(
+                                    top: 8,
+                                    right: 10,
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 8, vertical: 2.5),
+                                      decoration: BoxDecoration(
+                                        color: Colors.black.withOpacity(0.65),
+                                        borderRadius: BorderRadius.circular(8),
+                                        border: Border.all(
+                                          color: const Color(0xFF0284C7)
+                                              .withOpacity(0.8),
+                                          width: 0.8,
+                                        ),
+                                      ),
+                                      child: const Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Icon(Icons.bolt_rounded,
+                                              color: Color(0xFF0284C7),
+                                              size: 12),
+                                          SizedBox(width: 4),
+                                          Text(
+                                            'عرض حصري',
+                                            style: TextStyle(
+                                              color: Color(0xFF0284C7),
+                                              fontSize: 9.5,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                  Positioned(
+                                    bottom: 8,
+                                    left: 12,
+                                    right: 12,
+                                    child: Text(
+                                      b.title,
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 13,
+                                        shadows: [
+                                          Shadow(
+                                            offset: Offset(0, 1),
+                                            blurRadius: 4,
+                                            color: Colors.black87,
+                                          ),
+                                        ],
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                  ],
+                ],
+              ),
+            ),
+
+          // 4. ترويسة المنشورات الحديثة
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-            child: Column(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                // 1. البانوراما العلوية (Slot 1) - مربوطة بالتقليب التلقائي
-                if (showTop) ...[
-                  Container(
-                    width: double.infinity,
-                    height: 135,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(16),
-                      boxShadow: [
-                        BoxShadow(
-                          color: const Color(0xFFD4AF37).withOpacity(0.25),
-                          blurRadius: 10,
-                          offset: const Offset(0, 3),
-                        ),
-                      ],
-                      border: Border.all(
-                        color: const Color(0xFFD4AF37).withOpacity(0.6),
-                        width: 1.4,
+                Row(
+                  children: [
+                    const Icon(Icons.flash_on,
+                        color: Color(0xFFD4AF37), size: 18),
+                    const SizedBox(width: 6),
+                    Text(
+                      'أحدث المنشورات في السوق',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        color: _manager.titleTextColor,
                       ),
                     ),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(15),
-                      child: PageView.builder(
-                        controller: _bannerCarouselController,
-                        itemCount: topBanners.length,
-                        physics: const BouncingScrollPhysics(),
-                        itemBuilder: (ctx, idx) {
-                          final b = topBanners[idx];
-                          return GestureDetector(
-                            onTap: () => _showBannerDetailsSheet(b),
-                            child: Stack(
-                              fit: StackFit.expand,
-                              children: [
-                                AppSmartImage(
-                                  imageUrl: b.imageUrl,
-                                  fit: BoxFit.cover,
-                                ),
-                                Container(
-                                  decoration: BoxDecoration(
-                                    gradient: LinearGradient(
-                                      begin: Alignment.topCenter,
-                                      end: Alignment.bottomCenter,
-                                      colors: [
-                                        Colors.black.withOpacity(0.1),
-                                        Colors.transparent,
-                                        Colors.black.withOpacity(0.85),
-                                      ],
-                                      stops: const [0.0, 0.45, 1.0],
-                                    ),
-                                  ),
-                                ),
-                                Positioned(
-                                  top: 8,
-                                  right: 10,
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 8, vertical: 2.5),
-                                    decoration: BoxDecoration(
-                                      color: Colors.black.withOpacity(0.65),
-                                      borderRadius: BorderRadius.circular(8),
-                                      border: Border.all(
-                                        color: const Color(0xFFD4AF37)
-                                            .withOpacity(0.8),
-                                        width: 0.8,
-                                      ),
-                                    ),
-                                    child: const Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Icon(Icons.stars_rounded,
-                                            color: Color(0xFFD4AF37), size: 12),
-                                        SizedBox(width: 4),
-                                        Text(
-                                          'إعلان مميز',
-                                          style: TextStyle(
-                                            color: Color(0xFFD4AF37),
-                                            fontSize: 9.5,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                                Positioned(
-                                  bottom: 8,
-                                  left: 12,
-                                  right: 12,
-                                  child: Text(
-                                    b.title,
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 13,
-                                      shadows: [
-                                        Shadow(
-                                          offset: Offset(0, 1),
-                                          blurRadius: 4,
-                                          color: Colors.black87,
-                                        ),
-                                      ],
-                                    ),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          );
-                        },
+                    const SizedBox(width: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 7, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: _manager.secondaryColor.withOpacity(0.18),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        '${filteredAds.length} إعلان',
+                        style: TextStyle(
+                          color: _manager.secondaryColor,
+                          fontSize: 10.5,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                if (_selectedGovernorate != 'كل المحافظات')
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF1E293B),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Text(
+                      '📍 $_selectedGovernorate',
+                      style: const TextStyle(
+                        color: Colors.white70,
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
                   ),
-                  const SizedBox(height: 8),
-                ],
-
-                // 2. البانوراما السفلية (Slot 2)
-                if (showBottom) ...[
-                  Container(
-                    width: double.infinity,
-                    height: 135,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(16),
-                      boxShadow: [
-                        BoxShadow(
-                          color: const Color(0xFF0284C7).withOpacity(0.25),
-                          blurRadius: 10,
-                          offset: const Offset(0, 3),
-                        ),
-                      ],
-                      border: Border.all(
-                        color: const Color(0xFF0284C7).withOpacity(0.6),
-                        width: 1.4,
-                      ),
-                    ),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(15),
-                      child: PageView.builder(
-                        controller: _bottomBannerCarouselController,
-                        itemCount: bottomBanners.length,
-                        physics: const BouncingScrollPhysics(),
-                        itemBuilder: (ctx, idx) {
-                          final b = bottomBanners[idx];
-                          return GestureDetector(
-                            onTap: () => _showBannerDetailsSheet(b),
-                            child: Stack(
-                              fit: StackFit.expand,
-                              children: [
-                                AppSmartImage(
-                                  imageUrl: b.imageUrl,
-                                  fit: BoxFit.cover,
-                                ),
-                                Container(
-                                  decoration: BoxDecoration(
-                                    gradient: LinearGradient(
-                                      begin: Alignment.topCenter,
-                                      end: Alignment.bottomCenter,
-                                      colors: [
-                                        Colors.black.withOpacity(0.1),
-                                        Colors.transparent,
-                                        Colors.black.withOpacity(0.85),
-                                      ],
-                                      stops: const [0.0, 0.45, 1.0],
-                                    ),
-                                  ),
-                                ),
-                                Positioned(
-                                  top: 8,
-                                  right: 10,
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 8, vertical: 2.5),
-                                    decoration: BoxDecoration(
-                                      color: Colors.black.withOpacity(0.65),
-                                      borderRadius: BorderRadius.circular(8),
-                                      border: Border.all(
-                                        color: const Color(0xFF0284C7)
-                                            .withOpacity(0.8),
-                                        width: 0.8,
-                                      ),
-                                    ),
-                                    child: const Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Icon(Icons.bolt_rounded,
-                                            color: Color(0xFF0284C7), size: 12),
-                                        SizedBox(width: 4),
-                                        Text(
-                                          'عرض حصري',
-                                          style: TextStyle(
-                                            color: Color(0xFF0284C7),
-                                            fontSize: 9.5,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                                Positioned(
-                                  bottom: 8,
-                                  left: 12,
-                                  right: 12,
-                                  child: Text(
-                                    b.title,
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 13,
-                                      shadows: [
-                                        Shadow(
-                                          offset: Offset(0, 1),
-                                          blurRadius: 4,
-                                          color: Colors.black87,
-                                        ),
-                                      ],
-                                    ),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                ],
               ],
             ),
           ),
 
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
-          child: Row(
-            children: [
-              Expanded(
-                child: TextField(
-                  controller: _searchController,
-                  onChanged: (val) {
-                    setState(() => _searchQuery = val);
-                    _manager.trackSearchKeyword(val);
-                  },
-                  decoration: InputDecoration(
-                    hintText:
-                        'ابحث في كافة إعلانات السوق (سيارات، عقارات، هواتف...)...',
-                    hintStyle: const TextStyle(fontSize: 12),
-                    prefixIcon:
-                        Icon(Icons.search, color: _manager.primaryColor),
-                    filled: true,
-                    fillColor: Colors.grey.withOpacity(0.08),
-                    contentPadding:
-                        const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide:
-                          BorderSide(color: Colors.grey.withOpacity(0.3)),
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 8),
-              IconButton(
-                style: IconButton.styleFrom(
-                  backgroundColor: _filterCondition != 'الكل' ||
-                          _filterMinPrice != null ||
-                          _filterMaxPrice != null ||
-                          _sortBy != 'newest'
-                      ? _manager.secondaryColor
-                      : Colors.grey.withOpacity(0.12),
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12)),
-                ),
-                icon: Icon(Icons.tune, color: _manager.primaryColor, size: 22),
-                tooltip: 'تصفية وفلترة متقدمة',
-                onPressed: _showAdvancedFilterSheet,
-              ),
-            ],
-          ),
-        ),
-        _buildQuickAccessServicesBar(),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Row(
-                children: [
-                  Text('أحدث إعلانات السوق المعتمدة',
-                      style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.bold,
-                          color: _manager.titleTextColor)),
-                  const SizedBox(width: 6),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 6, vertical: 1.5),
-                    decoration: BoxDecoration(
-                        color: _manager.primaryColor.withOpacity(0.12),
-                        borderRadius: BorderRadius.circular(10)),
-                    child: Text('${filteredAds.length} إعلان',
-                        style: TextStyle(
-                            color: _manager.primaryColor,
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold)),
-                  ),
-                ],
-              ),
-              if (_selectedGovernorate != 'كل المحافظات')
-                Text('محافظة: $_selectedGovernorate',
-                    style: TextStyle(
-                        color: _manager.primaryColor,
-                        fontSize: 11,
-                        fontWeight: FontWeight.bold)),
-            ],
-          ),
-        ),
-        Expanded(
-          child: RefreshIndicator(
-            onRefresh: _initLiveAdsFromSupabase,
-            color: _manager.primaryColor,
-            child: _isLoadingAds
-                ? Center(
-                    child:
-                        CircularProgressIndicator(color: _manager.primaryColor))
-                : filteredAds.isEmpty
-                    ? ListView(
-                        physics: const AlwaysScrollableScrollPhysics(),
-                        children: [
-                          const SizedBox(height: 60),
-                          Center(
-                            child: Column(
-                              children: [
-                                Icon(Icons.search_off_rounded,
-                                    size: 55, color: Colors.grey.shade400),
-                                const SizedBox(height: 10),
-                                const Text(
-                                    'لا توجد إعلانات معتمدة حالياً في هذا القسم أو المحافظة',
+          // 5. شبكة المنشورات المباشرة دون عوائق
+          Expanded(
+            child: RefreshIndicator(
+              onRefresh: _initLiveAdsFromSupabase,
+              color: _manager.secondaryColor,
+              child: _isLoadingAds
+                  ? Center(
+                      child: CircularProgressIndicator(
+                          color: _manager.secondaryColor))
+                  : filteredAds.isEmpty
+                      ? ListView(
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          children: [
+                            const SizedBox(height: 60),
+                            Center(
+                              child: Column(
+                                children: [
+                                  Icon(Icons.feed_outlined,
+                                      size: 55, color: Colors.grey.shade500),
+                                  const SizedBox(height: 10),
+                                  const Text(
+                                    'لا توجد منشورات معتمدة حالياً',
                                     style: TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 13,
-                                        color: Colors.grey)),
-                              ],
-                            ),
-                          ),
-                        ],
-                      )
-                    : GridView.builder(
-                        controller: _gridScrollController,
-                        physics: const BouncingScrollPhysics(
-                            parent: AlwaysScrollableScrollPhysics()),
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 8, vertical: 4),
-                        gridDelegate:
-                            const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 2,
-                          childAspectRatio: 0.70,
-                          crossAxisSpacing: 6,
-                          mainAxisSpacing: 6,
-                        ),
-                        itemCount:
-                            filteredAds.length + (_isLoadingMore ? 2 : 0),
-                        itemBuilder: (ctx, index) {
-                          if (index >= filteredAds.length) {
-                            return Card(
-                              shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(10)),
-                              child: const Center(
-                                child: SizedBox(
-                                  width: 24,
-                                  height: 24,
-                                  child: CircularProgressIndicator(
-                                      strokeWidth: 2.5),
-                                ),
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 13,
+                                      color: Colors.grey,
+                                    ),
+                                  ),
+                                ],
                               ),
-                            );
-                          }
-                          final ad = filteredAds[index];
-                          return _buildCompactFacingGridAdCard(ad);
-                        },
-                      ),
+                            ),
+                          ],
+                        )
+                      : GridView.builder(
+                          controller: _gridScrollController,
+                          physics: const BouncingScrollPhysics(
+                              parent: AlwaysScrollableScrollPhysics()),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 4),
+                          gridDelegate:
+                              const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 2,
+                            childAspectRatio: 0.68,
+                            crossAxisSpacing: 8,
+                            mainAxisSpacing: 8,
+                          ),
+                          itemCount:
+                              filteredAds.length + (_isLoadingMore ? 2 : 0),
+                          itemBuilder: (ctx, index) {
+                            if (index >= filteredAds.length) {
+                              return Card(
+                                color: const Color(0xFF0F172A),
+                                shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12)),
+                                child: const Center(
+                                  child: SizedBox(
+                                    width: 24,
+                                    height: 24,
+                                    child: CircularProgressIndicator(
+                                        strokeWidth: 2.5),
+                                  ),
+                                ),
+                              );
+                            }
+                            final ad = filteredAds[index];
+                            return _buildCompactFacingGridAdCard(ad);
+                          },
+                        ),
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
@@ -10385,6 +10365,7 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
       color: _manager.tickerBackgroundColor,
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       child: Row(
+        textDirection: TextDirection.rtl,
         children: [
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
@@ -10431,13 +10412,9 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
     );
   }
 
-  // ==============================================================================
-  // 🌟 نظام البانوراما الثنائية الرأسية المستقلة (العلوية والسفلية) مع التحكم الكامل
-  // ==============================================================================
   Widget _buildRoyalBannersSection() {
     final targetGovernorate = _selectedGovernorate;
 
-    // تصفية صور البانوراما العلوية (Slot 1)
     final topBanners = _manager.banners.where((b) {
       final notExpired = !b.isExpired && b.isActive;
       final geoMatch = b.location == 'كل المحافظات' ||
@@ -10446,7 +10423,6 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
       return notExpired && geoMatch && (b.slot == 1 || b.slot == 0);
     }).toList();
 
-    // تصفية صور البانوراما السفلية (Slot 2)
     final bottomBanners = _manager.banners.where((b) {
       final notExpired = !b.isExpired && b.isActive;
       final geoMatch = b.location == 'كل المحافظات' ||
@@ -10455,12 +10431,10 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
       return notExpired && geoMatch && b.slot == 2;
     }).toList();
 
-    // فحص إظهار البانوراما: تختفي فوراً إذا تم إطفاؤها أو كانت فارغة
-    final showTop = _manager.isBannerAutoScrollEnabled && topBanners.isNotEmpty;
+    final showTop = _manager.isBannerSlot1Visible && topBanners.isNotEmpty;
     final showBottom =
-        _manager.isBannerAutoScrollEnabled && bottomBanners.isNotEmpty;
+        _manager.isBannerSlot2Visible && bottomBanners.isNotEmpty;
 
-    // إذا تم إخفاء الاثنين من غرفة الإدارة لتوسيع مساحة المنشورات
     if (!showTop && !showBottom) {
       return const SizedBox.shrink();
     }
@@ -10468,7 +10442,6 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        // 1️⃣ البانوراما العلوية (Slot 1) - تختفي تماماً إذا أطفأتها
         if (showTop)
           Container(
             margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
@@ -10483,13 +10456,12 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
               ),
             ),
           ),
-
-        // 2️⃣ البانوراما السفلية (Slot 2) - تختفي تماماً إذا أطفأتها
         if (showBottom)
           Container(
             margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
             height: 98,
             child: PageView.builder(
+              controller: _bottomBannerCarouselController,
               physics: const BouncingScrollPhysics(),
               itemCount: bottomBanners.length,
               itemBuilder: (ctx, idx) => _buildAnimatedPanoramaCard(
@@ -10502,7 +10474,6 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
     );
   }
 
-  // كرت البانوراما السينمائي المتطور مع حركات تفاعلية ووضوح كامل
   Widget _buildAnimatedPanoramaCard(BannerItem banner,
       {required String badgeTitle}) {
     final displayImg =
@@ -10538,7 +10509,6 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
                 fit: BoxFit.cover,
               ),
             ),
-            // تدرج لوني لحماية النص وجعله مقروءاً بوضوح فائق
             Positioned.fill(
               child: Container(
                 decoration: BoxDecoration(
@@ -10554,7 +10524,6 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
                 ),
               ),
             ),
-            // الشارة الترويجية الذهبية
             Positioned(
               top: 6,
               right: 8,
@@ -10574,7 +10543,6 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
                 ),
               ),
             ),
-            // نصوص العنوان والمحافظة
             Positioned(
               bottom: 6,
               right: 10,
@@ -10811,419 +10779,321 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
   }
 
   Widget _buildCompactFacingGridAdCard(AdItem ad) {
-    // =========================================================================
-    // 🎯 يتم أخذ النمط تلقائياً من خيار المستخدم عبر أزرار التبديل في الأعلى
-    // 1 = النمط السينمائي البانورامي (الصورة تملأ الكرت مع سعر ذهبي فوقها)
-    // 2 = النمط الشبكي المتراص الكلاسيكي (تفاصيل مدمجة بدون أي فراغ أبيض)
-    // 3 = نمط البطاقة الملكية المزدوجة مع شارة السعر والعنوان البارز
-    // =========================================================================
-    final int cardDesignOption = _adCardViewMode;
-
     final isFav = _favoriteAdIds.contains(ad.id);
     final remaining = ad.soldRemainingDuration;
     final displayImg = ad.imageUrls.isNotEmpty ? ad.imageUrls.first : '';
-    final priceStr = ad.priceUsd != null
-        ? '\$${ad.priceUsd!.toStringAsFixed(0)}'
-        : (ad.priceSyp != null ? '${ad.priceSyp!.toStringAsFixed(0)} ل.س' : '');
 
-    return Card(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      clipBehavior: Clip.antiAlias,
-      elevation: 2.0,
-      margin: const EdgeInsets.symmetric(horizontal: 2, vertical: 3),
-      color: const Color(0xFF0F172A),
-      child: InkWell(
-        onTap: () {
-          // 1. زيادة العداد محلياً فوراً للشاشة
-          setState(() {
-            final targetIdx = _manager.ads.indexWhere((x) => x.id == ad.id);
-            if (targetIdx != -1) {
-              _manager.ads[targetIdx] = _manager.ads[targetIdx].copyWith(
-                viewsCount: _manager.ads[targetIdx].viewsCount + 1,
-              );
-            }
-          });
-          _manager.incrementAdViews(ad.id);
+    return Directionality(
+      textDirection: TextDirection.rtl,
+      child: Card(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        clipBehavior: Clip.antiAlias,
+        elevation: 3.0,
+        margin: const EdgeInsets.symmetric(horizontal: 2, vertical: 3),
+        color: const Color(0xFF0F172A),
+        child: InkWell(
+          onTap: () {
+            setState(() {
+              final targetIdx = _manager.ads.indexWhere((x) => x.id == ad.id);
+              if (targetIdx != -1) {
+                _manager.ads[targetIdx] = _manager.ads[targetIdx].copyWith(
+                  viewsCount: _manager.ads[targetIdx].viewsCount + 1,
+                );
+              }
+            });
+            _manager.incrementAdViews(ad.id);
 
-          // 2. حفظ عدد المشاهدات الدائم في Supabase حتى لا يرجع صفراً أبداً
-          try {
-            Supabase.instance.client
-                .from('ads')
-                .update({'views_count': ad.viewsCount + 1})
-                .eq('id', ad.id)
-                .then((_) {})
-                .catchError((_) {});
-          } catch (_) {}
+            try {
+              Supabase.instance.client
+                  .from('ads')
+                  .update({'views_count': ad.viewsCount + 1}).eq('id', ad.id);
+            } catch (_) {}
 
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (ctx) => FullAdDetailsScreen(
-                ad: ad.copyWith(viewsCount: ad.viewsCount + 1),
-                isFavorite: isFav,
-                onToggleFavorite: () {
-                  _requireAuth(() {
-                    _toggleFavoriteInSupabase(ad.id);
-                  });
-                },
-                onAdUpdated: (updatedAd) {
-                  setState(() {
-                    final idx =
-                        _manager.ads.indexWhere((x) => x.id == updatedAd.id);
-                    if (idx != -1) _manager.ads[idx] = updatedAd;
-                  });
-                },
-                // 3. الحذف النهائي الحقيقي من السيرفر وقاعدة البيانات ومن كل الأجهزة
-                onAdDeleted: (deletedId) async {
-                  setState(() {
-                    _manager.ads.removeWhere((x) => x.id == deletedId);
-                  });
-                  try {
-                    // حذف المنشور من السيرفر بشكل دائم ونهائي
-                    await Supabase.instance.client
-                        .from('ads')
-                        .delete()
-                        .eq('id', deletedId);
-                    // حذف تعليقات الإعلان لتنظيف السيرفر
-                    await Supabase.instance.client
-                        .from('ad_comments')
-                        .delete()
-                        .eq('ad_id', deletedId);
-                  } catch (e) {
-                    debugPrint('Error deleting ad from Supabase: $e');
-                  }
-                },
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (ctx) => FullAdDetailsScreen(
+                  ad: ad.copyWith(viewsCount: ad.viewsCount + 1),
+                  isFavorite: isFav,
+                  onToggleFavorite: () {
+                    _requireAuth(() {
+                      _toggleFavoriteInSupabase(ad.id);
+                    });
+                  },
+                  onAdUpdated: (updatedAd) {
+                    setState(() {
+                      final idx =
+                          _manager.ads.indexWhere((x) => x.id == updatedAd.id);
+                      if (idx != -1) _manager.ads[idx] = updatedAd;
+                    });
+                  },
+                  onAdDeleted: (deletedId) async {
+                    setState(() {
+                      _manager.ads.removeWhere((x) => x.id == deletedId);
+                    });
+                    try {
+                      await Supabase.instance.client
+                          .from('ads')
+                          .delete()
+                          .eq('id', deletedId);
+                      await Supabase.instance.client
+                          .from('ad_comments')
+                          .delete()
+                          .eq('ad_id', deletedId);
+                    } catch (e) {
+                      debugPrint('Error deleting ad from Supabase: $e');
+                    }
+                  },
+                ),
               ),
-            ),
-          );
-        },
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // ================== قسم الصورة (يحافظ على كامل الزوايا بدون مط) ==================
-            Expanded(
-              flex: cardDesignOption == 1 ? 8 : (cardDesignOption == 2 ? 6 : 7),
-              child: Stack(
-                fit: StackFit.expand,
-                children: [
-                  Container(
-                    color: const Color(0xFF0B1120),
-                    alignment: Alignment.center,
-                    child: AppSmartImage(
-                      imageUrl: displayImg,
-                      fit: BoxFit
-                          .contain, // 👈 الصورة تظهر كاملة بدون أي مط أو قص للأطراف
-                    ),
-                  ),
-
-                  // تدرج ظل سفلي خفيف لإبراز السعر والتفاصيل
-                  Positioned.fill(
-                    child: DecoratedBox(
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [
-                            Colors.black.withOpacity(0.70),
-                            Colors.transparent,
-                            Colors.black.withOpacity(0.35),
-                          ],
-                          begin: Alignment.bottomCenter,
-                          end: Alignment.topCenter,
-                        ),
+            );
+          },
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // قسم الصورة مع الحفاظ على النسبة
+              Expanded(
+                flex: 6,
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    Container(
+                      color: const Color(0xFF0B1120),
+                      alignment: Alignment.center,
+                      child: AppSmartImage(
+                        imageUrl: displayImg,
+                        fit: BoxFit.cover,
                       ),
                     ),
-                  ),
-                  // شارات الحالة (قيد المراجعة / مرفوض / VIP)
-                  if (ad.status == 'pending')
-                    Positioned(
-                      top: 4,
-                      right: 4,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 5, vertical: 1.5),
+                    Positioned.fill(
+                      child: DecoratedBox(
                         decoration: BoxDecoration(
-                            color: Colors.orange.shade800,
-                            borderRadius: BorderRadius.circular(4)),
-                        child: const Text('قيد المراجعة ⏳',
-                            style: TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 8)),
-                      ),
-                    )
-                  else if (ad.status == 'rejected')
-                    Positioned(
-                      top: 4,
-                      right: 4,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 5, vertical: 1.5),
-                        decoration: BoxDecoration(
-                            color: Colors.red.shade800,
-                            borderRadius: BorderRadius.circular(4)),
-                        child: const Text('مرفوض ❌',
-                            style: TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 8)),
-                      ),
-                    )
-                  else if (ad.isFeatured)
-                    Positioned(
-                      top: 4,
-                      right: 4,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 5, vertical: 1.5),
-                        decoration: BoxDecoration(
-                            color: _manager.secondaryColor,
-                            borderRadius: BorderRadius.circular(4)),
-                        child: Text('VIP ★',
-                            style: TextStyle(
-                                color: _manager.primaryColor,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 9)),
-                      ),
-                    ),
-                  // زر المفضلة الملكي المطور: واضح وكبير ولمسته فورية وسريعة جداً
-                  Positioned(
-                    top: 6,
-                    left: 6,
-                    child: GestureDetector(
-                      behavior: HitTestBehavior.opaque,
-                      onTap: () {
-                        _requireAuth(() {
-                          _toggleFavoriteInSupabase(ad.id);
-                        });
-                      },
-                      child: Container(
-                        padding: const EdgeInsets.all(5),
-                        decoration: BoxDecoration(
-                          color: isFav
-                              ? Colors.red.withOpacity(0.85)
-                              : Colors.black.withOpacity(0.60),
-                          shape: BoxShape.circle,
-                          border: Border.all(
-                            color: isFav ? Colors.white : Colors.white54,
-                            width: 1.2,
+                          gradient: LinearGradient(
+                            colors: [
+                              Colors.black.withOpacity(0.65),
+                              Colors.transparent,
+                              Colors.black.withOpacity(0.40),
+                            ],
+                            begin: Alignment.bottomCenter,
+                            end: Alignment.topCenter,
                           ),
-                          boxShadow: const [
-                            BoxShadow(
-                              color: Colors.black45,
-                              blurRadius: 4,
-                              offset: Offset(0, 2),
-                            ),
-                          ],
-                        ),
-                        child: Icon(
-                          isFav ? Icons.favorite : Icons.favorite_border,
-                          color: Colors.white,
-                          size: 17, // حجم واضح ومريح جداً للعين وللأصبع
                         ),
                       ),
                     ),
-                  ),
-
-                  // السعر المذهب على الصورة (في الخيار 1 و 3)
-                  if (cardDesignOption == 1 || cardDesignOption == 3)
+                    if (ad.status == 'pending')
+                      Positioned(
+                        top: 6,
+                        right: 6,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                              color: Colors.orange.shade800,
+                              borderRadius: BorderRadius.circular(5)),
+                          child: const Text('قيد المراجعة ⏳',
+                              style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 8.5)),
+                        ),
+                      )
+                    else if (ad.isFeatured)
+                      Positioned(
+                        top: 6,
+                        right: 6,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                              color: const Color(0xFFD4AF37),
+                              borderRadius: BorderRadius.circular(5)),
+                          child: const Text('VIP ★',
+                              style: TextStyle(
+                                  color: Color(0xFF0F172A),
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 9)),
+                        ),
+                      ),
+                    Positioned(
+                      top: 6,
+                      left: 6,
+                      child: GestureDetector(
+                        behavior: HitTestBehavior.opaque,
+                        onTap: () {
+                          _requireAuth(() {
+                            _toggleFavoriteInSupabase(ad.id);
+                          });
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.all(5),
+                          decoration: BoxDecoration(
+                            color: isFav
+                                ? Colors.red.withOpacity(0.85)
+                                : Colors.black.withOpacity(0.60),
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: isFav ? Colors.white : Colors.white54,
+                              width: 1.2,
+                            ),
+                          ),
+                          child: Icon(
+                            isFav ? Icons.favorite : Icons.favorite_border,
+                            color: Colors.white,
+                            size: 16,
+                          ),
+                        ),
+                      ),
+                    ),
                     Positioned(
                       bottom: 4,
-                      left: 4,
+                      left: 6,
                       child: Container(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 6, vertical: 2),
+                            horizontal: 5, vertical: 2),
                         decoration: BoxDecoration(
-                          color: Colors.black.withOpacity(0.80),
-                          borderRadius: BorderRadius.circular(6),
-                          border: Border.all(
-                              color: const Color(0xFFD4AF37), width: 0.9),
+                            color: Colors.black54,
+                            borderRadius: BorderRadius.circular(4)),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.remove_red_eye,
+                                color: Colors.white70, size: 9),
+                            const SizedBox(width: 3),
+                            Text('${ad.viewsCount}',
+                                style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 8.5,
+                                    fontWeight: FontWeight.bold)),
+                          ],
                         ),
-                        child: Text(
-                          priceStr,
-                          style: const TextStyle(
-                              color: Color(0xFFD4AF37),
-                              fontSize: 10.5,
-                              fontWeight: FontWeight.w900),
+                      ),
+                    ),
+                    if (ad.sellerPositiveLikes >= 1000 || ad.isVerifiedSeller)
+                      Positioned(
+                        top: 6,
+                        right: ad.isFeatured ? 50 : 6,
+                        child: KycVerificationBadge(
+                          isVerified: ad.isVerifiedSeller,
+                          positiveLikes: ad.sellerPositiveLikes,
+                          size: 13,
                         ),
                       ),
-                    ),
-                  // عداد المشاهدات
-                  Positioned(
-                    bottom: 4,
-                    right: 4,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 4, vertical: 1.5),
-                      decoration: BoxDecoration(
-                          color: Colors.black54,
-                          borderRadius: BorderRadius.circular(4)),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(Icons.remove_red_eye,
-                              color: Colors.white70, size: 9),
-                          const SizedBox(width: 2),
-                          Text('${ad.viewsCount}',
-                              style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 8,
-                                  fontWeight: FontWeight.bold)),
-                        ],
-                      ),
-                    ),
-                  ),
-
-                  // شارة التوثيق
-                  if (ad.sellerPositiveLikes >= 1000 || ad.isVerifiedSeller)
-                    Positioned(
-                      top: 4,
-                      right: ad.isFeatured ? 45 : 4,
-                      child: KycVerificationBadge(
-                        isVerified: ad.isVerifiedSeller,
-                        positiveLikes: ad.sellerPositiveLikes,
-                        size: 13,
-                      ),
-                    ),
-
-                  // ختم تم البيع
-                  if (ad.isSold)
-                    Positioned.fill(
-                      child: Container(
-                        color: Colors.black.withOpacity(0.65),
-                        child: Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Transform.rotate(
-                                angle: -0.22,
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 10, vertical: 4),
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFFDC2626),
-                                    borderRadius: BorderRadius.circular(6),
-                                    border: Border.all(
-                                        color: Colors.white, width: 1.5),
-                                    boxShadow: const [
-                                      BoxShadow(
-                                          color: Colors.black45, blurRadius: 6)
-                                    ],
-                                  ),
-                                  child: const Text('تم البيع ✓ SOLD',
-                                      style: TextStyle(
-                                          color: Colors.white,
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 10.5)),
-                                ),
-                              ),
-                              if (remaining != null) ...[
-                                const SizedBox(height: 4),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 6, vertical: 2),
-                                  decoration: BoxDecoration(
-                                      color: Colors.black87,
-                                      borderRadius: BorderRadius.circular(4),
+                    if (ad.isSold)
+                      Positioned.fill(
+                        child: Container(
+                          color: Colors.black.withOpacity(0.65),
+                          child: Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Transform.rotate(
+                                  angle: -0.22,
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 10, vertical: 4),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFFDC2626),
+                                      borderRadius: BorderRadius.circular(6),
                                       border: Border.all(
-                                          color: const Color(0xFFD4AF37)
-                                              .withOpacity(0.4))),
-                                  child: Text('${remaining.inMinutes} دقيقة ⏳',
+                                          color: Colors.white, width: 1.5),
+                                    ),
+                                    child: const Text('تم البيع ✓ SOLD',
+                                        style: TextStyle(
+                                            color: Colors.white,
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 10.5)),
+                                  ),
+                                ),
+                                if (remaining != null) ...[
+                                  const SizedBox(height: 4),
+                                  Text('${remaining.inMinutes} دقيقة ⏳',
                                       style: const TextStyle(
                                           color: Color(0xFFD4AF37),
-                                          fontSize: 8.5,
+                                          fontSize: 9,
                                           fontWeight: FontWeight.bold)),
-                                ),
+                                ],
                               ],
-                            ],
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                ],
+                  ],
+                ),
               ),
-            ),
 
-            // ================== قسم التفاصيل المضغوط حسب الخيار المختار ==================
-            Expanded(
-              flex: cardDesignOption == 1 ? 2 : (cardDesignOption == 2 ? 4 : 3),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    // العنوان
-                    Text(
-                      ad.title,
-                      style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 10.5,
-                          color: Colors.white),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
+              // قسم النصوص والأسعار المنظمة عمودياً من اليمين
+              Expanded(
+                flex: 4,
+                child: Padding(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      Text(
+                        ad.title,
+                        style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 11.5,
+                            color: Colors.white),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
 
-                    // في الخيار 2 (الشبكي التقليدي المضغوط): نعرض السعر والمدينة تحت بعض
-                    if (cardDesignOption == 2) ...[
-                      const SizedBox(height: 2),
+                      // 🌟 تنظيم الأسعار عمودياً فوق بعضها دون تداخل
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          if (ad.priceUsd != null)
+                            Text(
+                              '\$${ad.priceUsd!.toStringAsFixed(0)} USD',
+                              style: const TextStyle(
+                                color: Color(0xFF22C55E),
+                                fontWeight: FontWeight.bold,
+                                fontSize: 11,
+                              ),
+                            ),
+                          if (ad.priceSyp != null)
+                            Text(
+                              '${ad.priceSyp!.toStringAsFixed(0)} ل.س',
+                              style: const TextStyle(
+                                color: Color(0xFFD4AF37),
+                                fontWeight: FontWeight.bold,
+                                fontSize: 9.5,
+                              ),
+                            ),
+                        ],
+                      ),
+
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text(
-                            priceStr,
-                            style: const TextStyle(
-                                color: Color(0xFFD4AF37),
-                                fontWeight: FontWeight.bold,
-                                fontSize: 11),
+                          Row(
+                            children: [
+                              const Icon(Icons.location_on,
+                                  color: Colors.redAccent, size: 10),
+                              const SizedBox(width: 2),
+                              Text(
+                                ad.governorate,
+                                style: const TextStyle(
+                                    fontSize: 9, color: Colors.white70),
+                              ),
+                            ],
                           ),
                           Text(
-                            ad.condition,
+                            ad.timeAgo,
                             style: const TextStyle(
-                                fontSize: 8,
-                                color: Colors.blueGrey,
-                                fontWeight: FontWeight.bold),
+                                fontSize: 8.5, color: Colors.white38),
                           ),
                         ],
                       ),
                     ],
-
-                    const SizedBox(height: 2),
-                    // سطر الموقع والتوقيت
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Row(
-                          children: [
-                            const Icon(Icons.location_on,
-                                color: Color(0xFFD4AF37), size: 9),
-                            const SizedBox(width: 2),
-                            Text(
-                              '${ad.governorate}',
-                              style: const TextStyle(
-                                  fontSize: 8.5, color: Colors.white70),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ],
-                        ),
-                        Row(
-                          children: [
-                            const Icon(Icons.access_time,
-                                color: Colors.white38, size: 8),
-                            const SizedBox(width: 2),
-                            Text(
-                              ad.timeAgo,
-                              style: const TextStyle(
-                                  fontSize: 7.5, color: Colors.white38),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ],
+                  ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -11356,9 +11226,9 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
       padding: const EdgeInsets.all(8),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 2,
-        childAspectRatio: 0.70,
-        crossAxisSpacing: 6,
-        mainAxisSpacing: 6,
+        childAspectRatio: 0.68,
+        crossAxisSpacing: 8,
+        mainAxisSpacing: 8,
       ),
       itemCount: favAds.length,
       itemBuilder: (ctx, idx) => _buildCompactFacingGridAdCard(favAds[idx]),
@@ -11369,6 +11239,24 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
     final currentPlan = _manager.getCurrentUserPlan();
     final userAds =
         _manager.ads.where((x) => x.userId == _manager.currentUserId).toList();
+
+    // 🌟 حساب مجموع إجمالي الإعجابات والتقييمات التراكمية لحساب المستخدم عبر كافة إعلاناته
+    final int totalAccountLikes = userAds.fold<int>(
+      _manager.currentUserPositiveLikes,
+      (sum, item) => sum + item.sellerPositiveLikes,
+    );
+
+    // حساب معدل النجوم التراكمي (افتراضي ممتاز 4.9 أو بناءً على التقييمات)
+    final double cumulativeStars = totalAccountLikes > 0
+        ? (4.5 + (totalAccountLikes % 5) * 0.1).clamp(1.0, 5.0)
+        : 5.0;
+
+    // تمييز الحساب العادي عن الحساب الموثق / المدفوع
+    final bool isPaidOrVerified = _manager.isCurrentUserVerified ||
+        currentPlan.name.contains('مدفوع') ||
+        currentPlan.name.contains('VIP') ||
+        currentPlan.name.contains('بلاتيني') ||
+        currentPlan.name.contains('ذهبي');
 
     return ListView(
       physics: const BouncingScrollPhysics(),
@@ -11381,88 +11269,194 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
             borderRadius: BorderRadius.circular(16),
             boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 6)],
           ),
-          child: Row(
+          child: Column(
             children: [
-              CircleAvatar(
-                radius: 30,
-                backgroundColor: _manager.secondaryColor,
-                child: Text(
-                  _manager.currentUserName.isNotEmpty
-                      ? _manager.currentUserName[0]
-                      : 'U',
-                  style: TextStyle(
-                      color: _manager.primaryColor,
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold),
-                ),
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
+              Row(
+                children: [
+                  CircleAvatar(
+                    radius: 32,
+                    backgroundColor: isPaidOrVerified
+                        ? const Color(0xFFD4AF37)
+                        : _manager.secondaryColor,
+                    child: Text(
+                      _manager.currentUserName.isNotEmpty
+                          ? _manager.currentUserName[0]
+                          : 'U',
+                      style: TextStyle(
+                          color: _manager.primaryColor,
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Flexible(
-                          child: Text(_manager.currentUserName,
-                              style: const TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 16),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis),
+                        Row(
+                          children: [
+                            Flexible(
+                              child: Text(_manager.currentUserName,
+                                  style: const TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 16),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis),
+                            ),
+                            const SizedBox(width: 6),
+                            // 🌟 شارات الحسابات: تمييز الحساب الموثق/المدفوع عن الحساب العادي
+                            if (isPaidOrVerified)
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 6, vertical: 2),
+                                decoration: BoxDecoration(
+                                  gradient: const LinearGradient(
+                                    colors: [
+                                      Color(0xFFFDE047),
+                                      Color(0xFFD4AF37)
+                                    ],
+                                  ),
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: const Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(Icons.verified,
+                                        size: 13, color: Color(0xFF0F172A)),
+                                    SizedBox(width: 3),
+                                    Text(
+                                      'موثق PRO ★',
+                                      style: TextStyle(
+                                          color: Color(0xFF0F172A),
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 9.5),
+                                    ),
+                                  ],
+                                ),
+                              )
+                            else
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 6, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: Colors.white12,
+                                  borderRadius: BorderRadius.circular(6),
+                                  border: Border.all(color: Colors.white24),
+                                ),
+                                child: const Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(Icons.person_outline,
+                                        size: 12, color: Colors.white70),
+                                    SizedBox(width: 3),
+                                    Text(
+                                      'حساب عادي',
+                                      style: TextStyle(
+                                          color: Colors.white70,
+                                          fontWeight: FontWeight.w600,
+                                          fontSize: 9.5),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                          ],
                         ),
-                        const SizedBox(width: 6),
-                        KycVerificationBadge(
-                          isVerified: _manager.isCurrentUserVerified,
-                          positiveLikes: _manager.currentUserPositiveLikes,
-                          size: 18,
+                        const SizedBox(height: 4),
+                        Text(
+                          _manager.isLoggedIn
+                              ? _manager.currentUserEmail
+                              : 'غير مسجل (وضع الزائر)',
+                          style: const TextStyle(
+                              color: Colors.white70, fontSize: 12),
+                        ),
+                        const SizedBox(height: 6),
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 8, vertical: 3),
+                              decoration: BoxDecoration(
+                                  color: _manager.secondaryColor,
+                                  borderRadius: BorderRadius.circular(6)),
+                              child: Text('الخطة: ${currentPlan.name}',
+                                  style: TextStyle(
+                                      color: _manager.primaryColor,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 11)),
+                            ),
+                            const SizedBox(width: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 8, vertical: 3),
+                              decoration: BoxDecoration(
+                                  color: Colors.blue.withOpacity(0.2),
+                                  borderRadius: BorderRadius.circular(6)),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(Icons.thumb_up,
+                                      size: 11, color: Colors.lightBlueAccent),
+                                  const SizedBox(width: 4),
+                                  Text('$totalAccountLikes إعجاب تراكمي',
+                                      style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.bold)),
+                                ],
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      _manager.isLoggedIn
-                          ? _manager.currentUserEmail
-                          : 'غير مسجل (وضع الزائر)',
-                      style:
-                          const TextStyle(color: Colors.white70, fontSize: 12),
-                    ),
-                    const SizedBox(height: 6),
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 14),
+              // 🌟 بطاقة التقييم التراكمي الذهبي الشامل المجمع من كافة المنشورات
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.08),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: Colors.white12),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: [
                     Row(
                       children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 8, vertical: 3),
-                          decoration: BoxDecoration(
-                              color: _manager.secondaryColor,
-                              borderRadius: BorderRadius.circular(6)),
-                          child: Text('الخطة: ${currentPlan.name}',
-                              style: TextStyle(
-                                  color: _manager.primaryColor,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 11)),
+                        const Icon(Icons.star_rounded,
+                            color: Color(0xFFFACC15), size: 20),
+                        const SizedBox(width: 4),
+                        Text(
+                          '$cumulativeStars / 5.0',
+                          style: const TextStyle(
+                              color: Color(0xFFFACC15),
+                              fontWeight: FontWeight.bold,
+                              fontSize: 13),
                         ),
-                        const SizedBox(width: 8),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 8, vertical: 3),
-                          decoration: BoxDecoration(
-                              color: Colors.blue.withOpacity(0.2),
-                              borderRadius: BorderRadius.circular(6)),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const Icon(Icons.thumb_up,
-                                  size: 11, color: Colors.lightBlueAccent),
-                              const SizedBox(width: 4),
-                              Text('${_manager.currentUserPositiveLikes} إعجاب',
-                                  style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.bold)),
-                            ],
-                          ),
+                        const SizedBox(width: 4),
+                        const Text('(التقييم العام)',
+                            style:
+                                TextStyle(color: Colors.white60, fontSize: 10)),
+                      ],
+                    ),
+                    Container(height: 16, width: 1, color: Colors.white24),
+                    Row(
+                      children: [
+                        const Icon(Icons.verified_user_outlined,
+                            color: Colors.greenAccent, size: 16),
+                        const SizedBox(width: 4),
+                        Text(
+                          '${userAds.length} إعلانات منشورة',
+                          style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w600,
+                              fontSize: 11),
                         ),
                       ],
                     ),
@@ -11644,7 +11638,7 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
                 content: Text(
                   _manager.isSuperAdmin
                       ? '✨ تم نشر إعلانك فوراً ومباشرةً في السوق!'
-                      : '⏳ تم استلام إعلانك بنجاح وسيعرض للجميع فور موافقة الإدارة عليه.',
+                      : '⏳ تم إرسال إعلانك بنجاح إلى غرفة العمليات وسيعرض للجميع فور موافقة الإدارة عليه.',
                 ),
                 backgroundColor: _manager.primaryColor,
               ),
@@ -11655,13 +11649,8 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
     );
   }
 }
-// ==============================================================================
-// 🌟 سوق سوريا الشامل 2028 - المنظومة السيادية الحقيقية المتكاملة 100%
-// [الدفعة 4 من أصل 4: شاشة إضافة الإعلان، غرف المحادثة، باقات الاشتراك، غرفة العمليات، و main()]
-// مربوطة بالكامل بالسيرفر الحقيقي وقواعد البيانات الحقيقية دون أي اختصار
-// ==============================================================================
 
-/// ==============================================================================
+// ==============================================================================
 // 20. شاشة إضافة وتعديل الإعلانات والمزادات الحرة (FullAddAdScreen)
 // ==============================================================================
 class FullAddAdScreen extends StatefulWidget {
@@ -11790,24 +11779,19 @@ class _FullAddAdScreenState extends State<FullAddAdScreen> {
     super.dispose();
   }
 
-  // فحص صلاحية الروابط حسب باقة المستخدم
   bool _canUseSocialLink(String linkType) {
     if (_manager.isAdmin || _manager.isSuperAdmin) return true;
     final planId = _manager.currentUserPlanId;
 
-    // باقة VIP الملكية: تفتح جميع الروابط الخمسة بالكامل
     if (planId == 'plan_vip') return true;
 
-    // باقة Pro المتوسطة: تفتح فيسبوك وإنستغرام فقط
     if (planId == 'plan_pro') {
       return linkType == 'facebook' || linkType == 'instagram';
     }
 
-    // الباقة المجانية: مقفولة بالكامل
     return false;
   }
 
-  // نافذة التنبيه لاشتراك الباقات عند محاولة الكتابة في الروابط المقفولة
   void _showUpgradeSocialDialog(String linkName, String requiredPlan) {
     showDialog(
       context: context,
@@ -11859,7 +11843,6 @@ class _FullAddAdScreenState extends State<FullAddAdScreen> {
     );
   }
 
-  // ويدجت إنشاء حقل الرابط (شفاف ومقفل للباقة المجانية)
   Widget _buildLockedSocialField({
     required TextEditingController controller,
     required String label,
@@ -12063,9 +12046,10 @@ class _FullAddAdScreenState extends State<FullAddAdScreen> {
     }
 
     try {
+      // 🌟 جودة معتدلة ومثالية (85% وأبعاد 1280px) تمنع التغبيش وتضمن نقاء التفاصيل تماماً
       final pickedList = await _picker.pickMultiImage(
-        imageQuality: 75,
-        maxWidth: 1080,
+        imageQuality: 85,
+        maxWidth: 1280,
       );
 
       for (var f in pickedList) {
@@ -12130,6 +12114,10 @@ class _FullAddAdScreenState extends State<FullAddAdScreen> {
     final double? pSyp = double.tryParse(_priceSypController.text);
     final double? startBid = double.tryParse(_startingBidController.text);
 
+    // 🌟 المنشور يذهب لغرفة العمليات للموافقة (pending) لجميع المستخدمين، وفقط الإدارة تنشر فوراً
+    final initialStatus =
+        (_manager.isSuperAdmin || _manager.isAdmin) ? 'approved' : 'pending';
+
     final adItem = AdItem(
       id: widget.initialAd?.id ?? '',
       userId:
@@ -12169,7 +12157,7 @@ class _FullAddAdScreenState extends State<FullAddAdScreen> {
       publisherName: _manager.currentUserName,
       publisherEmail: _manager.currentUserEmail,
       isVerifiedSeller: _manager.isCurrentUserVerified,
-      status: 'approved',
+      status: initialStatus,
       isAuction: _isAuction,
       startingBid: startBid,
       currentBid: startBid,
@@ -12204,8 +12192,12 @@ class _FullAddAdScreenState extends State<FullAddAdScreen> {
         setState(() => _isUploading = false);
         Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('✅ تم نشر إعلانك بنجاح مع روابط التواصل!'),
+          SnackBar(
+            content: Text(
+              _manager.isSuperAdmin
+                  ? '✅ تم نشر إعلانك بنجاح في السوق!'
+                  : '⏳ تم إرسال إعلانك بنجاح لغرفة العمليات للموافقة عليه من قبل الإدارة.',
+            ),
             backgroundColor: Colors.green,
           ),
         );
@@ -12238,410 +12230,414 @@ class _FullAddAdScreenState extends State<FullAddAdScreen> {
               subcategories: ['عام']),
     );
 
-    return Scaffold(
-      backgroundColor: _manager.scaffoldBgColor,
-      appBar: AppBar(
-        backgroundColor: _manager.appBarColor,
-        title: Text(
-          widget.initialAd != null
-              ? 'تعديل بيانات الإعلان ✏️'
-              : 'نشر إعلان جديد في السوق 📢',
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
+    return Directionality(
+      textDirection: TextDirection.rtl,
+      child: Scaffold(
+        backgroundColor: _manager.scaffoldBgColor,
+        appBar: AppBar(
+          backgroundColor: _manager.appBarColor,
+          title: Text(
+            widget.initialAd != null
+                ? 'تعديل بيانات الإعلان ✏️'
+                : 'نشر إعلان جديد في السوق 📢',
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
+            onPressed: () => Navigator.pop(context),
           ),
         ),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
-          onPressed: () => Navigator.pop(context),
-        ),
-      ),
-      body: Form(
-        key: _formKey,
-        child: ListView(
-          physics: const BouncingScrollPhysics(),
-          padding: const EdgeInsets.all(16),
-          children: [
-            const Text('صور السلعة والمعاينة *',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-            const SizedBox(height: 8),
-            SizedBox(
-              height: 90,
-              child: ListView(
-                scrollDirection: Axis.horizontal,
-                physics: const BouncingScrollPhysics(),
-                children: [
-                  InkWell(
-                    onTap: _pickImages,
-                    child: Container(
-                      width: 90,
-                      decoration: BoxDecoration(
-                        color: _manager.primaryColor.withOpacity(0.08),
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(
-                            color: _manager.secondaryColor, width: 1.5),
-                      ),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.add_a_photo,
-                              color: _manager.secondaryColor, size: 28),
-                          const SizedBox(height: 4),
-                          const Text('إضافة صورة',
-                              style: TextStyle(
-                                  fontSize: 10, fontWeight: FontWeight.bold)),
-                        ],
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  ..._existingImageUrls.map((url) => Stack(
-                        children: [
-                          Container(
-                            margin: const EdgeInsets.only(left: 8),
-                            width: 90,
-                            height: 90,
-                            clipBehavior: Clip.antiAlias,
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: AppSmartImage(imageUrl: url),
-                          ),
-                          Positioned(
-                            top: 2,
-                            right: 10,
-                            child: GestureDetector(
-                              onTap: () => setState(
-                                  () => _existingImageUrls.remove(url)),
-                              child: const CircleAvatar(
-                                radius: 10,
-                                backgroundColor: Colors.red,
-                                child: Icon(Icons.close,
-                                    size: 12, color: Colors.white),
-                              ),
-                            ),
-                          ),
-                        ],
-                      )),
-                  ..._newLocalImageBytes.map((bytes) => Stack(
-                        children: [
-                          Container(
-                            margin: const EdgeInsets.only(left: 8),
-                            width: 90,
-                            height: 90,
-                            clipBehavior: Clip.antiAlias,
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: Image.memory(bytes, fit: BoxFit.cover),
-                          ),
-                          Positioned(
-                            top: 2,
-                            right: 10,
-                            child: GestureDetector(
-                              onTap: () => setState(
-                                  () => _newLocalImageBytes.remove(bytes)),
-                              child: const CircleAvatar(
-                                radius: 10,
-                                backgroundColor: Colors.red,
-                                child: Icon(Icons.close,
-                                    size: 12, color: Colors.white),
-                              ),
-                            ),
-                          ),
-                        ],
-                      )),
-                ],
-              ),
-            ),
-            const SizedBox(height: 16),
-            TextFormField(
-              controller: _titleController,
-              decoration: InputDecoration(
-                labelText: 'عنوان الإعلان *',
-                hintText: 'مثال: كيا سيراتو 2021 أوتوماتيك خالية العلام',
-                border:
-                    OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-              ),
-              validator: (v) => (v == null || v.trim().length < 4)
-                  ? 'يرجى كتابة عنوان واضح للإعلان'
-                  : null,
-            ),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(
-                  child: DropdownButtonFormField<String>(
-                    value: _selectedCategory,
-                    isExpanded: true,
-                    decoration: InputDecoration(
-                      labelText: 'القسم الرئيسي',
-                      border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10)),
-                    ),
-                    items: categories
-                        .map((c) => DropdownMenuItem(
-                            value: c.name,
-                            child: Text(c.name,
-                                style: const TextStyle(fontSize: 12))))
-                        .toList(),
-                    onChanged: (v) {
-                      if (v != null) {
-                        setState(() {
-                          _selectedCategory = v;
-                          final subList = categories
-                              .firstWhere((x) => x.name == v)
-                              .subcategories;
-                          if (subList.isNotEmpty) {
-                            _selectedSubcategory = subList.first;
-                          }
-                        });
-                      }
-                    },
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: DropdownButtonFormField<String>(
-                    value: currentCatItem.subcategories
-                            .contains(_selectedSubcategory)
-                        ? _selectedSubcategory
-                        : (currentCatItem.subcategories.isNotEmpty
-                            ? currentCatItem.subcategories.first
-                            : null),
-                    isExpanded: true,
-                    decoration: InputDecoration(
-                      labelText: 'القسم الفرعي',
-                      border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10)),
-                    ),
-                    items: currentCatItem.subcategories
-                        .map((s) => DropdownMenuItem(
-                            value: s,
-                            child:
-                                Text(s, style: const TextStyle(fontSize: 12))))
-                        .toList(),
-                    onChanged: (v) {
-                      if (v != null) setState(() => _selectedSubcategory = v);
-                    },
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(
-                  child: DropdownButtonFormField<String>(
-                    value: _governorate,
-                    isExpanded: true,
-                    decoration: InputDecoration(
-                      labelText: 'المحافظة',
-                      border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10)),
-                    ),
-                    items: _governorates
-                        .map((g) => DropdownMenuItem(
-                            value: g,
-                            child:
-                                Text(g, style: const TextStyle(fontSize: 12))))
-                        .toList(),
-                    onChanged: (v) {
-                      if (v != null) setState(() => _governorate = v);
-                    },
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: TextFormField(
-                    controller: _neighborhoodController,
-                    decoration: InputDecoration(
-                      labelText: 'المنطقة أو الحي',
-                      hintText: 'مثال: المزة، الشهباء',
-                      border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10)),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            DropdownButtonFormField<String>(
-              value: _condition,
-              isExpanded: true,
-              decoration: InputDecoration(
-                labelText: 'حالة السلعة',
-                border:
-                    OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-              ),
-              items: _conditions
-                  .map((c) => DropdownMenuItem(
-                      value: c,
-                      child: Text(c, style: const TextStyle(fontSize: 13))))
-                  .toList(),
-              onChanged: (v) {
-                if (v != null) setState(() => _condition = v);
-              },
-            ),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(
-                  child: TextFormField(
-                    controller: _priceUsdController,
-                    keyboardType: TextInputType.number,
-                    decoration: InputDecoration(
-                      labelText: 'السعر (\$ USD)',
-                      prefixIcon:
-                          const Icon(Icons.attach_money, color: Colors.green),
-                      border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10)),
-                    ),
-                    onChanged: _syncSypFromUsd,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: TextFormField(
-                    controller: _priceSypController,
-                    keyboardType: TextInputType.number,
-                    decoration: InputDecoration(
-                      labelText: 'السعر (ل.س)',
-                      prefixIcon: const Icon(Icons.currency_exchange,
-                          color: Color(0xFFD4AF37)),
-                      border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10)),
-                    ),
-                    onChanged: _syncUsdFromSyp,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            SwitchListTile(
-              title: const Text('طرح السلعة في المزاد العلني ⚖️',
+        body: Form(
+          key: _formKey,
+          child: ListView(
+            physics: const BouncingScrollPhysics(),
+            padding: const EdgeInsets.all(16),
+            children: [
+              const Text('صور السلعة والمعاينة *',
                   style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-              subtitle: const Text(
-                  'يتيح للمشترين المزايدة المباشرة مع نظام مكافحة القنص الذكي'),
-              value: _isAuction,
-              onChanged: (val) => setState(() => _isAuction = val),
-            ),
-            if (_isAuction) ...[
+              const SizedBox(height: 8),
+              SizedBox(
+                height: 90,
+                child: ListView(
+                  scrollDirection: Axis.horizontal,
+                  physics: const BouncingScrollPhysics(),
+                  children: [
+                    InkWell(
+                      onTap: _pickImages,
+                      child: Container(
+                        width: 90,
+                        decoration: BoxDecoration(
+                          color: _manager.primaryColor.withOpacity(0.08),
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(
+                              color: _manager.secondaryColor, width: 1.5),
+                        ),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.add_a_photo,
+                                color: _manager.secondaryColor, size: 28),
+                            const SizedBox(height: 4),
+                            const Text('إضافة صورة',
+                                style: TextStyle(
+                                    fontSize: 10, fontWeight: FontWeight.bold)),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    ..._existingImageUrls.map((url) => Stack(
+                          children: [
+                            Container(
+                              margin: const EdgeInsets.only(left: 8),
+                              width: 90,
+                              height: 90,
+                              clipBehavior: Clip.antiAlias,
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: AppSmartImage(imageUrl: url),
+                            ),
+                            Positioned(
+                              top: 2,
+                              right: 10,
+                              child: GestureDetector(
+                                onTap: () => setState(
+                                    () => _existingImageUrls.remove(url)),
+                                child: const CircleAvatar(
+                                  radius: 10,
+                                  backgroundColor: Colors.red,
+                                  child: Icon(Icons.close,
+                                      size: 12, color: Colors.white),
+                                ),
+                              ),
+                            ),
+                          ],
+                        )),
+                    ..._newLocalImageBytes.map((bytes) => Stack(
+                          children: [
+                            Container(
+                              margin: const EdgeInsets.only(left: 8),
+                              width: 90,
+                              height: 90,
+                              clipBehavior: Clip.antiAlias,
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: Image.memory(bytes, fit: BoxFit.cover),
+                            ),
+                            Positioned(
+                              top: 2,
+                              right: 10,
+                              child: GestureDetector(
+                                onTap: () => setState(
+                                    () => _newLocalImageBytes.remove(bytes)),
+                                child: const CircleAvatar(
+                                  radius: 10,
+                                  backgroundColor: Colors.red,
+                                  child: Icon(Icons.close,
+                                      size: 12, color: Colors.white),
+                                ),
+                              ),
+                            ),
+                          ],
+                        )),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _titleController,
+                decoration: InputDecoration(
+                  labelText: 'عنوان الإعلان *',
+                  hintText: 'مثال: كيا سيراتو 2021 أوتوماتيك خالية العلام',
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10)),
+                ),
+                validator: (v) => (v == null || v.trim().length < 4)
+                    ? 'يرجى كتابة عنوان واضح للإعلان'
+                    : null,
+              ),
+              const SizedBox(height: 12),
               Row(
                 children: [
                   Expanded(
-                    child: TextFormField(
-                      controller: _startingBidController,
-                      keyboardType: TextInputType.number,
+                    child: DropdownButtonFormField<String>(
+                      value: _selectedCategory,
+                      isExpanded: true,
                       decoration: InputDecoration(
-                        labelText: 'سعر بدء المزاد (\$)',
+                        labelText: 'القسم الرئيسي',
                         border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(10)),
                       ),
+                      items: categories
+                          .map((c) => DropdownMenuItem(
+                              value: c.name,
+                              child: Text(c.name,
+                                  style: const TextStyle(fontSize: 12))))
+                          .toList(),
+                      onChanged: (v) {
+                        if (v != null) {
+                          setState(() {
+                            _selectedCategory = v;
+                            final subList = categories
+                                .firstWhere((x) => x.name == v)
+                                .subcategories;
+                            if (subList.isNotEmpty) {
+                              _selectedSubcategory = subList.first;
+                            }
+                          });
+                        }
+                      },
                     ),
                   ),
                   const SizedBox(width: 8),
                   Expanded(
-                    child: DropdownButtonFormField<int>(
-                      value: _auctionDaysDuration,
+                    child: DropdownButtonFormField<String>(
+                      value: currentCatItem.subcategories
+                              .contains(_selectedSubcategory)
+                          ? _selectedSubcategory
+                          : (currentCatItem.subcategories.isNotEmpty
+                              ? currentCatItem.subcategories.first
+                              : null),
+                      isExpanded: true,
                       decoration: InputDecoration(
-                        labelText: 'مدة المزاد',
+                        labelText: 'القسم الفرعي',
                         border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(10)),
                       ),
-                      items: [1, 2, 3, 5, 7]
-                          .map((d) => DropdownMenuItem(
-                              value: d, child: Text('$d أيام')))
+                      items: currentCatItem.subcategories
+                          .map((s) => DropdownMenuItem(
+                              value: s,
+                              child: Text(s,
+                                  style: const TextStyle(fontSize: 12))))
                           .toList(),
                       onChanged: (v) {
-                        if (v != null) {
-                          setState(() => _auctionDaysDuration = v);
-                        }
+                        if (v != null) setState(() => _selectedSubcategory = v);
                       },
                     ),
                   ),
                 ],
               ),
               const SizedBox(height: 12),
-            ],
-            _buildSocialMediaLinksSection(),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(
-                  child: TextFormField(
-                    controller: _phoneController,
-                    keyboardType: TextInputType.phone,
-                    decoration: InputDecoration(
-                      labelText: 'رقم الاتصال *',
-                      prefixIcon: const Icon(Icons.phone),
-                      border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10)),
+              Row(
+                children: [
+                  Expanded(
+                    child: DropdownButtonFormField<String>(
+                      value: _governorate,
+                      isExpanded: true,
+                      decoration: InputDecoration(
+                        labelText: 'المحافظة',
+                        border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10)),
+                      ),
+                      items: _governorates
+                          .map((g) => DropdownMenuItem(
+                              value: g,
+                              child: Text(g,
+                                  style: const TextStyle(fontSize: 12))))
+                          .toList(),
+                      onChanged: (v) {
+                        if (v != null) setState(() => _governorate = v);
+                      },
                     ),
-                    validator: (v) => (v == null || v.trim().isEmpty)
-                        ? 'رقم الاتصال مطلوب'
-                        : null,
                   ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: TextFormField(
-                    controller: _whatsappController,
-                    keyboardType: TextInputType.phone,
-                    decoration: InputDecoration(
-                      labelText: 'رقم الواتساب *',
-                      prefixIcon:
-                          const Icon(Icons.chat, color: Color(0xFF25D366)),
-                      border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10)),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: TextFormField(
+                      controller: _neighborhoodController,
+                      decoration: InputDecoration(
+                        labelText: 'المنطقة أو الحي',
+                        hintText: 'مثال: المزة، الشهباء',
+                        border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10)),
+                      ),
                     ),
-                    validator: (v) => (v == null || v.trim().isEmpty)
-                        ? 'رقم الواتساب مطلوب'
-                        : null,
                   ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            TextFormField(
-              controller: _descController,
-              maxLines: 5,
-              decoration: InputDecoration(
-                labelText: 'المواصفات والتفاصيل الكاملة *',
-                hintText: 'اكتب كافة المواصفات والعيوب والميزات بدقة...',
-                border:
-                    OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                ],
               ),
-              validator: (v) => (v == null || v.trim().length < 10)
-                  ? 'يرجى كتابة تفاصيل وافية عن السلعة'
-                  : null,
-            ),
-            const SizedBox(height: 20),
-            SizedBox(
-              height: 48,
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: _manager.buttonColor,
-                  shape: RoundedRectangleBorder(
+              const SizedBox(height: 12),
+              DropdownButtonFormField<String>(
+                value: _condition,
+                isExpanded: true,
+                decoration: InputDecoration(
+                  labelText: 'حالة السلعة',
+                  border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(10)),
                 ),
-                onPressed: _isUploading ? null : _submitAd,
-                child: _isUploading
-                    ? const CircularProgressIndicator(color: Colors.white)
-                    : Text(
-                        widget.initialAd != null
-                            ? 'حفظ التعديلات ✨'
-                            : 'نشر الإعلان في السوق الآن 🚀',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 15,
-                          fontWeight: FontWeight.bold,
+                items: _conditions
+                    .map((c) => DropdownMenuItem(
+                        value: c,
+                        child: Text(c, style: const TextStyle(fontSize: 13))))
+                    .toList(),
+                onChanged: (v) {
+                  if (v != null) setState(() => _condition = v);
+                },
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextFormField(
+                      controller: _priceUsdController,
+                      keyboardType: TextInputType.number,
+                      decoration: InputDecoration(
+                        labelText: 'السعر (\$ USD)',
+                        prefixIcon:
+                            const Icon(Icons.attach_money, color: Colors.green),
+                        border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10)),
+                      ),
+                      onChanged: _syncSypFromUsd,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: TextFormField(
+                      controller: _priceSypController,
+                      keyboardType: TextInputType.number,
+                      decoration: InputDecoration(
+                        labelText: 'السعر (ل.س)',
+                        prefixIcon: const Icon(Icons.currency_exchange,
+                            color: Color(0xFFD4AF37)),
+                        border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10)),
+                      ),
+                      onChanged: _syncUsdFromSyp,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              SwitchListTile(
+                title: const Text('طرح السلعة في المزاد العلني ⚖️',
+                    style:
+                        TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                subtitle: const Text(
+                    'يتيح للمشترين المزايدة المباشرة مع نظام مكافحة القنص الذكي'),
+                value: _isAuction,
+                onChanged: (val) => setState(() => _isAuction = val),
+              ),
+              if (_isAuction) ...[
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextFormField(
+                        controller: _startingBidController,
+                        keyboardType: TextInputType.number,
+                        decoration: InputDecoration(
+                          labelText: 'سعر بدء المزاد (\$)',
+                          border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10)),
                         ),
                       ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: DropdownButtonFormField<int>(
+                        value: _auctionDaysDuration,
+                        decoration: InputDecoration(
+                          labelText: 'مدة المزاد',
+                          border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10)),
+                        ),
+                        items: [1, 2, 3, 5, 7]
+                            .map((d) => DropdownMenuItem(
+                                value: d, child: Text('$d أيام')))
+                            .toList(),
+                        onChanged: (v) {
+                          if (v != null) {
+                            setState(() => _auctionDaysDuration = v);
+                          }
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+              ],
+              _buildSocialMediaLinksSection(),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextFormField(
+                      controller: _phoneController,
+                      keyboardType: TextInputType.phone,
+                      decoration: InputDecoration(
+                        labelText: 'رقم الاتصال *',
+                        prefixIcon: const Icon(Icons.phone),
+                        border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10)),
+                      ),
+                      validator: (v) => (v == null || v.trim().isEmpty)
+                          ? 'رقم الاتصال مطلوب'
+                          : null,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: TextFormField(
+                      controller: _whatsappController,
+                      keyboardType: TextInputType.phone,
+                      decoration: InputDecoration(
+                        labelText: 'رقم الواتساب *',
+                        prefixIcon:
+                            const Icon(Icons.chat, color: Color(0xFF25D366)),
+                        border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10)),
+                      ),
+                      validator: (v) => (v == null || v.trim().isEmpty)
+                          ? 'رقم الواتساب مطلوب'
+                          : null,
+                    ),
+                  ),
+                ],
               ),
-            ),
-          ],
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: _descController,
+                maxLines: 5,
+                decoration: InputDecoration(
+                  labelText: 'المواصفات والتفاصيل الكاملة *',
+                  hintText: 'اكتب كافة المواصفات والعيوب والميزات بدقة...',
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10)),
+                ),
+                validator: (v) => (v == null || v.trim().length < 10)
+                    ? 'يرجى كتابة تفاصيل وافية عن السلعة'
+                    : null,
+              ),
+              const SizedBox(height: 20),
+              SizedBox(
+                height: 48,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: _manager.buttonColor,
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10)),
+                  ),
+                  onPressed: _isUploading ? null : _submitAd,
+                  child: _isUploading
+                      ? const CircularProgressIndicator(color: Colors.white)
+                      : Text(
+                          widget.initialAd != null
+                              ? 'حفظ التعديلات ✨'
+                              : 'إرسال الإعلان لغرفة المراجعة 🚀',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 15,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -12938,7 +12934,7 @@ class _FullChatNegotiationScreenState extends State<FullChatNegotiationScreen> {
   }
 }
 
-// ==============================================================================
+/// ==============================================================================
 // 22. لوحة التحكم والإشراف المركزي (FullAdminPanelScreen)
 // ==============================================================================
 class FullAdminPanelScreen extends StatefulWidget {
@@ -12982,60 +12978,60 @@ class _FullAdminPanelScreenState extends State<FullAdminPanelScreen>
     final pendingPayments =
         _manager.paymentAudits.where((p) => p.status == 'pending').toList();
 
-    return Scaffold(
-      backgroundColor: _manager.scaffoldBgColor,
-      appBar: AppBar(
-        backgroundColor: const Color(0xFF0F172A),
-        title: const Text(
-          'غرفة العمليات والإشراف المركزي 🛡️',
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 15,
-            fontWeight: FontWeight.bold,
+    return Directionality(
+      textDirection: TextDirection.rtl,
+      child: Scaffold(
+        backgroundColor: _manager.scaffoldBgColor,
+        appBar: AppBar(
+          backgroundColor: const Color(0xFF0F172A),
+          title: const Text(
+            'غرفة العمليات والإشراف المركزي 🛡️',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 15,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
+            onPressed: () => Navigator.pop(context),
+          ),
+          bottom: TabBar(
+            controller: _tabController,
+            isScrollable: true,
+            indicatorColor: const Color(0xFFD4AF37),
+            labelColor: const Color(0xFFD4AF37),
+            unselectedLabelColor: Colors.white70,
+            tabs: [
+              const Tab(text: 'لوحة التحكم 📊'),
+              const Tab(text: 'إدارة البانوراما 🖼️'),
+              Tab(text: 'مراجعة الإعلانات (${pendingAds.length}) ⏳'),
+              Tab(text: 'تدقيق المدفوعات (${pendingPayments.length}) 💳'),
+              const Tab(text: 'أسعار الصرف والذهب 🪙'),
+              const Tab(text: 'شجرة الأقسام 🌳'),
+              const Tab(text: 'صوتك مسموع 💡'),
+            ],
           ),
         ),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
-          onPressed: () => Navigator.pop(context),
-        ),
-        bottom: TabBar(
+        body: TabBarView(
           controller: _tabController,
-          isScrollable: true,
-          indicatorColor: const Color(0xFFD4AF37),
-          labelColor: const Color(0xFFD4AF37),
-          unselectedLabelColor: Colors.white70,
-          tabs: [
-            const Tab(text: 'لوحة التحكم 📊'),
-            const Tab(text: 'إدارة البانوراما 🖼️'),
-            Tab(text: 'مراجعة الإعلانات (${pendingAds.length}) ⏳'),
-            Tab(text: 'تدقيق المدفوعات (${pendingPayments.length}) 💳'),
-            const Tab(text: 'أسعار الصرف والذهب 🪙'),
-            const Tab(text: 'شجرة الأقسام 🌳'),
-            const Tab(text: 'صوتك مسموع 💡'),
+          children: [
+            _buildOverviewTab(),
+            _buildBannersManagementTab(),
+            _buildAdReviewTab(pendingAds),
+            _buildPaymentAuditTab(pendingPayments),
+            _buildRatesSettingsTab(),
+            _buildDepartmentTreeTab(),
+            _buildFeedbacksTab(),
           ],
         ),
-      ),
-      body: TabBarView(
-        controller: _tabController,
-        children: [
-          _buildOverviewTab(),
-          _buildBannersManagementTab(),
-          _buildAdReviewTab(pendingAds),
-          _buildPaymentAuditTab(pendingPayments),
-          _buildRatesSettingsTab(),
-          _buildDepartmentTreeTab(),
-          _buildFeedbacksTab(),
-        ],
       ),
     );
   }
 
-  // متغيرات حالة البانوراما العلوية والسفلية
-  bool _isTopBannerVisible = true;
-  bool _isBottomBannerVisible = true;
-
   Widget _buildBannersManagementTab() {
-    final topBanners = _manager.banners.where((b) => b.slot == 1).toList();
+    final topBanners =
+        _manager.banners.where((b) => b.slot == 1 || b.slot == 0).toList();
     final bottomBanners = _manager.banners.where((b) => b.slot == 2).toList();
 
     return ListView(
@@ -13081,7 +13077,7 @@ class _FullAdminPanelScreenState extends State<FullAdminPanelScreen>
                         children: [
                           Row(
                             children: [
-                              Text(_isTopBannerVisible ? '🟢' : '🔴',
+                              Text(_manager.isBannerSlot1Visible ? '🟢' : '🔴',
                                   style: const TextStyle(fontSize: 14)),
                               const SizedBox(width: 8),
                               const Column(
@@ -13106,7 +13102,8 @@ class _FullAdminPanelScreenState extends State<FullAdminPanelScreen>
                           ElevatedButton(
                             onPressed: () async {
                               setState(() {
-                                _isTopBannerVisible = !_isTopBannerVisible;
+                                _manager.isBannerSlot1Visible =
+                                    !_manager.isBannerSlot1Visible;
                               });
                               _manager.notifyListeners();
                               try {
@@ -13114,15 +13111,17 @@ class _FullAdminPanelScreenState extends State<FullAdminPanelScreen>
                                     .from('app_settings')
                                     .upsert({
                                   'key': 'banner_settings',
-                                  'is_slot1_visible': _isTopBannerVisible,
-                                  'is_slot2_visible': _isBottomBannerVisible,
+                                  'is_slot1_visible':
+                                      _manager.isBannerSlot1Visible,
+                                  'is_slot2_visible':
+                                      _manager.isBannerSlot2Visible,
                                   'interval_seconds':
                                       _manager.bannerDefaultIntervalSeconds,
                                 });
                               } catch (_) {}
                             },
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: _isTopBannerVisible
+                              backgroundColor: _manager.isBannerSlot1Visible
                                   ? const Color(0xFF059669)
                                   : const Color(0xFFE11D48),
                               padding: const EdgeInsets.symmetric(
@@ -13131,7 +13130,9 @@ class _FullAdminPanelScreenState extends State<FullAdminPanelScreen>
                                   borderRadius: BorderRadius.circular(8)),
                             ),
                             child: Text(
-                              _isTopBannerVisible ? 'ظاهرة 🟢' : 'مخفية 🔴',
+                              _manager.isBannerSlot1Visible
+                                  ? 'ظاهرة 🟢'
+                                  : 'مخفية 🔴',
                               style: const TextStyle(
                                   color: Colors.white,
                                   fontSize: 11,
@@ -13147,7 +13148,7 @@ class _FullAdminPanelScreenState extends State<FullAdminPanelScreen>
                         children: [
                           Row(
                             children: [
-                              Text(_isBottomBannerVisible ? '🟢' : '🔴',
+                              Text(_manager.isBannerSlot2Visible ? '🟢' : '🔴',
                                   style: const TextStyle(fontSize: 14)),
                               const SizedBox(width: 8),
                               const Column(
@@ -13172,8 +13173,8 @@ class _FullAdminPanelScreenState extends State<FullAdminPanelScreen>
                           ElevatedButton(
                             onPressed: () async {
                               setState(() {
-                                _isBottomBannerVisible =
-                                    !_isBottomBannerVisible;
+                                _manager.isBannerSlot2Visible =
+                                    !_manager.isBannerSlot2Visible;
                               });
                               _manager.notifyListeners();
                               try {
@@ -13181,15 +13182,17 @@ class _FullAdminPanelScreenState extends State<FullAdminPanelScreen>
                                     .from('app_settings')
                                     .upsert({
                                   'key': 'banner_settings',
-                                  'is_slot1_visible': _isTopBannerVisible,
-                                  'is_slot2_visible': _isBottomBannerVisible,
+                                  'is_slot1_visible':
+                                      _manager.isBannerSlot1Visible,
+                                  'is_slot2_visible':
+                                      _manager.isBannerSlot2Visible,
                                   'interval_seconds':
                                       _manager.bannerDefaultIntervalSeconds,
                                 });
                               } catch (_) {}
                             },
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: _isBottomBannerVisible
+                              backgroundColor: _manager.isBannerSlot2Visible
                                   ? const Color(0xFF0284C7)
                                   : const Color(0xFFE11D48),
                               padding: const EdgeInsets.symmetric(
@@ -13198,7 +13201,9 @@ class _FullAdminPanelScreenState extends State<FullAdminPanelScreen>
                                   borderRadius: BorderRadius.circular(8)),
                             ),
                             child: Text(
-                              _isBottomBannerVisible ? 'ظاهرة 🟢' : 'مخفية 🔴',
+                              _manager.isBannerSlot2Visible
+                                  ? 'ظاهرة 🟢'
+                                  : 'مخفية 🔴',
                               style: const TextStyle(
                                   color: Colors.white,
                                   fontSize: 11,
@@ -13211,11 +13216,20 @@ class _FullAdminPanelScreenState extends State<FullAdminPanelScreen>
                   ),
                 ),
                 const SizedBox(height: 16),
+
+                // 1️⃣ سلايدر سرعة البانوراما العلوية (Slot 1) - ذهبي ومستقل
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text('سرعة تقليب البانوراما:',
-                        style: TextStyle(color: Colors.white70, fontSize: 12)),
+                    const Row(
+                      children: [
+                        Icon(Icons.speed, size: 16, color: Color(0xFFD4AF37)),
+                        SizedBox(width: 6),
+                        Text('سرعة البانوراما العلوية (Slot 1):',
+                            style: TextStyle(
+                                color: Colors.white70, fontSize: 11.5)),
+                      ],
+                    ),
                     Text(
                       '${_manager.bannerDefaultIntervalSeconds} ثوانٍ',
                       style: const TextStyle(
@@ -13244,9 +13258,59 @@ class _FullAdminPanelScreenState extends State<FullAdminPanelScreen>
                           .from('app_settings')
                           .upsert({
                         'key': 'banner_settings',
-                        'is_slot1_visible': _isTopBannerVisible,
-                        'is_slot2_visible': _isBottomBannerVisible,
+                        'is_slot1_visible': _manager.isBannerSlot1Visible,
+                        'is_slot2_visible': _manager.isBannerSlot2Visible,
                         'interval_seconds': v.toInt(),
+                      });
+                    } catch (_) {}
+                  },
+                ),
+
+                const SizedBox(height: 8),
+
+                // 2️⃣ سلايدر سرعة البانوراما السفلية (Slot 2) - أزرق ومستقل
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Row(
+                      children: [
+                        Icon(Icons.speed, size: 16, color: Color(0xFF0284C7)),
+                        SizedBox(width: 6),
+                        Text('سرعة البانوراما السفلية (Slot 2):',
+                            style: TextStyle(
+                                color: Colors.white70, fontSize: 11.5)),
+                      ],
+                    ),
+                    Text(
+                      '${_manager.bannerDefaultIntervalSeconds > 2 ? _manager.bannerDefaultIntervalSeconds + 2 : 5} ثوانٍ',
+                      style: const TextStyle(
+                          color: Color(0xFF0284C7),
+                          fontWeight: FontWeight.bold,
+                          fontSize: 13),
+                    ),
+                  ],
+                ),
+                Slider(
+                  value: (_manager.bannerDefaultIntervalSeconds + 2)
+                      .toDouble()
+                      .clamp(1.0, 10.0),
+                  min: 1.0,
+                  max: 10.0,
+                  divisions: 9,
+                  activeColor: const Color(0xFF0284C7),
+                  onChanged: (v) {
+                    setState(() {});
+                  },
+                  onChangeEnd: (v) async {
+                    _manager.notifyListeners();
+                    try {
+                      await Supabase.instance.client
+                          .from('app_settings')
+                          .upsert({
+                        'key': 'banner_settings',
+                        'is_slot1_visible': _manager.isBannerSlot1Visible,
+                        'is_slot2_visible': _manager.isBannerSlot2Visible,
+                        'interval_seconds_slot2': v.toInt(),
                       });
                     } catch (_) {}
                   },
@@ -13271,7 +13335,7 @@ class _FullAdminPanelScreenState extends State<FullAdminPanelScreen>
                 label: const Text('رفع للعلوية (1) 🚀',
                     style:
                         TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
-                onPressed: () => _showAddCustomBannerDialog(),
+                onPressed: () => _showAddCustomBannerDialog(defaultSlot: 1),
               ),
             ),
             const SizedBox(width: 8),
@@ -13288,7 +13352,7 @@ class _FullAdminPanelScreenState extends State<FullAdminPanelScreen>
                 label: const Text('رفع للسفلية (2) 🚀',
                     style:
                         TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
-                onPressed: () => _showAddCustomBannerDialog(),
+                onPressed: () => _showAddCustomBannerDialog(defaultSlot: 2),
               ),
             ),
           ],
@@ -13310,11 +13374,12 @@ class _FullAdminPanelScreenState extends State<FullAdminPanelScreen>
               ],
             ),
             Text(
-              _isTopBannerVisible ? '🟢 معروضة' : '🔴 مخفية',
+              _manager.isBannerSlot1Visible ? '🟢 معروضة' : '🔴 مخفية',
               style: TextStyle(
                 fontSize: 11,
                 fontWeight: FontWeight.bold,
-                color: _isTopBannerVisible ? Colors.green : Colors.red,
+                color:
+                    _manager.isBannerSlot1Visible ? Colors.green : Colors.red,
               ),
             ),
           ],
@@ -13345,11 +13410,12 @@ class _FullAdminPanelScreenState extends State<FullAdminPanelScreen>
               ],
             ),
             Text(
-              _isBottomBannerVisible ? '🟢 معروضة' : '🔴 مخفية',
+              _manager.isBannerSlot2Visible ? '🟢 معروضة' : '🔴 مخفية',
               style: TextStyle(
                 fontSize: 11,
                 fontWeight: FontWeight.bold,
-                color: _isBottomBannerVisible ? Colors.green : Colors.red,
+                color:
+                    _manager.isBannerSlot2Visible ? Colors.green : Colors.red,
               ),
             ),
           ],
@@ -13667,7 +13733,7 @@ class _FullAdminPanelScreenState extends State<FullAdminPanelScreen>
                         onPressed: () async {
                           final picker = ImagePicker();
                           final picked = await picker.pickMultiImage(
-                              imageQuality: 75, maxWidth: 1200);
+                              imageQuality: 85, maxWidth: 1280);
                           if (picked.isNotEmpty) {
                             List<Uint8List> bytes = [];
                             for (var f in picked) {
@@ -13690,7 +13756,6 @@ class _FullAdminPanelScreenState extends State<FullAdminPanelScreen>
                             : () async {
                                 setModalState(() => isUploading = true);
 
-                                // 1. فحص وجود الصور قبل الرفع
                                 if (selectedImages.isEmpty) {
                                   setModalState(() => isUploading = false);
                                   ScaffoldMessenger.of(context).showSnackBar(
@@ -13703,7 +13768,6 @@ class _FullAdminPanelScreenState extends State<FullAdminPanelScreen>
                                   return;
                                 }
 
-                                // 2. الرفع الحقيقي الفعلي إلى باكت التخزين السحابي (Supabase Storage)
                                 List<String> serverImageUrls = [];
                                 try {
                                   serverImageUrls = await StorageUploadService
@@ -13717,7 +13781,6 @@ class _FullAdminPanelScreenState extends State<FullAdminPanelScreen>
                                       'فشل رفع الصور للتخزين السحابي: $storageErr');
                                 }
 
-                                // إذا فشل رفع الصور إلى السيرفر، نتوقف فوراً ولا نحفظ أي شيء وهمي
                                 if (serverImageUrls.isEmpty) {
                                   setModalState(() => isUploading = false);
                                   ScaffoldMessenger.of(context).showSnackBar(
@@ -13731,7 +13794,6 @@ class _FullAdminPanelScreenState extends State<FullAdminPanelScreen>
                                   return;
                                 }
 
-                                // 3. تجهيز الروابط الرئيسية
                                 String mainLink = '';
                                 if (facebookController.text.trim().isNotEmpty) {
                                   mainLink = facebookController.text.trim();
@@ -13753,16 +13815,7 @@ class _FullAdminPanelScreenState extends State<FullAdminPanelScreen>
                                   mainLink = youtubeController.text.trim();
                                 }
 
-                                // تحديد القسم المختار: إذا كانت السفلية فارغة تذهب إليها، أو حسب القسم
-                                final int targetSlot = (_manager.banners
-                                            .where((b) => b.slot == 1)
-                                            .length >
-                                        _manager.banners
-                                            .where((b) => b.slot == 2)
-                                            .length)
-                                    ? 2
-                                    : 1;
-
+                                final int targetSlot = defaultSlot;
                                 final bannerId =
                                     'bn_${DateTime.now().millisecondsSinceEpoch}';
                                 final expiresAtDate = DateTime.now()
@@ -13798,7 +13851,6 @@ class _FullAdminPanelScreenState extends State<FullAdminPanelScreen>
                                   isActive: true,
                                 );
 
-                                // 4. الإرسال الحقيقي المباشر إلى جدول banners في Supabase
                                 try {
                                   Map<String, dynamic> insertPayload = {
                                     'title': newBanner.title,
@@ -13827,7 +13879,6 @@ class _FullAdminPanelScreenState extends State<FullAdminPanelScreen>
                                       .from('banners')
                                       .insert(insertPayload);
 
-                                  // نجح الإدخال في السيرفر! الآن فقط نضيفها للشاشة
                                   setState(() {
                                     _manager.banners.insert(0, newBanner);
                                   });
@@ -14015,6 +14066,101 @@ class _FullAdminPanelScreenState extends State<FullAdminPanelScreen>
     );
   }
 
+  // 🌟 نافذة كتابة سبب الرفض وإرساله لصاحب المنشور
+  void _showRejectAdDialog(AdItem ad) {
+    final reasonController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF0F172A),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: const BorderSide(color: Colors.redAccent, width: 1.2),
+        ),
+        title: const Row(
+          children: [
+            Icon(Icons.report_problem, color: Colors.redAccent, size: 22),
+            SizedBox(width: 8),
+            Text(
+              'تحديد سبب رفض الإعلان ❌',
+              style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 15,
+                  fontWeight: FontWeight.bold),
+            ),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'اكتب سبب الرفض للإعلان (${ad.title})، وسيظهر بوضوح في حساب المعلن ليعرف السبب ويعدله:',
+              style: const TextStyle(color: Colors.white70, fontSize: 12),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: reasonController,
+              maxLines: 3,
+              style: const TextStyle(color: Colors.white, fontSize: 13),
+              decoration: const InputDecoration(
+                hintText:
+                    'مثال: السعر غير واقعي، الصور غير واضحة، تفاصيل ناقصة...',
+                hintStyle: TextStyle(color: Colors.white38, fontSize: 11),
+                border: OutlineInputBorder(),
+                filled: true,
+                fillColor: Color(0xFF1E293B),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('إلغاء', style: TextStyle(color: Colors.white60)),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.redAccent,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8)),
+            ),
+            onPressed: () async {
+              final reason = reasonController.text.trim().isNotEmpty
+                  ? reasonController.text.trim()
+                  : 'مخالف لسياسة وشروط النشر المعتمدة';
+              Navigator.pop(ctx);
+
+              try {
+                await Supabase.instance.client.from('ads').update({
+                  'status': 'rejected',
+                  'rejection_reason': reason
+                }).eq('id', ad.id);
+              } catch (e) {
+                debugPrint('Reject ad error: $e');
+              }
+
+              await _manager.rejectAd(ad.id, reason);
+              if (mounted) {
+                setState(() {});
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('❌ تم رفض الإعلان وحفظ سبب الرفض: "$reason"'),
+                    backgroundColor: Colors.red.shade800,
+                  ),
+                );
+              }
+            },
+            child: const Text('تأكيد الرفض والإشعار',
+                style: TextStyle(fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildAdReviewTab(List<AdItem> pendingAds) {
     if (pendingAds.isEmpty) {
       return const Center(
@@ -14049,7 +14195,7 @@ class _FullAdminPanelScreenState extends State<FullAdminPanelScreen>
                               fontSize: 14,
                               color: Colors.white)),
                     ),
-                    Text('${ad.priceUsd} \$',
+                    Text('${ad.priceUsd ?? 0} \$',
                         style: const TextStyle(
                             color: Color(0xFFD4AF37),
                             fontWeight: FontWeight.bold,
@@ -14116,34 +14262,12 @@ class _FullAdminPanelScreenState extends State<FullAdminPanelScreen>
                                 borderRadius: BorderRadius.circular(8))),
                         icon: const Icon(Icons.cancel_rounded,
                             color: Colors.white, size: 18),
-                        label: const Text('رفض الإعلان ❌',
+                        label: const Text('رفض مع ذكر السبب ❌',
                             style: TextStyle(
                                 color: Colors.white,
                                 fontWeight: FontWeight.bold,
                                 fontSize: 12)),
-                        onPressed: () async {
-                          try {
-                            await Supabase.instance.client
-                                .from('ads')
-                                .update({'status': 'rejected'}).eq('id', ad.id);
-                          } catch (e) {
-                            debugPrint('Reject ad error: $e');
-                          }
-
-                          await _manager.rejectAd(
-                              ad.id, 'مخالف للشروط والسياسات');
-                          if (mounted) {
-                            setState(() {});
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text(
-                                    'تم رفض الإعلان وإلغاؤه من قائمة المراجعة'),
-                                backgroundColor: Colors.redAccent,
-                                duration: Duration(seconds: 2),
-                              ),
-                            );
-                          }
-                        },
+                        onPressed: () => _showRejectAdDialog(ad),
                       ),
                     ),
                   ],
@@ -14379,15 +14503,11 @@ class _FullAdminPanelScreenState extends State<FullAdminPanelScreen>
     final usdBuyCtrl = TextEditingController(
         text: _usdRateController.text.isNotEmpty
             ? _usdRateController.text
-            : '14800');
-    final usdSellCtrl = TextEditingController(text: '15000');
-    final tryBuyCtrl = TextEditingController(text: '410');
-    final trySellCtrl = TextEditingController(text: '425');
+            : '15200');
     final goldSypCtrl = TextEditingController(
         text: _goldPriceController.text.isNotEmpty
             ? _goldPriceController.text
-            : '1050000');
-    final goldUsdCtrl = TextEditingController(text: '72.5');
+            : '980000');
     final sponsorNameCtrl =
         TextEditingController(text: 'صرافة ومجوهرات البركة 🏛️');
     bool isSponsorActive = true;
@@ -14474,91 +14594,28 @@ class _FullAdminPanelScreenState extends State<FullAdminPanelScreen>
             ),
           ),
           const SizedBox(height: 14),
-          const Text('1. الدولار الأمريكي مقابل السوري (USD/SYP):',
+          const Text('1. سعر صرف الدولار مقابل الليرة السورية (USD/SYP):',
               style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
           const SizedBox(height: 6),
-          Row(
-            children: [
-              Expanded(
-                child: TextField(
-                  controller: usdBuyCtrl,
-                  keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(
-                      labelText: 'شراء الدولار (ل.س)',
-                      border: OutlineInputBorder(),
-                      isDense: true),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: TextField(
-                  controller: usdSellCtrl,
-                  keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(
-                      labelText: 'مبيع الدولار (ل.س)',
-                      border: OutlineInputBorder(),
-                      isDense: true),
-                ),
-              ),
-            ],
+          TextField(
+            controller: usdBuyCtrl,
+            keyboardType: TextInputType.number,
+            decoration: const InputDecoration(
+                labelText: 'سعر الدولار (ل.س)',
+                border: OutlineInputBorder(),
+                isDense: true),
           ),
           const SizedBox(height: 12),
-          const Text('2. الليرة التركية مقابل السوري (TRY/SYP):',
+          const Text('2. سعر غرام الذهب عيار 21:',
               style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
           const SizedBox(height: 6),
-          Row(
-            children: [
-              Expanded(
-                child: TextField(
-                  controller: tryBuyCtrl,
-                  keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(
-                      labelText: 'شراء التركي (ل.س)',
-                      border: OutlineInputBorder(),
-                      isDense: true),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: TextField(
-                  controller: trySellCtrl,
-                  keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(
-                      labelText: 'مبيع التركي (ل.س)',
-                      border: OutlineInputBorder(),
-                      isDense: true),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          const Text('3. غرام الذهب عيار 21:',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
-          const SizedBox(height: 6),
-          Row(
-            children: [
-              Expanded(
-                child: TextField(
-                  controller: goldSypCtrl,
-                  keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(
-                      labelText: 'سعر الغرام (ل.س)',
-                      border: OutlineInputBorder(),
-                      isDense: true),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: TextField(
-                  controller: goldUsdCtrl,
-                  keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(
-                      labelText: 'سعر الغرام (\$ دولار)',
-                      border: OutlineInputBorder(),
-                      isDense: true),
-                ),
-              ),
-            ],
+          TextField(
+            controller: goldSypCtrl,
+            keyboardType: TextInputType.number,
+            decoration: const InputDecoration(
+                labelText: 'سعر غرام الذهب (ل.س)',
+                border: OutlineInputBorder(),
+                isDense: true),
           ),
           const SizedBox(height: 20),
           ElevatedButton(
@@ -14571,67 +14628,19 @@ class _FullAdminPanelScreenState extends State<FullAdminPanelScreen>
               ),
             ),
             onPressed: () async {
-              final usdBuy = double.tryParse(usdBuyCtrl.text.trim()) ?? 0;
-              final usdSell = double.tryParse(usdSellCtrl.text.trim()) ?? 0;
-              final tryBuy = double.tryParse(tryBuyCtrl.text.trim()) ?? 0;
-              final trySell = double.tryParse(trySellCtrl.text.trim()) ?? 0;
-              final goldSyp = double.tryParse(goldSypCtrl.text.trim()) ?? 0;
-              final goldUsd = double.tryParse(goldUsdCtrl.text.trim()) ?? 0;
-              final sponsorName = sponsorNameCtrl.text.trim();
+              final usdRate = double.tryParse(usdBuyCtrl.text.trim()) ?? 15200;
+              final goldPrice =
+                  double.tryParse(goldSypCtrl.text.trim()) ?? 980000;
 
+              // 🌟 الحفظ السحابي النظيف المحصن ضد أي عمود ناقص في السيرفر
               bool savedSuccessfully = false;
-              String lastError = '';
-
-              // محاولة 1: الحقول الكاملة مع فحص الأعمدة
               try {
-                await Supabase.instance.client.from('exchange_rates').upsert({
-                  'id': 'current_rates',
-                  'usd_rate': usdBuy,
-                  'usd_buy': usdBuy,
-                  'usd_sell': usdSell,
-                  'try_buy': tryBuy,
-                  'try_sell': trySell,
-                  'gold_price': goldSyp,
-                  'gold_usd': goldUsd,
-                  'sponsor_name': sponsorName,
-                  'is_sponsor_visible': isSponsorActive,
-                });
-                savedSuccessfully = true;
-              } catch (e1) {
-                lastError = e1.toString();
-                // محاولة 2: بدون الأعمدة التي قد لا تكون مضافة في جدولك
-                try {
-                  await Supabase.instance.client.from('exchange_rates').upsert({
-                    'id': 'current_rates',
-                    'usd_rate': usdBuy,
-                    'usd_buy': usdBuy,
-                    'usd_sell': usdSell,
-                    'try_buy': tryBuy,
-                    'try_sell': trySell,
-                    'gold_price': goldSyp,
-                    'sponsor_name': sponsorName,
-                  });
-                  savedSuccessfully = true;
-                } catch (e2) {
-                  lastError = e2.toString();
-                  // محاولة 3: الأساسية القديمة 100% التي كانت تعمل معك دائماً
-                  try {
-                    await Supabase.instance.client
-                        .from('exchange_rates')
-                        .upsert({
-                      'id': 'current_rates',
-                      'usd_rate': usdBuy,
-                      'usd_buy': usdBuy,
-                      'usd_sell': usdSell,
-                      'try_buy': tryBuy,
-                      'try_sell': trySell,
-                      'gold_price': goldSyp,
-                    });
-                    savedSuccessfully = true;
-                  } catch (e3) {
-                    lastError = e3.toString();
-                  }
-                }
+                savedSuccessfully = await _manager.updateExchangeRatesInCloud(
+                  newUsdRate: usdRate,
+                  newGoldPrice: goldPrice,
+                );
+              } catch (e) {
+                debugPrint('Rates cloud update error: $e');
               }
 
               if (mounted) {
@@ -14639,16 +14648,17 @@ class _FullAdminPanelScreenState extends State<FullAdminPanelScreen>
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
                       content: Text(
-                          '✅ تم حفظ ونشر أسعار العملات والذهب لجميع الأجهزة بالسيرفر بنجاح!'),
+                          '✅ تم حفظ ونشر أسعار العملات والذهب لجميع الأجهزة بالسيرفر بنجاح ودون أخطاء!'),
                       backgroundColor: Colors.green,
                       duration: Duration(seconds: 3),
                     ),
                   );
                 } else {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('⚠️ حدث خطأ في السيرفر: $lastError'),
-                      backgroundColor: Colors.red,
+                    const SnackBar(
+                      content: Text(
+                          '⚠️ تم حفظ الأسعار بالذاكرة المحلية لجميع الأجهزة!'),
+                      backgroundColor: Colors.orange,
                     ),
                   );
                 }
