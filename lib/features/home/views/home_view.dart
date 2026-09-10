@@ -861,7 +861,7 @@ class _HomeViewState extends State<HomeView> {
       BuildContext context, AdModel ad, Color green, Color gold) {
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      shape: RoundedRectangleBorder(14),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
       clipBehavior: Clip.antiAlias,
       elevation: 2,
       child: InkWell(

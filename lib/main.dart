@@ -1427,13 +1427,16 @@ class AppStateManager extends ChangeNotifier {
     'شحن شدات',
     'قرض فوري بدون ضمانات',
   ];
-
   BannerDisplayLayoutMode bannerDisplayMode = BannerDisplayLayoutMode.dualGrid;
   bool isBannerAutoScrollEnabled = true;
   int bannerDefaultIntervalSeconds = 3;
   bool isLoadingCloudData = false;
   int bannerSlot1IntervalSeconds = 3;
   int bannerSlot2IntervalSeconds = 4;
+
+  // 🌟 متغيرات التحكم المركزية المستقلة بظهور البانوراما العلوية والسفلية
+  bool isBannerSlot1Visible = true;
+  bool isBannerSlot2Visible = true;
 
   StreamSubscription? _adsSubscription;
   StreamSubscription? _bannersSubscription;
@@ -1500,10 +1503,21 @@ class AppStateManager extends ChangeNotifier {
           primaryKey: ['key']).listen((List<Map<String, dynamic>> data) {
         for (var row in data) {
           if (row['key'] == 'banner_settings') {
-            if (row['mode'] == 'fullPanorama') {
-              bannerDisplayMode = BannerDisplayLayoutMode.fullPanorama;
-            } else if (row['mode'] == 'dualGrid') {
-              bannerDisplayMode = BannerDisplayLayoutMode.dualGrid;
+            if (row['is_slot1_visible'] != null) {
+              isBannerSlot1Visible = row['is_slot1_visible'] == true ||
+                  row['is_slot1_visible'].toString() == 'true';
+            }
+            if (row['is_slot2_visible'] != null) {
+              isBannerSlot2Visible = row['is_slot2_visible'] == true ||
+                  row['is_slot2_visible'].toString() == 'true';
+            }
+            if (row['slot1_interval'] != null) {
+              bannerSlot1IntervalSeconds =
+                  (row['slot1_interval'] as num).toInt();
+            }
+            if (row['slot2_interval'] != null) {
+              bannerSlot2IntervalSeconds =
+                  (row['slot2_interval'] as num).toInt();
             }
             if (row['interval_seconds'] != null) {
               bannerDefaultIntervalSeconds =
@@ -1722,35 +1736,6 @@ class AppStateManager extends ChangeNotifier {
       debugPrint('Error deleting banner from cloud: $e');
       return false;
     }
-  }
-
-  void _initDefaultDepartments() {
-    departments = [
-      DepartmentNode(
-        id: 'dep_cars',
-        nameAr: 'سيارات ومركبات',
-        nameEn: 'Vehicles',
-        iconName: 'DirectionsCar',
-        themeColor: const Color(0xFF0284C7),
-        activeAdsCount: 0,
-      ),
-      DepartmentNode(
-        id: 'dep_realestate',
-        nameAr: 'عقارات وأراضي',
-        nameEn: 'Real Estate',
-        iconName: 'Home',
-        themeColor: const Color(0xFF16A34A),
-        activeAdsCount: 0,
-      ),
-      DepartmentNode(
-        id: 'dep_solar',
-        nameAr: 'طاقة شمسية وبطاريات',
-        nameEn: 'Solar Energy',
-        iconName: 'WbSunny',
-        themeColor: const Color(0xFFD4AF37),
-        activeAdsCount: 0,
-      ),
-    ];
   }
 
   Future<void> loadCachedDataOffline() async {
@@ -2177,7 +2162,8 @@ class AppStateManager extends ChangeNotifier {
           .from('ad_comments')
           .select()
           .eq('ad_id', adId)
-          .order('created_at', ascending: true);
+          .order('created_at', ascending: true)
+          .timeout(const Duration(seconds: 8));
 
       if (res is List) {
         return res
@@ -2193,7 +2179,6 @@ class AppStateManager extends ChangeNotifier {
   Future<AdCommentItem?> addAdComment({
     required String adId,
     required String commentText,
-    String? userAvatar,
   }) async {
     final comment = AdCommentItem(
       id: 'cmt_${DateTime.now().millisecondsSinceEpoch}',
@@ -2205,33 +2190,92 @@ class AppStateManager extends ChangeNotifier {
     );
 
     try {
-      final payload = {
-        'id': comment.id,
-        'ad_id': adId,
-        'user_id': comment.userId,
-        'user_name': comment.userName,
-        'comment_text': comment.commentText,
-        'created_at': comment.createdAt.toIso8601String(),
-      };
-
-      await Supabase.instance.client.from('ad_comments').insert(payload);
+      await Supabase.instance.client
+          .from('ad_comments')
+          .insert(comment.toMap())
+          .timeout(const Duration(seconds: 8));
       return comment;
     } catch (e) {
       debugPrint('Error adding comment to Supabase: $e');
-      // محاولة الإرسال بدون id إذا كان السيرفر يولد id تلقائياً uuid
-      try {
-        await Supabase.instance.client.from('ad_comments').insert({
-          'ad_id': adId,
-          'user_id': comment.userId,
-          'user_name': comment.userName,
-          'comment_text': comment.commentText,
-        });
-        return comment;
-      } catch (e2) {
-        debugPrint('Second attempt comment error: $e2');
-      }
       return comment;
     }
+  }
+
+  void _initDefaultDepartments() {
+    departments = [
+      DepartmentNode(
+        id: 'dep_cars',
+        nameAr: 'سيارات ومركبات',
+        nameEn: 'Vehicles',
+        iconName: 'DirectionsCar',
+        themeColor: const Color(0xFF0284C7),
+        activeAdsCount: 0,
+        subBranches: [
+          DepartmentNode(
+            id: 'dep_cars_sale',
+            nameAr: 'سيارات سياحية للبيع',
+            parentId: 'dep_cars',
+            activeAdsCount: 0,
+          ),
+          DepartmentNode(
+            id: 'dep_cars_rent',
+            nameAr: 'سيارات للإيجار',
+            parentId: 'dep_cars',
+            activeAdsCount: 0,
+          ),
+          DepartmentNode(
+            id: 'dep_cars_parts',
+            nameAr: 'قطع غيار وإكسسوارات',
+            parentId: 'dep_cars',
+            activeAdsCount: 0,
+          ),
+        ],
+      ),
+      DepartmentNode(
+        id: 'dep_realestate',
+        nameAr: 'عقارات وأراضي',
+        nameEn: 'Real Estate',
+        iconName: 'Home',
+        themeColor: const Color(0xFF16A34A),
+        activeAdsCount: 0,
+        subBranches: [
+          DepartmentNode(
+            id: 'dep_re_apartments',
+            nameAr: 'شقق وفلل للبيع',
+            parentId: 'dep_realestate',
+            activeAdsCount: 0,
+          ),
+          DepartmentNode(
+            id: 'dep_re_rent',
+            nameAr: 'شقق للإيجار',
+            parentId: 'dep_realestate',
+            activeAdsCount: 0,
+          ),
+        ],
+      ),
+      DepartmentNode(
+        id: 'dep_solar',
+        nameAr: 'طاقة شمسية وبطاريات',
+        nameEn: 'Solar Energy',
+        iconName: 'WbSunny',
+        themeColor: const Color(0xFFD4AF37),
+        activeAdsCount: 0,
+        subBranches: [
+          DepartmentNode(
+            id: 'dep_solar_batteries',
+            nameAr: 'بطاريات ليثيوم LiFePO4',
+            parentId: 'dep_solar',
+            activeAdsCount: 0,
+          ),
+          DepartmentNode(
+            id: 'dep_solar_inverters',
+            nameAr: 'إنفرترات ومحولات ذكية',
+            parentId: 'dep_solar',
+            activeAdsCount: 0,
+          ),
+        ],
+      ),
+    ];
   }
 
   void _initDefaultCategories() {
@@ -4793,29 +4837,48 @@ class _FullAdDetailsScreenState extends State<FullAdDetailsScreen> {
     });
   }
 
-  void _loadComments() {
+  Future<void> _loadComments() async {
     setState(() => _isLoadingComments = true);
+
+    // 1. جلب فوري ومباشر من السيرفر لضمان ظهور التعليقات حتى لو كان Stream معطلاً
+    try {
+      final res = await Supabase.instance.client
+          .from('ad_comments')
+          .select()
+          .eq('ad_id', _currentAd.id)
+          .order('created_at', ascending: true);
+
+      if (res is List && mounted) {
+        setState(() {
+          _adComments = res.map((m) => AdCommentItem.fromMap(m)).toList();
+          _isLoadingComments = false;
+        });
+      }
+    } catch (e) {
+      debugPrint('Direct Comments Fetch Error: $e');
+      if (mounted) setState(() => _isLoadingComments = false);
+    }
+
+    // 2. الاستماع اللحظي المستمر لأي تعليق جديد يضيفه مستخدم آخر
     _commentsSubscription?.cancel();
     try {
       _commentsSubscription = Supabase.instance.client
           .from('ad_comments')
           .stream(primaryKey: ['id'])
           .eq('ad_id', _currentAd.id)
-          .order('created_at', ascending: false)
+          .order('created_at', ascending: true)
           .listen((List<Map<String, dynamic>> data) {
-            if (mounted) {
+            if (mounted && data.isNotEmpty) {
               setState(() {
                 _adComments =
                     data.map((m) => AdCommentItem.fromMap(m)).toList();
-                _isLoadingComments = false;
               });
             }
           }, onError: (err) {
             debugPrint('Comments Stream Error: $err');
-            if (mounted) setState(() => _isLoadingComments = false);
           });
     } catch (e) {
-      if (mounted) setState(() => _isLoadingComments = false);
+      debugPrint('Stream setup error: $e');
     }
   }
 
@@ -4829,25 +4892,60 @@ class _FullAdDetailsScreenState extends State<FullAdDetailsScreen> {
             ? _manager.currentUserPhone
             : 'مستخدم موثق');
 
-    final nowStr = DateTime.now().toIso8601String();
-
+    final now = DateTime.now();
     _commentController.clear();
     FocusScope.of(context).unfocus();
 
+    // فحص ذكي للـ UUID لمنع خطأ الـ syntax عند إرسال كلمة guest
+    final isUuid = RegExp(
+            r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$')
+        .hasMatch(_manager.currentUserId);
+    final String? validUserId = isUuid ? _manager.currentUserId : null;
+
+    // إضافة التعليق فوراً للواجهة ليظهر للمستخدم في نفس اللحظة
+    final tempComment = AdCommentItem(
+      id: 'temp_${now.millisecondsSinceEpoch}',
+      adId: _currentAd.id,
+      userId: validUserId ?? '',
+      userName: userName,
+      commentText: text,
+      createdAt: now,
+    );
+
+    setState(() {
+      _adComments.add(tempComment);
+    });
+
+    // إرسال التعليق للسيرفر بحفظ متوافق مع كافة الأعمدة المحتملة
+    bool saved = false;
     try {
       await Supabase.instance.client.from('ad_comments').insert({
         'ad_id': _currentAd.id,
-        'user_id': _manager.currentUserId.isNotEmpty
-            ? _manager.currentUserId
-            : 'guest',
+        if (validUserId != null) 'user_id': validUserId,
         'user_name': userName,
-        'user_phone': _manager.currentUserPhone,
+        'comment_text': text,
         'content': text,
         'comment': text,
-        'created_at': nowStr,
+        'created_at': now.toIso8601String(),
       });
+      saved = true;
+    } catch (e1) {
+      debugPrint('Primary comment insert attempt: $e1');
+      // محاولة بديلة إذا كان الجدول يحتوي فقط على أعمدة بسيطة
+      try {
+        await Supabase.instance.client.from('ad_comments').insert({
+          'ad_id': _currentAd.id,
+          'user_name': userName,
+          'comment_text': text,
+        });
+        saved = true;
+      } catch (e2) {
+        debugPrint('Secondary insert attempt: $e2');
+      }
+    }
 
-      if (mounted) {
+    if (mounted) {
+      if (saved) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('تم إرسال تعليقك بنجاح ✅'),
@@ -4855,9 +4953,15 @@ class _FullAdDetailsScreenState extends State<FullAdDetailsScreen> {
             duration: Duration(seconds: 2),
           ),
         );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('⚠️ تعذر إرسال التعليق للسيرفر، يرجى فحص الاتصال.'),
+            backgroundColor: Colors.orange,
+            duration: Duration(seconds: 2),
+          ),
+        );
       }
-    } catch (e) {
-      debugPrint('Comment insert error: $e');
     }
   }
 
@@ -6677,65 +6781,43 @@ class _FullAdDetailsScreenState extends State<FullAdDetailsScreen> {
                 else
                   ..._adComments.map(
                     (c) => Container(
-                      margin: const EdgeInsets.only(bottom: 8),
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 10, vertical: 8),
+                      margin: const EdgeInsets.only(bottom: 6),
+                      padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
                         color: Colors.white,
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: Colors.grey.shade300),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.grey.shade200),
                       ),
-                      child: Row(
+                      child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          CircleAvatar(
-                            radius: 16,
-                            backgroundColor: Colors.blue.shade100,
-                            child: const Icon(Icons.person,
-                                size: 18, color: Colors.blue),
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Row(
-                                      children: [
-                                        Text(
-                                          c.userName,
-                                          style: const TextStyle(
-                                              fontWeight: FontWeight.bold,
-                                              fontSize: 13),
-                                        ),
-                                        const SizedBox(width: 4),
-                                        const Icon(Icons.verified,
-                                            size: 14, color: Colors.blueAccent),
-                                      ],
-                                    ),
-                                    Text(
-                                      '${c.createdAt.hour}:${c.createdAt.minute.toString().padLeft(2, '0')}',
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Row(
+                                children: [
+                                  const Icon(Icons.verified,
+                                      size: 14, color: Colors.blueAccent),
+                                  const SizedBox(width: 4),
+                                  Text(c.userName,
                                       style: const TextStyle(
-                                          fontSize: 10, color: Colors.grey),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  c.commentText.isNotEmpty
-                                      ? c.commentText
-                                      : '...',
-                                  style: const TextStyle(
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.black87,
-                                  ),
-                                ),
-                              ],
-                            ),
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 12)),
+                                ],
+                              ),
+                              Text(
+                                '${c.createdAt.hour}:${c.createdAt.minute.toString().padLeft(2, '0')}',
+                                style: const TextStyle(
+                                    fontSize: 10, color: Colors.grey),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 4),
+                          // عرض نص التعليق الصريح بدون أن يكون فارغاً
+                          Text(
+                            c.commentText.isNotEmpty ? c.commentText : '...',
+                            style: const TextStyle(
+                                fontSize: 12, color: Colors.black87),
                           ),
                         ],
                       ),
@@ -7995,7 +8077,7 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
             ),
           );
         },
-      onOpenPlans: () {
+        onOpenPlans: () {
           showModalBottomSheet(
             context: context,
             isScrollControlled: true,
@@ -8143,6 +8225,55 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
           ],
         ),
         actions: [
+          // 🔍 أيقونة البحث السريع النظيفة
+          IconButton(
+            icon:
+                const Icon(Icons.search_rounded, color: Colors.white, size: 21),
+            tooltip: 'بحث في السوق',
+            padding: const EdgeInsets.symmetric(horizontal: 4),
+            constraints: const BoxConstraints(),
+            onPressed: () {
+              showModalBottomSheet(
+                context: context,
+                isScrollControlled: true,
+                shape: const RoundedRectangleBorder(
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+                ),
+                builder: (ctx) => Padding(
+                  padding: EdgeInsets.only(
+                    left: 16,
+                    right: 16,
+                    top: 16,
+                    bottom: MediaQuery.of(ctx).viewInsets.bottom + 16,
+                  ),
+                  child: TextField(
+                    controller: _searchController,
+                    autofocus: true,
+                    onChanged: (val) {
+                      setState(() => _searchQuery = val);
+                    },
+                    decoration: InputDecoration(
+                      hintText: 'ابحث في إعلانات السوق...',
+                      prefixIcon: const Icon(Icons.search),
+                      suffixIcon: IconButton(
+                        icon: const Icon(Icons.close, size: 18),
+                        onPressed: () {
+                          _searchController.clear();
+                          setState(() => _searchQuery = '');
+                          Navigator.pop(ctx);
+                        },
+                      ),
+                      filled: true,
+                      fillColor: Colors.grey.withOpacity(0.08),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
           IconButton(
             icon: const Icon(Icons.headset_mic_outlined,
                 color: Color(0xFFD4AF37), size: 19),
@@ -8158,7 +8289,7 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
               size: 19,
             ),
             tooltip: 'تغيير المظهر',
-            padding: const EdgeInsets.symmetric(horizontal: 6),
+            padding: const EdgeInsets.symmetric(horizontal: 5),
             constraints: const BoxConstraints(),
             onPressed: widget.onToggleTheme,
           ),
@@ -8166,9 +8297,9 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
           if (_manager.isModerator || _manager.isAdmin)
             IconButton(
               icon: const Icon(Icons.admin_panel_settings,
-                  color: Color(0xFFD4AF37), size: 22),
+                  color: Color(0xFFD4AF37), size: 21),
               tooltip: 'غرفة العمليات والإدارة',
-              padding: const EdgeInsets.symmetric(horizontal: 6),
+              padding: const EdgeInsets.symmetric(horizontal: 5),
               constraints: const BoxConstraints(),
               onPressed: () {
                 Navigator.push(
@@ -8179,51 +8310,9 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
                 );
               },
             ),
-          const SizedBox(width: 6),
+          const SizedBox(width: 4),
         ],
       ),
-// 🌟 زر إضافة إعلان الدائري الملكي في منتصف شريط التنقل السفلي مع توضيح صريح
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-      floatingActionButton: GestureDetector(
-        onTap: _openAddAdScreen,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 52,
-              height: 52,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: const LinearGradient(
-                  colors: [Color(0xFFF59E0B), Color(0xFFD97706)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: const Color(0xFFF59E0B).withOpacity(0.40),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-                border: Border.all(color: Colors.white, width: 2.2),
-              ),
-              child:
-                  const Icon(Icons.add_rounded, color: Colors.white, size: 32),
-            ),
-            const SizedBox(height: 2),
-            const Text(
-              'أضف إعلان',
-              style: TextStyle(
-                color: Color(0xFFF59E0B),
-                fontSize: 10.5,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ],
-        ),
-      ),
-
       body: SafeArea(
         child: _currentNavIndex == 0
             ? _buildHomeFeedTab()
@@ -8368,8 +8457,10 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
         ),
         // 2. شريط الأخبار العاجلة
         _buildCustomNewsTickerWidget(),
+        // 3. شريط البانوراما الإعلانية
+        _buildRoyalBannersSection(),
         const SizedBox(height: 8),
-        // 3. قائمة الأقسام الرئيسية
+        // 4. قائمة الأقسام الرئيسية
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
           child: Row(
@@ -8402,7 +8493,7 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
           ),
         ),
         const SizedBox(height: 6),
-        // 4. شبكة بطاقات الأقسام
+        // 5. شبكة بطاقات الأقسام
         Expanded(
           child: ListView.builder(
             physics: const BouncingScrollPhysics(),
@@ -8594,11 +8685,6 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
     });
   }
 
-  int _topBannerCurrentIndex = 0;
-  int _bottomBannerCurrentIndex = 0;
-  final PageController _topBannerController = PageController();
-  final PageController _bottomBannerController = PageController();
-
   void _startBannerCarouselTimer() {
     _bannerAutoScrollTimer?.cancel();
     final interval = _manager.bannerDefaultIntervalSeconds > 0
@@ -8607,31 +8693,18 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
 
     _bannerAutoScrollTimer =
         Timer.periodic(Duration(seconds: interval), (timer) {
-      if (!mounted) return;
-
-      final topBanners = _manager.banners.where((b) => b.slot == 1).toList();
-      final bottomBanners = _manager.banners.where((b) => b.slot == 2).toList();
-
-      // 1. تقليب البانوراما العلوية تلقائياً بحركة انسيابية
-      if (topBanners.length > 1 && _topBannerController.hasClients) {
-        _topBannerCurrentIndex =
-            (_topBannerCurrentIndex + 1) % topBanners.length;
-        _topBannerController.animateToPage(
-          _topBannerCurrentIndex,
-          duration: const Duration(milliseconds: 750),
-          curve: Curves.fastOutSlowIn,
+      if (mounted &&
+          !_isBannerUserInteracting &&
+          _manager.isBannerAutoScrollEnabled &&
+          _manager.banners.length > 1 &&
+          _bannerCarouselController.hasClients) {
+        final nextIndex = (_currentBannerIndex + 1) % _manager.banners.length;
+        _bannerCarouselController.animateToPage(
+          nextIndex,
+          duration: const Duration(milliseconds: 700),
+          curve: Curves.easeInOutCubic,
         );
-      }
-
-      // 2. تقليب البانوراما السفلية تلقائياً بحركة انسيابية
-      if (bottomBanners.length > 1 && _bottomBannerController.hasClients) {
-        _bottomBannerCurrentIndex =
-            (_bottomBannerCurrentIndex + 1) % bottomBanners.length;
-        _bottomBannerController.animateToPage(
-          _bottomBannerCurrentIndex,
-          duration: const Duration(milliseconds: 750),
-          curve: Curves.fastOutSlowIn,
-        );
+        setState(() => _currentBannerIndex = nextIndex);
       }
     });
   }
@@ -9737,10 +9810,17 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
     } else {
       filteredAds.sort((a, b) => b.createdAt.compareTo(a.createdAt));
     }
-    final topBanners = _manager.banners.where((b) => b.slot == 1).toList();
-    final bottomBanners = _manager.banners.where((b) => b.slot == 2).toList();
-    final bool showTop = topBanners.isNotEmpty;
-    final bool showBottom = bottomBanners.isNotEmpty;
+
+    final topBanners = _manager.banners
+        .where((b) => b.slot == 1 && b.isActive && !b.isExpired)
+        .toList();
+    final bottomBanners = _manager.banners
+        .where((b) => b.slot == 2 && b.isActive && !b.isExpired)
+        .toList();
+    final bool showTop = _manager.isBannerSlot1Visible && topBanners.isNotEmpty;
+    final bool showBottom =
+        _manager.isBannerSlot2Visible && bottomBanners.isNotEmpty;
+
     return Column(
       children: [
         LiveCurrencyExchangeTicker(
@@ -9749,64 +9829,9 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
           onRefresh: _initLiveAdsFromSupabase,
         ),
         _buildCustomNewsTickerWidget(),
-// شريط البانوراما العلوية
-        if (_manager.banners.any((b) => b.slot == 1))
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-            child: SizedBox(
-              height: 126,
-              width: double.infinity,
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(12),
-                child: PageView.builder(
-                  controller: _topBannerController,
-                  itemCount: _manager.banners.where((b) => b.slot == 1).length,
-                  physics: const BouncingScrollPhysics(),
-                  itemBuilder: (ctx, idx) {
-                    final b = _manager.banners
-                        .where((b) => b.slot == 1)
-                        .toList()[idx];
-                    return GestureDetector(
-                      onTap: () => _showBannerDetailsSheet(b),
-                      child: AppSmartImage(
-                          imageUrl: b.imageUrl, fit: BoxFit.cover),
-                    );
-                  },
-                ),
-              ),
-            ),
-          ),
 
-        // شريط البانوراما السفلية
-        if (_manager.banners.any((b) => b.slot == 2))
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-            child: SizedBox(
-              height: 126,
-              width: double.infinity,
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(12),
-                child: PageView.builder(
-                  controller: _bottomBannerController,
-                  itemCount: _manager.banners.where((b) => b.slot == 2).length,
-                  physics: const BouncingScrollPhysics(),
-                  itemBuilder: (ctx, idx) {
-                    final b = _manager.banners
-                        .where((b) => b.slot == 2)
-                        .toList()[idx];
-                    return GestureDetector(
-                      onTap: () => _showBannerDetailsSheet(b),
-                      child: AppSmartImage(
-                          imageUrl: b.imageUrl, fit: BoxFit.cover),
-                    );
-                  },
-                ),
-              ),
-            ),
-          ),
         // =====================================================================
-        // 🌟 منظومة البانوراما العلوية والسفلية (واحدة فوق وواحدة تحت بكامل العرض)
-        // مع التقليب التلقائي الانسيابي والتوسع الفوري للمنشورات إذا تم إخفاؤها
+        // 🌟 منظومة البانوراما السيادية: قسمين فوق بعضهما تماماً بكامل العرض
         // =====================================================================
         if (showTop || showBottom)
           Padding(
@@ -9815,18 +9840,124 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
               children: [
                 // 1. البانوراما العلوية (Slot 1)
                 if (showTop) ...[
-                  _buildSinglePanoramaViewWidget(
-                    banners: topBanners,
-                    borderColor: const Color(0xFFD4AF37),
+                  Container(
+                    width: double.infinity,
+                    height: 125,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(
+                          color: const Color(0xFFD4AF37).withOpacity(0.5),
+                          width: 1.2),
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(12),
+                      child: PageView.builder(
+                        itemCount: topBanners.length,
+                        physics: const BouncingScrollPhysics(),
+                        itemBuilder: (ctx, idx) {
+                          final b = topBanners[idx];
+                          return GestureDetector(
+                            onTap: () => _showBannerDetailsSheet(b),
+                            child: Stack(
+                              fit: StackFit.expand,
+                              children: [
+                                AppSmartImage(
+                                    imageUrl: b.imageUrl, fit: BoxFit.cover),
+                                Container(
+                                  decoration: BoxDecoration(
+                                    gradient: LinearGradient(
+                                      begin: Alignment.topCenter,
+                                      end: Alignment.bottomCenter,
+                                      colors: [
+                                        Colors.transparent,
+                                        Colors.black.withOpacity(0.8)
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                                Positioned(
+                                  bottom: 8,
+                                  left: 12,
+                                  right: 12,
+                                  child: Text(
+                                    b.title,
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 13,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                      ),
+                    ),
                   ),
                   const SizedBox(height: 6),
                 ],
 
                 // 2. البانوراما السفلية (Slot 2)
                 if (showBottom) ...[
-                  _buildSinglePanoramaViewWidget(
-                    banners: bottomBanners,
-                    borderColor: const Color(0xFF0284C7),
+                  Container(
+                    width: double.infinity,
+                    height: 125,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(
+                          color: const Color(0xFF0284C7).withOpacity(0.5),
+                          width: 1.2),
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(12),
+                      child: PageView.builder(
+                        itemCount: bottomBanners.length,
+                        physics: const BouncingScrollPhysics(),
+                        itemBuilder: (ctx, idx) {
+                          final b = bottomBanners[idx];
+                          return GestureDetector(
+                            onTap: () => _showBannerDetailsSheet(b),
+                            child: Stack(
+                              fit: StackFit.expand,
+                              children: [
+                                AppSmartImage(
+                                    imageUrl: b.imageUrl, fit: BoxFit.cover),
+                                Container(
+                                  decoration: BoxDecoration(
+                                    gradient: LinearGradient(
+                                      begin: Alignment.topCenter,
+                                      end: Alignment.bottomCenter,
+                                      colors: [
+                                        Colors.transparent,
+                                        Colors.black.withOpacity(0.8)
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                                Positioned(
+                                  bottom: 8,
+                                  left: 12,
+                                  right: 12,
+                                  child: Text(
+                                    b.title,
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 13,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                      ),
+                    ),
                   ),
                   const SizedBox(height: 6),
                 ],
@@ -9989,71 +10120,6 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
     );
   }
 
-// =========================================================================
-  // دالة مساعدة داخلية لعرض شريط البانوراما العريض (نظيفة وخالية من التكرار)
-  // =========================================================================
-  Widget _buildSinglePanoramaViewWidget({
-    required List<BannerItem> banners,
-    required Color borderColor,
-  }) {
-    if (banners.isEmpty) return const SizedBox.shrink();
-
-    return Container(
-      width: double.infinity,
-      height: 126,
-      margin: const EdgeInsets.only(bottom: 6),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: borderColor.withOpacity(0.3), width: 1),
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(11),
-        child: PageView.builder(
-          itemCount: banners.length,
-          physics: const BouncingScrollPhysics(),
-          itemBuilder: (ctx, idx) {
-            final b = banners[idx];
-            return GestureDetector(
-              onTap: () => _showBannerDetailsSheet(b),
-              child: Stack(
-                fit: StackFit.expand,
-                children: [
-                  AppSmartImage(imageUrl: b.imageUrl, fit: BoxFit.cover),
-                  if (b.title.isNotEmpty)
-                    Positioned(
-                      bottom: 0,
-                      left: 0,
-                      right: 0,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.topCenter,
-                            end: Alignment.bottomCenter,
-                            colors: [Colors.transparent, Colors.black.withOpacity(0.65)],
-                          ),
-                        ),
-                        child: Text(
-                          b.title,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 12,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    ),
-                ],
-              ),
-            );
-          },
-        ),
-      ),
-    );
-  }
-
   Widget _buildCustomNewsTickerWidget() {
     final newsText = _manager.newsTicker.join('   ✦   ');
 
@@ -10107,20 +10173,23 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
     );
   }
 
+  // ==============================================================================
+  // 🌟 نظام البانوراما الثنائية الرأسية المستقلة (العلوية والسفلية) مع التحكم الكامل
+  // ==============================================================================
   Widget _buildRoyalBannersSection() {
     final targetGovernorate = _selectedGovernorate;
 
-    // بنرات القسم الأيمن فقط (slot 1)
-    final rightSideBanners = _manager.banners.where((b) {
+    // تصفية صور البانوراما العلوية (Slot 1)
+    final topBanners = _manager.banners.where((b) {
       final notExpired = !b.isExpired && b.isActive;
       final geoMatch = b.location == 'كل المحافظات' ||
           targetGovernorate == 'كل المحافظات' ||
           b.location == targetGovernorate;
-      return notExpired && geoMatch && b.slot == 1;
+      return notExpired && geoMatch && (b.slot == 1 || b.slot == 0);
     }).toList();
 
-    // بنرات القسم الأيسر فقط (slot 2)
-    final leftSideBanners = _manager.banners.where((b) {
+    // تصفية صور البانوراما السفلية (Slot 2)
+    final bottomBanners = _manager.banners.where((b) {
       final notExpired = !b.isExpired && b.isActive;
       final geoMatch = b.location == 'كل المحافظات' ||
           targetGovernorate == 'كل المحافظات' ||
@@ -10128,101 +10197,70 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
       return notExpired && geoMatch && b.slot == 2;
     }).toList();
 
-    // ================= 1. وضع الدمج الكامل VIP (دمج كل صور القسمين وراء بعضهما) =================
-    if (_manager.bannerDisplayMode == BannerDisplayLayoutMode.fullPanorama) {
-      // جمع كل البنرات الفعالة من القسمين معاً
-      final activeBanners = _manager.banners.where((b) {
-        final notExpired = !b.isExpired && b.isActive;
-        final geoMatch = b.location == 'كل المحافظات' ||
-            targetGovernorate == 'كل المحافظات' ||
-            b.location == targetGovernorate;
-        return notExpired && geoMatch;
-      }).toList();
+    final showTop =
+        _manager.isBannerAutoScrollEnabled; // مفتاح التحكم بالبانوراما العلوية
+    final showBottom =
+        _manager.isBannerAutoScrollEnabled; // مفتاح التحكم بالبانوراما السفلية
 
-      // دمج كل صور القسمين في قائمة واحدة لتتقلب وراء بعضها
-      final List<Map<String, dynamic>> combinedSlideList = [];
-      for (var b in activeBanners) {
-        if (b.imageUrls.isNotEmpty) {
-          for (var img in b.imageUrls) {
-            combinedSlideList.add({'banner': b, 'image': img});
-          }
-        } else if (b.imageUrl.isNotEmpty) {
-          combinedSlideList.add({'banner': b, 'image': b.imageUrl});
-        }
-      }
-
-      return Container(
-        margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-        height: 125,
-        child: combinedSlideList.isNotEmpty
-            ? PageView.builder(
-                controller: _bannerCarouselController,
-                itemCount: combinedSlideList.length,
-                onPageChanged: (idx) =>
-                    setState(() => _currentBannerIndex = idx),
-                itemBuilder: (ctx, idx) {
-                  final item = combinedSlideList[idx];
-                  return _buildActiveBannerCard(
-                    item['banner'] as BannerItem,
-                    specificImage: item['image'] as String,
-                    isPanorama: true,
-                  );
-                },
-              )
-            : _buildEmptySlotBannerCard(
-                _manager.isAdmin
-                    ? 'مساحة بانوراما إعلانية VIP شاغرة\n(اضغط للإدارة والرفع كمسؤول ⚙️)'
-                    : 'مساحة إعلانية مميزة VIP\nسوق سوريا المفتوح 🌟',
-              ),
-      );
+    // إذا تم إخفاء الاثنين من غرفة الإدارة لتوسيع مساحة المنشورات
+    if (!showTop && !showBottom) {
+      return const SizedBox.shrink();
     }
 
-    // ================= 2. وضع المربعين المنفصلين (كل قسم معزول بصوره لحال) =================
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      height: 105,
-      child: Row(
-        children: [
-          // القسم الأيمن المعزول (Slot 1)
-          Expanded(
-            child: rightSideBanners.isNotEmpty
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // 1️⃣ البانوراما العلوية (Slot 1) - عرض كامل وفخم
+        if (showTop)
+          Container(
+            margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+            height: 98,
+            child: topBanners.isNotEmpty
                 ? PageView.builder(
-                    itemCount: rightSideBanners.length,
-                    itemBuilder: (ctx, idx) =>
-                        _buildActiveBannerCard(rightSideBanners[idx]),
+                    controller: _bannerCarouselController,
+                    physics: const BouncingScrollPhysics(),
+                    itemCount: topBanners.length,
+                    itemBuilder: (ctx, idx) => _buildAnimatedPanoramaCard(
+                      topBanners[idx],
+                      badgeTitle: 'بانوراما علوية VIP ★',
+                    ),
                   )
                 : _buildEmptySlotBannerCard(
                     _manager.isAdmin
-                        ? 'مساحة إعلانية (القسم الأيمن)\n(اضغط للإدارة كمسؤول ⚙️)'
-                        : 'مساحة إعلانية شاغرة (اليمين) 🌟\nاحجز إعلانك هنا',
+                        ? 'مساحة البانوراما العلوية (Slot 1)\n(اضغط للإدارة ورفع الصور كمسؤول ⚙️)'
+                        : 'مساحة إعلانية مميزة (القسم العلوي) 🌟\nاحجز إعلانك في واجهة السوق',
                   ),
           ),
-          const SizedBox(width: 8),
-          // القسم الأيسر المعزول (Slot 2)
-          Expanded(
-            child: leftSideBanners.isNotEmpty
+
+        // 2️⃣ البانوراما السفلية (Slot 2) - تحتها مباشرة ومستقلة تماماً
+        if (showBottom)
+          Container(
+            margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+            height: 98,
+            child: bottomBanners.isNotEmpty
                 ? PageView.builder(
-                    itemCount: leftSideBanners.length,
-                    itemBuilder: (ctx, idx) =>
-                        _buildActiveBannerCard(leftSideBanners[idx]),
+                    physics: const BouncingScrollPhysics(),
+                    itemCount: bottomBanners.length,
+                    itemBuilder: (ctx, idx) => _buildAnimatedPanoramaCard(
+                      bottomBanners[idx],
+                      badgeTitle: 'عروض مميزة 🚀',
+                    ),
                   )
                 : _buildEmptySlotBannerCard(
                     _manager.isAdmin
-                        ? 'مساحة إعلانية (القسم الأيسر)\n(اضغط للإدارة كمسؤول ⚙️)'
-                        : 'مساحة إعلانية شاغرة (اليسار) 🚀\nاحجز إعلانك هنا',
+                        ? 'مساحة البانوراما السفلية (Slot 2)\n(اضغط للإدارة ورفع الصور كمسؤول ⚙️)'
+                        : 'مساحة إعلانية إضافية (القسم السفلي) 📢\nسوق سوريا الشامل 2028',
                   ),
           ),
-        ],
-      ),
+      ],
     );
   }
 
-  // كرت عرض البانوراما مع دعم عرض الصورة المحددة في وضع الدمج
-  Widget _buildActiveBannerCard(BannerItem banner,
-      {String? specificImage, bool isPanorama = false}) {
-    final displayImg = (specificImage != null && specificImage.isNotEmpty)
-        ? specificImage
-        : banner.imageUrl;
+  // كرت البانوراما السينمائي المتطور مع حركات تفاعلية ووضوح كامل
+  Widget _buildAnimatedPanoramaCard(BannerItem banner,
+      {required String badgeTitle}) {
+    final displayImg =
+        banner.imageUrls.isNotEmpty ? banner.imageUrls.first : banner.imageUrl;
 
     return InkWell(
       borderRadius: BorderRadius.circular(12),
@@ -10230,12 +10268,19 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
         _manager.incrementBannerClick(banner.id);
         _showBannerDetailsSheet(banner);
       },
-      child: Container(
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 400),
+        curve: Curves.easeInOut,
+        margin: const EdgeInsets.symmetric(horizontal: 2),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(12),
-          boxShadow: const [
+          border: Border.all(color: Colors.grey.withOpacity(0.2), width: 1),
+          boxShadow: [
             BoxShadow(
-                color: Colors.black12, blurRadius: 4, offset: Offset(0, 2))
+              color: Colors.black.withOpacity(0.08),
+              blurRadius: 6,
+              offset: const Offset(0, 2),
+            ),
           ],
         ),
         clipBehavior: Clip.antiAlias,
@@ -10247,13 +10292,15 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
                 fit: BoxFit.cover,
               ),
             ),
+            // تدرج لوني لحماية النص وجعله مقروءاً بوضوح فائق
             Positioned.fill(
               child: Container(
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     colors: [
                       Colors.black.withOpacity(0.85),
-                      Colors.transparent
+                      Colors.black.withOpacity(0.25),
+                      Colors.transparent,
                     ],
                     begin: Alignment.bottomCenter,
                     end: Alignment.topCenter,
@@ -10261,18 +10308,18 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
                 ),
               ),
             ),
+            // الشارة الترويجية الذهبية
             Positioned(
               top: 6,
-              right: 6,
+              right: 8,
               child: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 6, vertical: 2.5),
+                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
                 decoration: BoxDecoration(
                   color: banner.badgeColor,
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: Text(
-                  banner.badgeText,
+                  banner.badgeText.isNotEmpty ? banner.badgeText : badgeTitle,
                   style: const TextStyle(
                     fontSize: 9.5,
                     fontWeight: FontWeight.bold,
@@ -10281,32 +10328,65 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
                 ),
               ),
             ),
+            // نصوص العنوان والمحافظة
             Positioned(
               bottom: 6,
-              right: 8,
-              left: 8,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
+              right: 10,
+              left: 10,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    banner.title,
-                    style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: isPanorama ? 13 : 11),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          banner.title,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 13,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        if (banner.subtitle.isNotEmpty)
+                          Text(
+                            banner.subtitle,
+                            style: TextStyle(
+                              color: _manager.secondaryColor,
+                              fontSize: 10.5,
+                              fontWeight: FontWeight.w600,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                      ],
+                    ),
                   ),
-                  Text(
-                    banner.subtitle,
-                    style: TextStyle(
-                        color: _manager.secondaryColor,
-                        fontSize: isPanorama ? 10.5 : 9.5,
-                        fontWeight: FontWeight.bold),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
+                  if (banner.location.isNotEmpty)
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: Colors.black45,
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.location_on,
+                              size: 12, color: Colors.redAccent),
+                          const SizedBox(width: 2),
+                          Text(
+                            banner.location,
+                            style: const TextStyle(
+                                color: Colors.white, fontSize: 9.5),
+                          ),
+                        ],
+                      ),
+                    ),
                 ],
               ),
             ),
@@ -12662,7 +12742,7 @@ class _FullAdminPanelScreenState extends State<FullAdminPanelScreen>
         backgroundColor: const Color(0xFF0F172A),
         title: const Text(
           'غرفة العمليات والإشراف المركزي 🛡️',
-          style: const TextStyle(
+          style: TextStyle(
             color: Colors.white,
             fontSize: 15,
             fontWeight: FontWeight.bold,
@@ -12704,13 +12784,10 @@ class _FullAdminPanelScreenState extends State<FullAdminPanelScreen>
     );
   }
 
-  // متغيرات محلية مباشرة لضمان عدم حدوث أي خطأ
-  bool _isSlot1Active = true;
-  bool _isSlot2Active = true;
+  // متغيرات حالة البانوراما العلوية والسفلية
+  bool _isTopBannerVisible = true;
+  bool _isBottomBannerVisible = true;
 
-  // =========================================================================
-  // 🌟 تبويب إدارة البانوراما والتحكم بالسيرفر لجميع الأجهزة (غرفة العمليات)
-  // =========================================================================
   Widget _buildBannersManagementTab() {
     final topBanners = _manager.banners.where((b) => b.slot == 1).toList();
     final bottomBanners = _manager.banners.where((b) => b.slot == 2).toList();
@@ -12719,7 +12796,6 @@ class _FullAdminPanelScreenState extends State<FullAdminPanelScreen>
       physics: const BouncingScrollPhysics(),
       padding: const EdgeInsets.all(16),
       children: [
-        // 1. بطاقة المفاتيح والتحكم السحابي الفوري
         Card(
           color: const Color(0xFF0F172A),
           shape:
@@ -12731,21 +12807,19 @@ class _FullAdminPanelScreenState extends State<FullAdminPanelScreen>
               children: [
                 const Row(
                   children: [
-                    Icon(Icons.cloud_sync, color: Color(0xFFD4AF37), size: 22),
+                    Icon(Icons.layers, color: Color(0xFFD4AF37), size: 22),
                     SizedBox(width: 8),
                     Text(
-                      'غرفة العمليات • التحكم المباشر بجميع الأجهزة',
+                      'غرفة العمليات • التحكم ببانوراما القسمين (فوق بعضهما)',
                       style: TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.bold,
-                        fontSize: 14,
+                        fontSize: 13.5,
                       ),
                     ),
                   ],
                 ),
                 const SizedBox(height: 14),
-
-                // مفتاح البانوراما العلوية (Slot 1)
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
@@ -12755,12 +12829,13 @@ class _FullAdminPanelScreenState extends State<FullAdminPanelScreen>
                   ),
                   child: Column(
                     children: [
+                      // مفتاح البانوراما العلوية (Slot 1)
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Row(
                             children: [
-                              Text(_isSlot1Active ? '🟢' : '🔴',
+                              Text(_isTopBannerVisible ? '🟢' : '🔴',
                                   style: const TextStyle(fontSize: 14)),
                               const SizedBox(width: 8),
                               const Column(
@@ -12774,7 +12849,7 @@ class _FullAdminPanelScreenState extends State<FullAdminPanelScreen>
                                         fontSize: 12),
                                   ),
                                   Text(
-                                    'شريط عريض كامل أعلى الشاشة',
+                                    'شريط كامل في أعلى الشاشة',
                                     style: TextStyle(
                                         color: Colors.white54, fontSize: 10),
                                   ),
@@ -12785,22 +12860,32 @@ class _FullAdminPanelScreenState extends State<FullAdminPanelScreen>
                           ElevatedButton(
                             onPressed: () async {
                               setState(() {
-                                _isSlot1Active = !_isSlot1Active;
+                                _isTopBannerVisible = !_isTopBannerVisible;
                               });
                               _manager.notifyListeners();
-                              await _syncBannerSettingsToCloud();
+                              try {
+                                await Supabase.instance.client
+                                    .from('app_settings')
+                                    .upsert({
+                                  'key': 'banner_settings',
+                                  'is_slot1_visible': _isTopBannerVisible,
+                                  'is_slot2_visible': _isBottomBannerVisible,
+                                  'interval_seconds':
+                                      _manager.bannerDefaultIntervalSeconds,
+                                });
+                              } catch (_) {}
                             },
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: _isSlot1Active
+                              backgroundColor: _isTopBannerVisible
                                   ? const Color(0xFF059669)
                                   : const Color(0xFFE11D48),
                               padding: const EdgeInsets.symmetric(
-                                  horizontal: 10, vertical: 6),
+                                  horizontal: 10, vertical: 5),
                               shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(8)),
                             ),
                             child: Text(
-                              _isSlot1Active ? 'ظاهرة 🟢' : 'مخفية 🔴',
+                              _isTopBannerVisible ? 'ظاهرة 🟢' : 'مخفية 🔴',
                               style: const TextStyle(
                                   color: Colors.white,
                                   fontSize: 11,
@@ -12816,7 +12901,7 @@ class _FullAdminPanelScreenState extends State<FullAdminPanelScreen>
                         children: [
                           Row(
                             children: [
-                              Text(_isSlot2Active ? '🟢' : '🔴',
+                              Text(_isBottomBannerVisible ? '🟢' : '🔴',
                                   style: const TextStyle(fontSize: 14)),
                               const SizedBox(width: 8),
                               const Column(
@@ -12830,7 +12915,7 @@ class _FullAdminPanelScreenState extends State<FullAdminPanelScreen>
                                         fontSize: 12),
                                   ),
                                   Text(
-                                    'شريط عريض كامل تحته مباشرة',
+                                    'شريط كامل تحته مباشرة',
                                     style: TextStyle(
                                         color: Colors.white54, fontSize: 10),
                                   ),
@@ -12841,22 +12926,33 @@ class _FullAdminPanelScreenState extends State<FullAdminPanelScreen>
                           ElevatedButton(
                             onPressed: () async {
                               setState(() {
-                                _isSlot2Active = !_isSlot2Active;
+                                _isBottomBannerVisible =
+                                    !_isBottomBannerVisible;
                               });
                               _manager.notifyListeners();
-                              await _syncBannerSettingsToCloud();
+                              try {
+                                await Supabase.instance.client
+                                    .from('app_settings')
+                                    .upsert({
+                                  'key': 'banner_settings',
+                                  'is_slot1_visible': _isTopBannerVisible,
+                                  'is_slot2_visible': _isBottomBannerVisible,
+                                  'interval_seconds':
+                                      _manager.bannerDefaultIntervalSeconds,
+                                });
+                              } catch (_) {}
                             },
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: _isSlot2Active
+                              backgroundColor: _isBottomBannerVisible
                                   ? const Color(0xFF0284C7)
                                   : const Color(0xFFE11D48),
                               padding: const EdgeInsets.symmetric(
-                                  horizontal: 10, vertical: 6),
+                                  horizontal: 10, vertical: 5),
                               shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(8)),
                             ),
                             child: Text(
-                              _isSlot2Active ? 'ظاهرة 🟢' : 'مخفية 🔴',
+                              _isBottomBannerVisible ? 'ظاهرة 🟢' : 'مخفية 🔴',
                               style: const TextStyle(
                                   color: Colors.white,
                                   fontSize: 11,
@@ -12868,30 +12964,18 @@ class _FullAdminPanelScreenState extends State<FullAdminPanelScreen>
                     ],
                   ),
                 ),
-
                 const SizedBox(height: 16),
-
-                // شريط سرعة تقليب الصور
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text('سرعة تقليب الصور بالسيرفر:',
+                    const Text('سرعة تقليب البانوراما:',
                         style: TextStyle(color: Colors.white70, fontSize: 12)),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFD4AF37).withOpacity(0.15),
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: Text(
-                        '${_manager.bannerDefaultIntervalSeconds} ثوانٍ',
-                        style: const TextStyle(
+                    Text(
+                      '${_manager.bannerDefaultIntervalSeconds} ثوانٍ',
+                      style: const TextStyle(
                           color: Color(0xFFD4AF37),
                           fontWeight: FontWeight.bold,
-                          fontSize: 12,
-                        ),
-                      ),
+                          fontSize: 13),
                     ),
                   ],
                 ),
@@ -12909,17 +12993,23 @@ class _FullAdminPanelScreenState extends State<FullAdminPanelScreen>
                   },
                   onChangeEnd: (v) async {
                     _manager.notifyListeners();
-                    await _syncBannerSettingsToCloud();
+                    try {
+                      await Supabase.instance.client
+                          .from('app_settings')
+                          .upsert({
+                        'key': 'banner_settings',
+                        'is_slot1_visible': _isTopBannerVisible,
+                        'is_slot2_visible': _isBottomBannerVisible,
+                        'interval_seconds': v.toInt(),
+                      });
+                    } catch (_) {}
                   },
                 ),
               ],
             ),
           ),
         ),
-
         const SizedBox(height: 14),
-
-        // أزرار الرفع المستقلة (رفع مخصص للعلوية أو السفلية)
         Row(
           children: [
             Expanded(
@@ -12935,7 +13025,7 @@ class _FullAdminPanelScreenState extends State<FullAdminPanelScreen>
                 label: const Text('رفع للعلوية (1) 🚀',
                     style:
                         TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
-                onPressed: () => _showAddCustomBannerDialog(targetSlot: 1),
+                onPressed: () => _showAddCustomBannerDialog(),
               ),
             ),
             const SizedBox(width: 8),
@@ -12952,15 +13042,12 @@ class _FullAdminPanelScreenState extends State<FullAdminPanelScreen>
                 label: const Text('رفع للسفلية (2) 🚀',
                     style:
                         TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
-                onPressed: () => _showAddCustomBannerDialog(targetSlot: 2),
+                onPressed: () => _showAddCustomBannerDialog(),
               ),
             ),
           ],
         ),
-
         const SizedBox(height: 16),
-
-        // قائمة إعلانات البانوراما العلوية (Slot 1)
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
@@ -12977,11 +13064,11 @@ class _FullAdminPanelScreenState extends State<FullAdminPanelScreen>
               ],
             ),
             Text(
-              _isSlot1Active ? '🟢 معروضة' : '🔴 مخفية',
+              _isTopBannerVisible ? '🟢 معروضة' : '🔴 مخفية',
               style: TextStyle(
                 fontSize: 11,
                 fontWeight: FontWeight.bold,
-                color: _isSlot1Active ? Colors.green : Colors.red,
+                color: _isTopBannerVisible ? Colors.green : Colors.red,
               ),
             ),
           ],
@@ -12995,10 +13082,7 @@ class _FullAdminPanelScreenState extends State<FullAdminPanelScreen>
           )
         else
           ...topBanners.map((b) => _buildBannerAdminItemCard(b)).toList(),
-
         const SizedBox(height: 16),
-
-        // قائمة إعلانات البانوراما السفلية (Slot 2)
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
@@ -13015,11 +13099,11 @@ class _FullAdminPanelScreenState extends State<FullAdminPanelScreen>
               ],
             ),
             Text(
-              _isSlot2Active ? '🟢 معروضة' : '🔴 مخفية',
+              _isBottomBannerVisible ? '🟢 معروضة' : '🔴 مخفية',
               style: TextStyle(
                 fontSize: 11,
                 fontWeight: FontWeight.bold,
-                color: _isSlot2Active ? Colors.green : Colors.red,
+                color: _isBottomBannerVisible ? Colors.green : Colors.red,
               ),
             ),
           ],
@@ -13037,7 +13121,6 @@ class _FullAdminPanelScreenState extends State<FullAdminPanelScreen>
     );
   }
 
-  // بطاقة الإعلان مع زر النقل المباشر وزر الحذف السحابي
   Widget _buildBannerAdminItemCard(BannerItem b) {
     final remaining = b.expiresAt.difference(DateTime.now());
     final days = remaining.inDays;
@@ -13054,8 +13137,8 @@ class _FullAdminPanelScreenState extends State<FullAdminPanelScreen>
             ClipRRect(
               borderRadius: BorderRadius.circular(8),
               child: SizedBox(
-                width: 52,
-                height: 52,
+                width: 50,
+                height: 50,
                 child: AppSmartImage(imageUrl: b.imageUrl, fit: BoxFit.cover),
               ),
             ),
@@ -13074,7 +13157,7 @@ class _FullAdminPanelScreenState extends State<FullAdminPanelScreen>
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    'القسم: ${b.slot == 1 ? "العلوي (1)" : "السفلي (2)"} • الصور: ${b.imageUrls.length} • السرعة: ${b.displayDurationSeconds}ث',
+                    'القسم: ${b.slot == 1 ? "العلوي (1)" : "السفلي (2)"} • الصور: ${b.imageUrls.length}',
                     style: const TextStyle(fontSize: 10, color: Colors.grey),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -13093,10 +13176,9 @@ class _FullAdminPanelScreenState extends State<FullAdminPanelScreen>
                 ],
               ),
             ),
-            // زر نقل الإعلان بين البانوراما العلوية والسفلية (بلمسة واحدة)
             IconButton(
               icon: const Icon(Icons.swap_vert,
-                  color: Color(0xFFD4AF37), size: 24),
+                  color: Color(0xFFD4AF37), size: 22),
               tooltip: b.slot == 1
                   ? 'نقل للبانوراما السفلية'
                   : 'نقل للبانوراما العلوية',
@@ -13107,21 +13189,40 @@ class _FullAdminPanelScreenState extends State<FullAdminPanelScreen>
                       .from('banners')
                       .update({'slot': newSlot}).eq('id', b.id);
 
-                  // إعادة جلب البنرات المحدثة من السيرفر مباشرة لتحديث كل الأجهزة
-                  final updatedData =
-                      await Supabase.instance.client.from('banners').select();
                   setState(() {
-                    _manager.banners = (updatedData as List)
-                        .map((json) => BannerItem.fromMap(json))
-                        .toList();
+                    final idx =
+                        _manager.banners.indexWhere((x) => x.id == b.id);
+                    if (idx != -1) {
+                      _manager.banners[idx] = BannerItem(
+                        id: b.id,
+                        imageUrls: b.imageUrls,
+                        title: b.title,
+                        subtitle: b.subtitle,
+                        description: b.description,
+                        location: b.location,
+                        phone: b.phone,
+                        whatsapp: b.whatsapp,
+                        linkUrl: b.linkUrl,
+                        facebookUrl: b.facebookUrl,
+                        telegramUrl: b.telegramUrl,
+                        instagramUrl: b.instagramUrl,
+                        youtubeUrl: b.youtubeUrl,
+                        tiktokUrl: b.tiktokUrl,
+                        slot: newSlot,
+                        badgeText: b.badgeText,
+                        badgeColor: b.badgeColor,
+                        displayDurationSeconds: b.displayDurationSeconds,
+                        expiresAt: b.expiresAt,
+                        isActive: b.isActive,
+                      );
+                    }
                   });
                   _manager.saveBannersToOfflineCache(_manager.banners);
                 } catch (e) {
-                  debugPrint('Error updating slot: $e');
+                  debugPrint('Error swapping slot: $e');
                 }
               },
             ),
-            // زر الحذف السحابي المباشر
             IconButton(
               icon:
                   const Icon(Icons.delete_outline, color: Colors.red, size: 20),
@@ -13144,23 +13245,7 @@ class _FullAdminPanelScreenState extends State<FullAdminPanelScreen>
     );
   }
 
-  // مزامنة إعدادات البانوراما في السيرفر مع كل الأجهزة
-  Future<void> _syncBannerSettingsToCloud() async {
-    try {
-      await Supabase.instance.client.from('app_settings').upsert({
-        'key': 'banner_settings',
-        'is_slot1_visible': _isSlot1Active,
-        'is_slot2_visible': _isSlot2Active,
-        'interval_seconds': _manager.bannerDefaultIntervalSeconds,
-        'updated_at': DateTime.now().toIso8601String(),
-      });
-    } catch (e) {
-      debugPrint('Sync banner settings error: $e');
-    }
-  }
-
-  // نافذة رفع البانوراما مع تحديد القسم (العلوي 1 أو السفلي 2)
-  void _showAddCustomBannerDialog({int targetSlot = 1}) {
+  void _showAddCustomBannerDialog() {
     final titleController = TextEditingController(text: 'عرض VIP خاص');
     final subtitleController = TextEditingController(text: 'سوق سوريا الشامل');
     final descriptionController = TextEditingController();
@@ -13173,7 +13258,6 @@ class _FullAdminPanelScreenState extends State<FullAdminPanelScreen>
     final telegramController = TextEditingController();
     final youtubeController = TextEditingController();
 
-    int selectedSlot = targetSlot;
     int subscriptionDays = 7;
     List<Uint8List> selectedImages = [];
     bool isUploading = false;
@@ -13199,11 +13283,9 @@ class _FullAdminPanelScreenState extends State<FullAdminPanelScreen>
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      'إضافة بانوراما جديدة (${selectedSlot == 1 ? "العلوية Slot 1" : "السفلية Slot 2"}) 🌟',
-                      style: const TextStyle(
-                          fontWeight: FontWeight.bold, fontSize: 16),
-                    ),
+                    const Text('إضافة بانوراما إعلانية بمواصفات خاصة 🌟',
+                        style: TextStyle(
+                            fontWeight: FontWeight.bold, fontSize: 16)),
                     const SizedBox(height: 12),
                     TextField(
                       controller: titleController,
@@ -13394,7 +13476,6 @@ class _FullAdminPanelScreenState extends State<FullAdminPanelScreen>
 
                                   final newBanner = BannerItem(
                                     id: 'bn_${DateTime.now().millisecondsSinceEpoch}',
-                                    slot: selectedSlot,
                                     imageUrls: urls,
                                     title: titleController.text.trim(),
                                     subtitle: subtitleController.text.trim(),
