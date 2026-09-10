@@ -4840,12 +4840,12 @@ class _FullAdDetailsScreenState extends State<FullAdDetailsScreen> {
   Future<void> _loadComments() async {
     setState(() => _isLoadingComments = true);
 
-    // 1. جلب فوري ومباشر من السيرفر لضمان ظهور التعليقات حتى لو كان Stream معطلاً
+    // 1. جلب فوري ومباشر من السيرفر
     try {
       final res = await Supabase.instance.client
           .from('ad_comments')
           .select()
-          .eq('ad_id', _currentAd.id)
+          .eq('ad_id', _currentAd.id.toString())
           .order('created_at', ascending: true);
 
       if (res is List && mounted) {
@@ -4865,7 +4865,7 @@ class _FullAdDetailsScreenState extends State<FullAdDetailsScreen> {
       _commentsSubscription = Supabase.instance.client
           .from('ad_comments')
           .stream(primaryKey: ['id'])
-          .eq('ad_id', _currentAd.id)
+          .eq('ad_id', _currentAd.id.toString())
           .order('created_at', ascending: true)
           .listen((List<Map<String, dynamic>> data) {
             if (mounted && data.isNotEmpty) {
@@ -4896,49 +4896,87 @@ class _FullAdDetailsScreenState extends State<FullAdDetailsScreen> {
     _commentController.clear();
     FocusScope.of(context).unfocus();
 
+    // فحص ذكي للـ UUID
     final isUuid = RegExp(
             r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$')
         .hasMatch(_manager.currentUserId);
     final String? validUserId = isUuid ? _manager.currentUserId : null;
 
-    final tempComment = AdCommentItem(
-      id: 'temp_${now.millisecondsSinceEpoch}',
-      adId: _currentAd.id,
-      userId: validUserId ?? '',
-      userName: userName,
-      commentText: text,
-      createdAt: now,
-    );
+    bool serverSuccess = false;
+    String errorMessage = '';
 
-    setState(() {
-      _adComments.add(tempComment);
-    });
+    // تجهيز حزمة الإرسال الخفيفة المتوافقة مع Supabase
+    final commentPayload = {
+      'ad_id': _currentAd.id.toString(),
+      'comment_text': text,
+      'content': text,
+      'user_name': userName,
+      if (validUserId != null) 'user_id': validUserId,
+      'created_at': now.toIso8601String(),
+    };
 
+    // المحاولة الأولى: الإرسال بكامل الحقول
     try {
-      await Supabase.instance.client.from('ad_comments').insert({
-        'ad_id': _currentAd.id,
-        if (validUserId != null) 'user_id': validUserId,
-        'user_name': userName,
-        'comment_text': text,
-        'created_at': now.toIso8601String(),
-      });
-    } catch (_) {
+      await Supabase.instance.client.from('ad_comments').insert(commentPayload);
+      serverSuccess = true;
+    } catch (e1) {
+      debugPrint('Comment Primary Insert Failed: $e1');
+      // المحاولة الثانية: الإرسال بالحقول الأساسية فقط (بدون user_id و content لتفادي أي خطأ من السيرفر)
       try {
         await Supabase.instance.client.from('ad_comments').insert({
-          'ad_id': _currentAd.id,
+          'ad_id': _currentAd.id.toString(),
           'comment_text': text,
+          'user_name': userName,
+          'created_at': now.toIso8601String(),
         });
-      } catch (_) {}
+        serverSuccess = true;
+      } catch (e2) {
+        debugPrint('Comment Secondary Insert Failed: $e2');
+        // المحاولة الثالثة: أبسط شكل ممكن
+        try {
+          await Supabase.instance.client.from('ad_comments').insert({
+            'ad_id': _currentAd.id.toString(),
+            'comment_text': text,
+          });
+          serverSuccess = true;
+        } catch (e3) {
+          errorMessage = e3.toString();
+          debugPrint('Comment Minimal Insert Failed: $e3');
+        }
+      }
     }
 
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('تم إرسال تعليقك بنجاح ✅'),
-          backgroundColor: Color(0xFF16A34A),
-          duration: Duration(seconds: 2),
-        ),
-      );
+      if (serverSuccess) {
+        // لا نضيف التعليق إلا إذا قبله السيرفر فعلياً
+        final savedComment = AdCommentItem(
+          id: 'cm_${now.millisecondsSinceEpoch}',
+          adId: _currentAd.id.toString(),
+          userId: validUserId ?? '',
+          userName: userName,
+          commentText: text,
+          createdAt: now,
+        );
+        setState(() {
+          _adComments.add(savedComment);
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('تم إرسال تعليقك وحفظه على السيرفر بنجاح ✅'),
+            backgroundColor: Color(0xFF16A34A),
+            duration: Duration(seconds: 2),
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('❌ تعذر إرسال التعليق للسيرفر: $errorMessage'),
+            backgroundColor: Colors.red.shade800,
+            duration: const Duration(seconds: 4),
+          ),
+        );
+      }
     }
   }
 
@@ -13531,12 +13569,8 @@ class _FullAdminPanelScreenState extends State<FullAdminPanelScreen>
 
                                 // 4. الإرسال الحقيقي المباشر إلى جدول banners في Supabase
                                 try {
-                                  await Supabase.instance.client
-                                      .from('banners')
-                                      .insert({
+                                  Map<String, dynamic> insertPayload = {
                                     'id': newBanner.id,
-                                    'image_urls': serverImageUrls,
-                                    'image_url': serverImageUrls.first,
                                     'title': newBanner.title,
                                     'subtitle': newBanner.subtitle,
                                     'description': newBanner.description,
@@ -13550,13 +13584,18 @@ class _FullAdminPanelScreenState extends State<FullAdminPanelScreen>
                                     'youtube_url': newBanner.youtubeUrl,
                                     'tiktok_url': newBanner.tiktokUrl,
                                     'slot': targetSlot,
-                                    'badge_text': newBanner.badgeText,
-                                    'display_duration_seconds':
-                                        newBanner.displayDurationSeconds,
-                                    'expires_at':
-                                        expiresAtDate.toIso8601String(),
-                                    'is_active': true,
-                                  });
+                                  };
+
+                                  if (serverImageUrls.isNotEmpty) {
+                                    insertPayload['image_url'] =
+                                        serverImageUrls.first;
+                                    insertPayload['image_urls'] =
+                                        serverImageUrls;
+                                  }
+
+                                  await Supabase.instance.client
+                                      .from('banners')
+                                      .insert(insertPayload);
 
                                   // نجح الإدخال في السيرفر! الآن فقط نضيفها للشاشة
                                   setState(() {
