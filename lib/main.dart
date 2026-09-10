@@ -8381,8 +8381,47 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
                 ),
               ),
 
-              // فراغ مخصص لزر أضف إعلان الدائري
-              const SizedBox(width: 56),
+              // زر أضف إعلان الدائري البارز (متاح لجميع العملاء)
+              Transform.translate(
+                offset: const Offset(0, -10),
+                child: InkWell(
+                  onTap: () {
+                    // فتح نموذج إضافة الإعلان المعتاد في التطبيق
+                    if (Navigator.canPop(context)) Navigator.pop(context);
+                    // إذا كان التنقل عبر الفهرس:
+                    setState(() => _currentNavIndex = 2);
+                  },
+                  borderRadius: BorderRadius.circular(30),
+                  child: Container(
+                    width: 50,
+                    height: 50,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: LinearGradient(
+                        colors: [
+                          _manager.secondaryColor,
+                          _manager.primaryColor,
+                        ],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: _manager.secondaryColor.withOpacity(0.4),
+                          blurRadius: 8,
+                          offset: const Offset(0, 3),
+                        ),
+                      ],
+                      border: Border.all(color: Colors.white, width: 2),
+                    ),
+                    child: const Icon(
+                      Icons.add_rounded,
+                      size: 32,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ),
 
               // 2. زر المفضلة
               InkWell(
@@ -13570,7 +13609,6 @@ class _FullAdminPanelScreenState extends State<FullAdminPanelScreen>
                                 // 4. الإرسال الحقيقي المباشر إلى جدول banners في Supabase
                                 try {
                                   Map<String, dynamic> insertPayload = {
-                                    'id': newBanner.id,
                                     'title': newBanner.title,
                                     'subtitle': newBanner.subtitle,
                                     'description': newBanner.description,
