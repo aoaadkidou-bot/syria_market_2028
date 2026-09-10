@@ -4882,7 +4882,7 @@ class _FullAdDetailsScreenState extends State<FullAdDetailsScreen> {
     }
   }
 
-Future<void> _submitComment() async {
+  Future<void> _submitComment() async {
     final text = _commentController.text.trim();
     if (text.isEmpty) return;
 
@@ -13420,98 +13420,145 @@ class _FullAdminPanelScreenState extends State<FullAdminPanelScreen>
                             ? null
                             : () async {
                                 setModalState(() => isUploading = true);
-                                final urls = await StorageUploadService
-                                    .uploadMultipleImageBytes(
-                                  bucketName: kStorageBucketBanners,
-                                  imagesBytesList: selectedImages,
-                                  prefix: 'pan',
-                                );
 
-                                List<String> finalUrls = urls;
-                                if (finalUrls.isEmpty &&
-                                    selectedImages.isNotEmpty) {
-                                  finalUrls = selectedImages
-                                      .map((img) =>
-                                          'data:image/jpeg;base64,${base64Encode(img)}')
-                                      .toList();
+                                // 1. فحص وجود الصور قبل الرفع
+                                if (selectedImages.isEmpty) {
+                                  setModalState(() => isUploading = false);
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text(
+                                          '⚠️ يرجى اختيار صورة واحدة على الأقل من المعرض!'),
+                                      backgroundColor: Colors.orange,
+                                    ),
+                                  );
+                                  return;
                                 }
 
-                                if (finalUrls.isNotEmpty) {
-                                  String mainLink = '';
-                                  if (facebookController.text
-                                      .trim()
-                                      .isNotEmpty) {
-                                    mainLink = facebookController.text.trim();
-                                  } else if (instagramController.text
-                                      .trim()
-                                      .isNotEmpty) {
-                                    mainLink = instagramController.text.trim();
-                                  } else if (telegramController.text
-                                      .trim()
-                                      .isNotEmpty) {
-                                    mainLink = telegramController.text.trim();
-                                  } else if (tiktokController.text
-                                      .trim()
-                                      .isNotEmpty) {
-                                    mainLink = tiktokController.text.trim();
-                                  } else if (youtubeController.text
-                                      .trim()
-                                      .isNotEmpty) {
-                                    mainLink = youtubeController.text.trim();
-                                  }
-
-                                  // تحديد القسم: إذا كان القسم السفلي يتم تحديده برقم 2، والعلوية برقم 1
-                                  final selectedSlot = (_manager.banners
-                                              .where((b) => b.slot == 1)
-                                              .length >
-                                          _manager.banners
-                                              .where((b) => b.slot == 2)
-                                              .length)
-                                      ? 2
-                                      : 1;
-
-                                  final newBanner = BannerItem(
-                                    id: 'bn_${DateTime.now().millisecondsSinceEpoch}',
-                                    imageUrls: finalUrls,
-                                    title:
-                                        titleController.text.trim().isNotEmpty
-                                            ? titleController.text.trim()
-                                            : 'عرض VIP خاص',
-                                    subtitle: subtitleController.text.trim(),
-                                    description:
-                                        descriptionController.text.trim(),
-                                    location: locationController.text
-                                            .trim()
-                                            .isNotEmpty
-                                        ? locationController.text.trim()
-                                        : 'كل المحافظات',
-                                    phone: phoneController.text.trim(),
-                                    whatsapp: whatsappController.text.trim(),
-                                    linkUrl: mainLink,
-                                    facebookUrl: facebookController.text.trim(),
-                                    telegramUrl: telegramController.text.trim(),
-                                    instagramUrl:
-                                        instagramController.text.trim(),
-                                    youtubeUrl: youtubeController.text.trim(),
-                                    tiktokUrl: tiktokController.text.trim(),
-                                    slot: selectedSlot,
-                                    badgeText: 'VIP ★',
-                                    badgeColor: const Color(0xFFD4AF37),
-                                    displayDurationSeconds:
-                                        _manager.bannerDefaultIntervalSeconds,
-                                    expiresAt: DateTime.now()
-                                        .add(Duration(days: subscriptionDays)),
-                                    isActive: true,
+                                // 2. الرفع الحقيقي الفعلي إلى باكت التخزين السحابي (Supabase Storage)
+                                List<String> serverImageUrls = [];
+                                try {
+                                  serverImageUrls = await StorageUploadService
+                                      .uploadMultipleImageBytes(
+                                    bucketName: kStorageBucketBanners,
+                                    imagesBytesList: selectedImages,
+                                    prefix: 'pan',
                                   );
+                                } catch (storageErr) {
+                                  debugPrint(
+                                      'فشل رفع الصور للتخزين السحابي: $storageErr');
+                                }
 
-                                  try {
-                                    await Supabase.instance.client
-                                        .from('banners')
-                                        .insert(newBanner.toMap());
-                                  } catch (err) {
-                                    debugPrint('Insert banner err: $err');
-                                  }
+                                // إذا فشل رفع الصور إلى السيرفر، نتوقف فوراً ولا نحفظ أي شيء وهمي
+                                if (serverImageUrls.isEmpty) {
+                                  setModalState(() => isUploading = false);
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text(
+                                          '❌ تعذر رفع الصور إلى السيرفر السحابي! تأكد من اتصال الإنترنت أو إعدادات Storage.'),
+                                      backgroundColor: Colors.red,
+                                      duration: Duration(seconds: 4),
+                                    ),
+                                  );
+                                  return;
+                                }
 
+                                // 3. تجهيز الروابط الرئيسية
+                                String mainLink = '';
+                                if (facebookController.text.trim().isNotEmpty) {
+                                  mainLink = facebookController.text.trim();
+                                } else if (instagramController.text
+                                    .trim()
+                                    .isNotEmpty) {
+                                  mainLink = instagramController.text.trim();
+                                } else if (telegramController.text
+                                    .trim()
+                                    .isNotEmpty) {
+                                  mainLink = telegramController.text.trim();
+                                } else if (tiktokController.text
+                                    .trim()
+                                    .isNotEmpty) {
+                                  mainLink = tiktokController.text.trim();
+                                } else if (youtubeController.text
+                                    .trim()
+                                    .isNotEmpty) {
+                                  mainLink = youtubeController.text.trim();
+                                }
+
+                                // تحديد القسم المختار: إذا كانت السفلية فارغة تذهب إليها، أو حسب القسم
+                                final int targetSlot = (_manager.banners
+                                            .where((b) => b.slot == 1)
+                                            .length >
+                                        _manager.banners
+                                            .where((b) => b.slot == 2)
+                                            .length)
+                                    ? 2
+                                    : 1;
+
+                                final bannerId =
+                                    'bn_${DateTime.now().millisecondsSinceEpoch}';
+                                final expiresAtDate = DateTime.now()
+                                    .add(Duration(days: subscriptionDays));
+
+                                final newBanner = BannerItem(
+                                  id: bannerId,
+                                  imageUrls: serverImageUrls,
+                                  title: titleController.text.trim().isNotEmpty
+                                      ? titleController.text.trim()
+                                      : 'عرض VIP خاص',
+                                  subtitle: subtitleController.text.trim(),
+                                  description:
+                                      descriptionController.text.trim(),
+                                  location:
+                                      locationController.text.trim().isNotEmpty
+                                          ? locationController.text.trim()
+                                          : 'كل المحافظات',
+                                  phone: phoneController.text.trim(),
+                                  whatsapp: whatsappController.text.trim(),
+                                  linkUrl: mainLink,
+                                  facebookUrl: facebookController.text.trim(),
+                                  telegramUrl: telegramController.text.trim(),
+                                  instagramUrl: instagramController.text.trim(),
+                                  youtubeUrl: youtubeController.text.trim(),
+                                  tiktokUrl: tiktokController.text.trim(),
+                                  slot: targetSlot,
+                                  badgeText: 'VIP ★',
+                                  badgeColor: const Color(0xFFD4AF37),
+                                  displayDurationSeconds:
+                                      _manager.bannerDefaultIntervalSeconds,
+                                  expiresAt: expiresAtDate,
+                                  isActive: true,
+                                );
+
+                                // 4. الإرسال الحقيقي المباشر إلى جدول banners في Supabase
+                                try {
+                                  await Supabase.instance.client
+                                      .from('banners')
+                                      .insert({
+                                    'id': newBanner.id,
+                                    'image_urls': serverImageUrls,
+                                    'image_url': serverImageUrls.first,
+                                    'title': newBanner.title,
+                                    'subtitle': newBanner.subtitle,
+                                    'description': newBanner.description,
+                                    'location': newBanner.location,
+                                    'phone': newBanner.phone,
+                                    'whatsapp': newBanner.whatsapp,
+                                    'link_url': newBanner.linkUrl,
+                                    'facebook_url': newBanner.facebookUrl,
+                                    'telegram_url': newBanner.telegramUrl,
+                                    'instagram_url': newBanner.instagramUrl,
+                                    'youtube_url': newBanner.youtubeUrl,
+                                    'tiktok_url': newBanner.tiktokUrl,
+                                    'slot': targetSlot,
+                                    'badge_text': newBanner.badgeText,
+                                    'display_duration_seconds':
+                                        newBanner.displayDurationSeconds,
+                                    'expires_at':
+                                        expiresAtDate.toIso8601String(),
+                                    'is_active': true,
+                                  });
+
+                                  // نجح الإدخال في السيرفر! الآن فقط نضيفها للشاشة
                                   setState(() {
                                     _manager.banners.insert(0, newBanner);
                                   });
@@ -13519,12 +13566,25 @@ class _FullAdminPanelScreenState extends State<FullAdminPanelScreen>
                                       _manager.banners);
                                   _manager.notifyListeners();
                                   Navigator.pop(ctx);
-                                } else {
-                                  setModalState(() => isUploading = false);
+
                                   ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
+                                    SnackBar(
                                       content: Text(
-                                          'يرجى تحديد صورة واحدة على الأقل للبانوراما'),
+                                          '🚀 تم رفع البانوراما إلى السيرفر بنجاح ونشرها في القسم ($targetSlot) لكل المستخدمين!'),
+                                      backgroundColor: const Color(0xFF16A34A),
+                                      duration: const Duration(seconds: 3),
+                                    ),
+                                  );
+                                } catch (dbError) {
+                                  setModalState(() => isUploading = false);
+                                  debugPrint(
+                                      'خطأ في إدخال البانوراما إلى جدول banners: $dbError');
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content:
+                                          Text('❌ خطأ في السيرفر: $dbError'),
+                                      backgroundColor: Colors.red.shade800,
+                                      duration: const Duration(seconds: 5),
                                     ),
                                   );
                                 }
