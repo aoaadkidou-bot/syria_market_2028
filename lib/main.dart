@@ -4882,7 +4882,7 @@ class _FullAdDetailsScreenState extends State<FullAdDetailsScreen> {
     }
   }
 
-  Future<void> _submitComment() async {
+Future<void> _submitComment() async {
     final text = _commentController.text.trim();
     if (text.isEmpty) return;
 
@@ -4896,13 +4896,11 @@ class _FullAdDetailsScreenState extends State<FullAdDetailsScreen> {
     _commentController.clear();
     FocusScope.of(context).unfocus();
 
-    // فحص ذكي للـ UUID لمنع خطأ الـ syntax عند إرسال كلمة guest
     final isUuid = RegExp(
             r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$')
         .hasMatch(_manager.currentUserId);
     final String? validUserId = isUuid ? _manager.currentUserId : null;
 
-    // إضافة التعليق فوراً للواجهة ليظهر للمستخدم في نفس اللحظة
     final tempComment = AdCommentItem(
       id: 'temp_${now.millisecondsSinceEpoch}',
       adId: _currentAd.id,
@@ -4916,52 +4914,31 @@ class _FullAdDetailsScreenState extends State<FullAdDetailsScreen> {
       _adComments.add(tempComment);
     });
 
-    // إرسال التعليق للسيرفر بحفظ متوافق مع كافة الأعمدة المحتملة
-    bool saved = false;
     try {
       await Supabase.instance.client.from('ad_comments').insert({
         'ad_id': _currentAd.id,
         if (validUserId != null) 'user_id': validUserId,
         'user_name': userName,
         'comment_text': text,
-        'content': text,
-        'comment': text,
         'created_at': now.toIso8601String(),
       });
-      saved = true;
-    } catch (e1) {
-      debugPrint('Primary comment insert attempt: $e1');
-      // محاولة بديلة إذا كان الجدول يحتوي فقط على أعمدة بسيطة
+    } catch (_) {
       try {
         await Supabase.instance.client.from('ad_comments').insert({
           'ad_id': _currentAd.id,
-          'user_name': userName,
           'comment_text': text,
         });
-        saved = true;
-      } catch (e2) {
-        debugPrint('Secondary insert attempt: $e2');
-      }
+      } catch (_) {}
     }
 
     if (mounted) {
-      if (saved) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('تم إرسال تعليقك بنجاح ✅'),
-            backgroundColor: Color(0xFF16A34A),
-            duration: Duration(seconds: 2),
-          ),
-        );
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('⚠️ تعذر إرسال التعليق للسيرفر، يرجى فحص الاتصال.'),
-            backgroundColor: Colors.orange,
-            duration: Duration(seconds: 2),
-          ),
-        );
-      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('تم إرسال تعليقك بنجاح ✅'),
+          backgroundColor: Color(0xFF16A34A),
+          duration: Duration(seconds: 2),
+        ),
+      );
     }
   }
 
@@ -13245,7 +13222,7 @@ class _FullAdminPanelScreenState extends State<FullAdminPanelScreen>
     );
   }
 
-  void _showAddCustomBannerDialog() {
+  void _showAddCustomBannerDialog({int defaultSlot = 1}) {
     final titleController = TextEditingController(text: 'عرض VIP خاص');
     final subtitleController = TextEditingController(text: 'سوق سوريا الشامل');
     final descriptionController = TextEditingController();
@@ -13450,7 +13427,16 @@ class _FullAdminPanelScreenState extends State<FullAdminPanelScreen>
                                   prefix: 'pan',
                                 );
 
-                                if (urls.isNotEmpty) {
+                                List<String> finalUrls = urls;
+                                if (finalUrls.isEmpty &&
+                                    selectedImages.isNotEmpty) {
+                                  finalUrls = selectedImages
+                                      .map((img) =>
+                                          'data:image/jpeg;base64,${base64Encode(img)}')
+                                      .toList();
+                                }
+
+                                if (finalUrls.isNotEmpty) {
                                   String mainLink = '';
                                   if (facebookController.text
                                       .trim()
@@ -13474,14 +13460,31 @@ class _FullAdminPanelScreenState extends State<FullAdminPanelScreen>
                                     mainLink = youtubeController.text.trim();
                                   }
 
+                                  // تحديد القسم: إذا كان القسم السفلي يتم تحديده برقم 2، والعلوية برقم 1
+                                  final selectedSlot = (_manager.banners
+                                              .where((b) => b.slot == 1)
+                                              .length >
+                                          _manager.banners
+                                              .where((b) => b.slot == 2)
+                                              .length)
+                                      ? 2
+                                      : 1;
+
                                   final newBanner = BannerItem(
                                     id: 'bn_${DateTime.now().millisecondsSinceEpoch}',
-                                    imageUrls: urls,
-                                    title: titleController.text.trim(),
+                                    imageUrls: finalUrls,
+                                    title:
+                                        titleController.text.trim().isNotEmpty
+                                            ? titleController.text.trim()
+                                            : 'عرض VIP خاص',
                                     subtitle: subtitleController.text.trim(),
                                     description:
                                         descriptionController.text.trim(),
-                                    location: locationController.text.trim(),
+                                    location: locationController.text
+                                            .trim()
+                                            .isNotEmpty
+                                        ? locationController.text.trim()
+                                        : 'كل المحافظات',
                                     phone: phoneController.text.trim(),
                                     whatsapp: whatsappController.text.trim(),
                                     linkUrl: mainLink,
@@ -13491,6 +13494,7 @@ class _FullAdminPanelScreenState extends State<FullAdminPanelScreen>
                                         instagramController.text.trim(),
                                     youtubeUrl: youtubeController.text.trim(),
                                     tiktokUrl: tiktokController.text.trim(),
+                                    slot: selectedSlot,
                                     badgeText: 'VIP ★',
                                     badgeColor: const Color(0xFFD4AF37),
                                     displayDurationSeconds:
@@ -13513,12 +13517,25 @@ class _FullAdminPanelScreenState extends State<FullAdminPanelScreen>
                                   });
                                   _manager.saveBannersToOfflineCache(
                                       _manager.banners);
+                                  _manager.notifyListeners();
                                   Navigator.pop(ctx);
+                                } else {
+                                  setModalState(() => isUploading = false);
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text(
+                                          'يرجى تحديد صورة واحدة على الأقل للبانوراما'),
+                                    ),
+                                  );
                                 }
                               },
                         child: isUploading
-                            ? const CircularProgressIndicator(
-                                color: Colors.black)
+                            ? const SizedBox(
+                                width: 22,
+                                height: 22,
+                                child: CircularProgressIndicator(
+                                    color: Colors.black, strokeWidth: 2.5),
+                              )
                             : const Text('نشر وتفعيل البانوراما فوراً 🚀',
                                 style: TextStyle(
                                     color: Color(0xFF0F172A),
