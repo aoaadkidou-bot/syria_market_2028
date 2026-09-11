@@ -1440,7 +1440,7 @@ class AppStateManager extends ChangeNotifier {
     'شحن شدات',
     'قرض فوري بدون ضمانات',
   ];
- BannerDisplayLayoutMode bannerDisplayMode = BannerDisplayLayoutMode.dualGrid;
+  BannerDisplayLayoutMode bannerDisplayMode = BannerDisplayLayoutMode.dualGrid;
   bool isBannerAutoScrollEnabled = true;
   int bannerDefaultIntervalSeconds = 3;
   bool isLoadingCloudData = false;
@@ -1486,12 +1486,14 @@ class AppStateManager extends ChangeNotifier {
           isBannerSlot2Visible = res['is_slot2_visible'] == true;
         }
         if (res['interval_seconds_slot1'] != null) {
-          bannerSlot1IntervalSeconds = (res['interval_seconds_slot1'] as num).toInt();
+          bannerSlot1IntervalSeconds =
+              (res['interval_seconds_slot1'] as num).toInt();
         } else if (res['interval_seconds'] != null) {
           bannerSlot1IntervalSeconds = (res['interval_seconds'] as num).toInt();
         }
         if (res['interval_seconds_slot2'] != null) {
-          bannerSlot2IntervalSeconds = (res['interval_seconds_slot2'] as num).toInt();
+          bannerSlot2IntervalSeconds =
+              (res['interval_seconds_slot2'] as num).toInt();
         }
         notifyListeners();
       }
@@ -1579,7 +1581,7 @@ class AppStateManager extends ChangeNotifier {
                   (row['interval_seconds'] as num).toInt();
             }
           } else if (row['key'] == 'maintenance_mode') {
-            isMaintenanceMode = row['value'] == 'true';
+            isMaintenanceMode = row['value'] == 'true' || row['value'] == true;
           }
         }
         notifyListeners();
@@ -1822,6 +1824,23 @@ class AppStateManager extends ChangeNotifier {
     notifyListeners();
 
     try {
+      // 🌟 فحص وجلب حالة الصيانة المركزية فور تشغيل التطبيق لجميع الهواتف
+      try {
+        final settingsRes = await Supabase.instance.client
+            .from('app_settings')
+            .select()
+            .eq('key', 'maintenance_mode')
+            .maybeSingle();
+
+        if (settingsRes != null) {
+          final val = settingsRes['value']?.toString().toLowerCase();
+          isMaintenanceMode = (val == 'true');
+          notifyListeners();
+        }
+      } catch (mErr) {
+        debugPrint('Maintenance check notice: $mErr');
+      }
+
       try {
         final ratesRes = await Supabase.instance.client
             .from('exchange_rates')
@@ -8387,7 +8406,8 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
                         _manager.addNewAdDirectly(newAd);
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
-                            content: Text('✅ تم استلام إعلانك بنجاح، وسيظهر في التطبيق فور اعتماده السريع ✨'),
+                            content: Text(
+                                '✅ تم استلام إعلانك بنجاح، وسيظهر في التطبيق فور اعتماده السريع ✨'),
                             backgroundColor: Color(0xFF16A34A),
                           ),
                         );
@@ -8461,7 +8481,7 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
             // 2. زر الأقسام
             Expanded(
               child: InkWell(
-                onTap: () => setState(() => _currentNavIndex = 1),
+                onTap: () => _showAllCategoriesBottomSheet(),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -8555,6 +8575,7 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
       ),
     );
   }
+
 // ===========================================================================
 // ويدجت شاشة الأقسام الكاملة مع أسعار الذهب والبانوراما والإعلانات وخيارات العرض
 // ===========================================================================
@@ -9934,10 +9955,10 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
                       controller: scrollController,
                       gridDelegate:
                           const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 3,
-                        childAspectRatio: 0.95,
-                        crossAxisSpacing: 10,
-                        mainAxisSpacing: 10,
+                        crossAxisCount: 2,
+                        childAspectRatio: 0.78,
+                        crossAxisSpacing: 6,
+                        mainAxisSpacing: 6,
                       ),
                       itemCount: _manager.categories.length,
                       itemBuilder: (c, i) {
@@ -10867,10 +10888,10 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
     return Directionality(
       textDirection: TextDirection.rtl,
       child: Card(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         clipBehavior: Clip.antiAlias,
-        elevation: 3.0,
-        margin: const EdgeInsets.symmetric(horizontal: 2, vertical: 3),
+        elevation: 2.0,
+        margin: EdgeInsets.zero,
         color: const Color(0xFF0F172A),
         child: InkWell(
           onTap: () {
@@ -10932,9 +10953,9 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // قسم الصورة مع الحفاظ على النسبة
+              // 1. صورة المنشور المصغرة المتناسقة
               Expanded(
-                flex: 6,
+                flex: 5,
                 child: Stack(
                   fit: StackFit.expand,
                   children: [
@@ -10951,9 +10972,9 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
                         decoration: BoxDecoration(
                           gradient: LinearGradient(
                             colors: [
-                              Colors.black.withOpacity(0.65),
+                              Colors.black.withOpacity(0.55),
                               Colors.transparent,
-                              Colors.black.withOpacity(0.40),
+                              Colors.black.withOpacity(0.35),
                             ],
                             begin: Alignment.bottomCenter,
                             end: Alignment.topCenter,
@@ -10963,41 +10984,41 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
                     ),
                     if (ad.status == 'pending')
                       Positioned(
-                        top: 6,
-                        right: 6,
+                        top: 4,
+                        right: 4,
                         child: Container(
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 6, vertical: 2),
+                              horizontal: 5, vertical: 1.5),
                           decoration: BoxDecoration(
                               color: Colors.orange.shade800,
-                              borderRadius: BorderRadius.circular(5)),
+                              borderRadius: BorderRadius.circular(4)),
                           child: const Text('قيد المراجعة ⏳',
                               style: TextStyle(
                                   color: Colors.white,
                                   fontWeight: FontWeight.bold,
-                                  fontSize: 8.5)),
+                                  fontSize: 8)),
                         ),
                       )
                     else if (ad.isFeatured)
                       Positioned(
-                        top: 6,
-                        right: 6,
+                        top: 4,
+                        right: 4,
                         child: Container(
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 6, vertical: 2),
+                              horizontal: 5, vertical: 1.5),
                           decoration: BoxDecoration(
                               color: const Color(0xFFD4AF37),
-                              borderRadius: BorderRadius.circular(5)),
+                              borderRadius: BorderRadius.circular(4)),
                           child: const Text('VIP ★',
                               style: TextStyle(
                                   color: Color(0xFF0F172A),
                                   fontWeight: FontWeight.bold,
-                                  fontSize: 9)),
+                                  fontSize: 8.5)),
                         ),
                       ),
                     Positioned(
-                      top: 6,
-                      left: 6,
+                      top: 4,
+                      left: 4,
                       child: GestureDetector(
                         behavior: HitTestBehavior.opaque,
                         onTap: () {
@@ -11006,31 +11027,31 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
                           });
                         },
                         child: Container(
-                          padding: const EdgeInsets.all(5),
+                          padding: const EdgeInsets.all(4),
                           decoration: BoxDecoration(
                             color: isFav
                                 ? Colors.red.withOpacity(0.85)
-                                : Colors.black.withOpacity(0.60),
+                                : Colors.black45,
                             shape: BoxShape.circle,
                             border: Border.all(
                               color: isFav ? Colors.white : Colors.white54,
-                              width: 1.2,
+                              width: 1,
                             ),
                           ),
                           child: Icon(
                             isFav ? Icons.favorite : Icons.favorite_border,
                             color: Colors.white,
-                            size: 16,
+                            size: 13,
                           ),
                         ),
                       ),
                     ),
                     Positioned(
-                      bottom: 4,
-                      left: 6,
+                      bottom: 3,
+                      left: 4,
                       child: Container(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 5, vertical: 2),
+                            horizontal: 4, vertical: 1.5),
                         decoration: BoxDecoration(
                             color: Colors.black54,
                             borderRadius: BorderRadius.circular(4)),
@@ -11038,27 +11059,17 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             const Icon(Icons.remove_red_eye,
-                                color: Colors.white70, size: 9),
-                            const SizedBox(width: 3),
+                                color: Colors.white70, size: 8),
+                            const SizedBox(width: 2),
                             Text('${ad.viewsCount}',
                                 style: const TextStyle(
                                     color: Colors.white,
-                                    fontSize: 8.5,
+                                    fontSize: 8,
                                     fontWeight: FontWeight.bold)),
                           ],
                         ),
                       ),
                     ),
-                    if (ad.sellerPositiveLikes >= 1000 || ad.isVerifiedSeller)
-                      Positioned(
-                        top: 6,
-                        right: ad.isFeatured ? 50 : 6,
-                        child: KycVerificationBadge(
-                          isVerified: ad.isVerifiedSeller,
-                          positiveLikes: ad.sellerPositiveLikes,
-                          size: 13,
-                        ),
-                      ),
                     if (ad.isSold)
                       Positioned.fill(
                         child: Container(
@@ -11071,26 +11082,26 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
                                   angle: -0.22,
                                   child: Container(
                                     padding: const EdgeInsets.symmetric(
-                                        horizontal: 10, vertical: 4),
+                                        horizontal: 8, vertical: 3),
                                     decoration: BoxDecoration(
                                       color: const Color(0xFFDC2626),
-                                      borderRadius: BorderRadius.circular(6),
+                                      borderRadius: BorderRadius.circular(5),
                                       border: Border.all(
-                                          color: Colors.white, width: 1.5),
+                                          color: Colors.white, width: 1.2),
                                     ),
-                                    child: const Text('تم البيع ✓ SOLD',
+                                    child: const Text('تم البيع ✓',
                                         style: TextStyle(
                                             color: Colors.white,
                                             fontWeight: FontWeight.bold,
-                                            fontSize: 10.5)),
+                                            fontSize: 9.5)),
                                   ),
                                 ),
                                 if (remaining != null) ...[
-                                  const SizedBox(height: 4),
+                                  const SizedBox(height: 3),
                                   Text('${remaining.inMinutes} دقيقة ⏳',
                                       style: const TextStyle(
                                           color: Color(0xFFD4AF37),
-                                          fontSize: 9,
+                                          fontSize: 8.5,
                                           fontWeight: FontWeight.bold)),
                                 ],
                               ],
@@ -11102,12 +11113,12 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
                 ),
               ),
 
-              // قسم النصوص والأسعار المنظمة عمودياً من اليمين
+              // 2. تفاصيل الإعلان المصغرة والأنيقة
               Expanded(
                 flex: 4,
                 child: Padding(
                   padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -11116,13 +11127,11 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
                         ad.title,
                         style: const TextStyle(
                             fontWeight: FontWeight.bold,
-                            fontSize: 11.5,
+                            fontSize: 10.5,
                             color: Colors.white),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
-
-                      // 🌟 تنظيم الأسعار عمودياً فوق بعضها دون تداخل
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -11132,7 +11141,7 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
                               style: const TextStyle(
                                 color: Color(0xFF22C55E),
                                 fontWeight: FontWeight.bold,
-                                fontSize: 11,
+                                fontSize: 10.5,
                               ),
                             ),
                           if (ad.priceSyp != null)
@@ -11140,32 +11149,31 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
                               '${ad.priceSyp!.toStringAsFixed(0)} ل.س',
                               style: const TextStyle(
                                 color: Color(0xFFD4AF37),
-                                fontWeight: FontWeight.bold,
-                                fontSize: 9.5,
+                                fontWeight: FontWeight.w600,
+                                fontSize: 9,
                               ),
                             ),
                         ],
                       ),
-
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Row(
                             children: [
                               const Icon(Icons.location_on,
-                                  color: Colors.redAccent, size: 10),
+                                  color: Colors.redAccent, size: 9),
                               const SizedBox(width: 2),
                               Text(
                                 ad.governorate,
                                 style: const TextStyle(
-                                    fontSize: 9, color: Colors.white70),
+                                    fontSize: 8.5, color: Colors.white70),
                               ),
                             ],
                           ),
                           Text(
                             ad.timeAgo,
                             style: const TextStyle(
-                                fontSize: 8.5, color: Colors.white38),
+                                fontSize: 8, color: Colors.white38),
                           ),
                         ],
                       ),
@@ -12276,7 +12284,7 @@ class _FullAddAdScreenState extends State<FullAddAdScreen> {
           SnackBar(
             content: Text(
               _manager.isSuperAdmin
-    ? '✅ تم نشر إعلانك بنجاح في السوق!'
+                  ? '✅ تم نشر إعلانك بنجاح في السوق!'
                   : '✅ تم استلام إعلانك بنجاح، وسيظهر في التطبيق فور اعتماده السريع ✨',
             ),
             backgroundColor: const Color(0xFF16A34A),
@@ -12289,7 +12297,8 @@ class _FullAddAdScreenState extends State<FullAddAdScreen> {
         setState(() => _isUploading = false);
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('⚠️ تعذر إتمام النشر، يرجى التحقق من اتصال الإنترنت والمحاولة ثانية.'),
+            content: Text(
+                '⚠️ تعذر إتمام النشر، يرجى التحقق من اتصال الإنترنت والمحاولة ثانية.'),
             backgroundColor: Color(0xFFDC2626),
           ),
         );
@@ -13110,6 +13119,9 @@ class _FullAdminPanelScreenState extends State<FullAdminPanelScreen>
     );
   }
 
+  // متغير محلي مستقل لحفظ سرعة البانوراما السفلية ومنع تداخلها مع العلوية
+  int _slot2Interval = 5;
+
   Widget _buildBannersManagementTab() {
     final topBanners =
         _manager.banners.where((b) => b.slot == 1 || b.slot == 0).toList();
@@ -13342,6 +13354,54 @@ class _FullAdminPanelScreenState extends State<FullAdminPanelScreen>
                         'is_slot1_visible': _manager.isBannerSlot1Visible,
                         'is_slot2_visible': _manager.isBannerSlot2Visible,
                         'interval_seconds': v.toInt(),
+                      });
+                    } catch (_) {}
+                  },
+                ),
+
+                const SizedBox(height: 8),
+
+                // 2️⃣ سلايدر سرعة البانوراما السفلية (Slot 2) - أزرق ومستقل تماماً
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Row(
+                      children: [
+                        Icon(Icons.speed, size: 16, color: Color(0xFF0284C7)),
+                        SizedBox(width: 6),
+                        Text('سرعة البانوراما السفلية (Slot 2):',
+                            style: TextStyle(
+                                color: Colors.white70, fontSize: 11.5)),
+                      ],
+                    ),
+                    Text(
+                      '$_slot2Interval ثوانٍ',
+                      style: const TextStyle(
+                          color: Color(0xFF0284C7),
+                          fontWeight: FontWeight.bold,
+                          fontSize: 13),
+                    ),
+                  ],
+                ),
+                Slider(
+                  value: _slot2Interval.toDouble().clamp(1.0, 10.0),
+                  min: 1.0,
+                  max: 10.0,
+                  divisions: 9,
+                  activeColor: const Color(0xFF0284C7),
+                  onChanged: (v) {
+                    setState(() => _slot2Interval = v.toInt());
+                  },
+                  onChangeEnd: (v) async {
+                    _manager.notifyListeners();
+                    try {
+                      await Supabase.instance.client
+                          .from('app_settings')
+                          .upsert({
+                        'key': 'banner_settings',
+                        'is_slot1_visible': _manager.isBannerSlot1Visible,
+                        'is_slot2_visible': _manager.isBannerSlot2Visible,
+                        'interval_seconds_slot2': v.toInt(),
                       });
                     } catch (_) {}
                   },
