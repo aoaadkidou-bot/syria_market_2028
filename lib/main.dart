@@ -1502,7 +1502,7 @@ class AppStateManager extends ChangeNotifier {
 
   Future<void> sendTelegramAlert(String message) async {
     debugPrint('Admin Notification: $message');
-  
+  }
 
   void initRealtimeListeners() {
     _adsSubscription?.cancel();
