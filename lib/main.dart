@@ -1440,10 +1440,12 @@ class AppStateManager extends ChangeNotifier {
     'شحن شدات',
     'قرض فوري بدون ضمانات',
   ];
-  BannerDisplayLayoutMode bannerDisplayMode = BannerDisplayLayoutMode.dualGrid;
+ BannerDisplayLayoutMode bannerDisplayMode = BannerDisplayLayoutMode.dualGrid;
   bool isBannerAutoScrollEnabled = true;
   int bannerDefaultIntervalSeconds = 3;
   bool isLoadingCloudData = false;
+
+  // 🌟 متغيرات السرعة المستقلة كلياً للبانوراما العلوية (Slot 1) والسفلية (Slot 2)
   int bannerSlot1IntervalSeconds = 3;
   int bannerSlot2IntervalSeconds = 4;
 
@@ -1455,9 +1457,52 @@ class AppStateManager extends ChangeNotifier {
   StreamSubscription? _bannersSubscription;
   StreamSubscription? _ratesSubscription;
 
+  // 🌟 تحديث سرعة البانوراما العلوية وحفظها
+  void setBannerSlot1Speed(int seconds) {
+    bannerSlot1IntervalSeconds = seconds.clamp(1, 10);
+    notifyListeners();
+  }
+
+  // 🌟 تحديث سرعة البانوراما السفلية وحفظها
+  void setBannerSlot2Speed(int seconds) {
+    bannerSlot2IntervalSeconds = seconds.clamp(1, 10);
+    notifyListeners();
+  }
+
+  // 🌟 جلب إعدادات وسرعات البانوراما من السيرفر لجميع الأجهزة تلقائياً
+  Future<void> fetchRemoteBannerSettings() async {
+    try {
+      final res = await Supabase.instance.client
+          .from('app_settings')
+          .select()
+          .eq('key', 'banner_settings')
+          .maybeSingle();
+
+      if (res != null) {
+        if (res['is_slot1_visible'] != null) {
+          isBannerSlot1Visible = res['is_slot1_visible'] == true;
+        }
+        if (res['is_slot2_visible'] != null) {
+          isBannerSlot2Visible = res['is_slot2_visible'] == true;
+        }
+        if (res['interval_seconds_slot1'] != null) {
+          bannerSlot1IntervalSeconds = (res['interval_seconds_slot1'] as num).toInt();
+        } else if (res['interval_seconds'] != null) {
+          bannerSlot1IntervalSeconds = (res['interval_seconds'] as num).toInt();
+        }
+        if (res['interval_seconds_slot2'] != null) {
+          bannerSlot2IntervalSeconds = (res['interval_seconds_slot2'] as num).toInt();
+        }
+        notifyListeners();
+      }
+    } catch (e) {
+      debugPrint('Error fetching remote banner settings: $e');
+    }
+  }
+
   Future<void> sendTelegramAlert(String message) async {
     debugPrint('Admin Notification: $message');
-  }
+  
 
   void initRealtimeListeners() {
     _adsSubscription?.cancel();
@@ -8319,161 +8364,197 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
                 ? _buildFavoritesTab()
                 : _buildProfileTab(),
       ),
-
-      // 🌟 زر الإضافة المركزي في المنتصف تماماً
+// 🌟 زر الإضافة المركزي المتناسق والمضغوط لفتح الاستمارة الشاملة الفخمة
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-      floatingActionButton: FloatingActionButton(
-        elevation: 6,
-        backgroundColor: _manager.secondaryColor,
-        foregroundColor: const Color(0xFF0F172A),
-        shape: const CircleBorder(),
-        tooltip: 'إضافة إعلان جديد',
-        onPressed: () {
-          _requireAuth(() {
-            try {
-              Navigator.pushNamed(context, '/add_ad');
-            } catch (_) {
-              // مسار بديل إذا لم يكن المسار مسجلاً
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('جارٍ فتح استمارة إضافة الإعلان...'),
-                  backgroundColor: Color(0xFF0284C7),
+      floatingActionButton: Padding(
+        padding: const EdgeInsets.only(top: 8),
+        child: SizedBox(
+          width: 44,
+          height: 44,
+          child: FloatingActionButton(
+            elevation: 4,
+            backgroundColor: _manager.secondaryColor,
+            foregroundColor: const Color(0xFF0F172A),
+            shape: const CircleBorder(),
+            tooltip: 'إضافة إعلان جديد',
+            onPressed: () {
+              _requireAuth(() {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (ctx) => FullAddAdScreen(
+                      onAdCreated: (newAd) {
+                        _manager.addNewAdDirectly(newAd);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('✅ تم استلام إعلانك بنجاح، وسيظهر في التطبيق فور اعتماده السريع ✨'),
+                            backgroundColor: Color(0xFF16A34A),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                );
+              });
+            },
+            child: Container(
+              width: 44,
+              height: 44,
+              decoration: const BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: LinearGradient(
+                  colors: [Color(0xFFFDE047), Color(0xFFD4AF37)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
                 ),
-              );
-            }
-          });
-        },
-        child: Container(
-          width: 56,
-          height: 56,
-          decoration: const BoxDecoration(
-            shape: BoxShape.circle,
-            gradient: LinearGradient(
-              colors: [Color(0xFFFDE047), Color(0xFFD4AF37)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
+              ),
+              child: const Icon(
+                Icons.add_rounded,
+                size: 26,
+                color: Color(0xFF0F172A),
+              ),
             ),
-          ),
-          child: const Icon(
-            Icons.add_rounded,
-            size: 36,
-            color: Color(0xFF0F172A),
           ),
         ),
       ),
-      // 🌟 الشريط السفلي المطور المفرغ للمنتصف Docked
+
+      // 🌟 شريط سفلي نحيف وواطي لكسب أكبر مساحة ممكنة مع تنظيم كامل ومتباعد للأيقونات
       bottomNavigationBar: BottomAppBar(
         shape: const CircularNotchedRectangle(),
-        notchMargin: 8.0,
+        notchMargin: 5.0,
         color: _manager.appBarColor,
-        elevation: 12,
-        child: SizedBox(
-          height: 60,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              // 1. زر الرئيسية
-              Expanded(
-                child: InkWell(
-                  onTap: () => setState(() => _currentNavIndex = 0),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.home_rounded,
-                        size: 24,
+        elevation: 8,
+        padding: EdgeInsets.zero,
+        height: 48,
+        child: Row(
+          children: [
+            // 1. زر الرئيسية
+            Expanded(
+              child: InkWell(
+                onTap: () => setState(() => _currentNavIndex = 0),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.home_rounded,
+                      size: 20,
+                      color: _currentNavIndex == 0
+                          ? _manager.secondaryColor
+                          : Colors.white60,
+                    ),
+                    const SizedBox(height: 1),
+                    Text(
+                      'الرئيسية',
+                      style: TextStyle(
+                        fontSize: 9.5,
+                        fontWeight: FontWeight.bold,
                         color: _currentNavIndex == 0
                             ? _manager.secondaryColor
                             : Colors.white60,
                       ),
-                      const SizedBox(height: 3),
-                      Text(
-                        'الرئيسية',
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.bold,
-                          color: _currentNavIndex == 0
-                              ? _manager.secondaryColor
-                              : Colors.white60,
-                        ),
-                      ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
+            ),
 
-              // مساحة فارغة في المنتصف للزر الدائري
-              const SizedBox(width: 48),
-
-              // 2. زر المفضلة
-              Expanded(
-                child: InkWell(
-                  onTap: () => setState(() => _currentNavIndex = 1),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.favorite_rounded,
-                        size: 24,
+            // 2. زر الأقسام
+            Expanded(
+              child: InkWell(
+                onTap: () => setState(() => _currentNavIndex = 1),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.grid_view_rounded,
+                      size: 20,
+                      color: _currentNavIndex == 1
+                          ? _manager.secondaryColor
+                          : Colors.white60,
+                    ),
+                    const SizedBox(height: 1),
+                    Text(
+                      'الأقسام',
+                      style: TextStyle(
+                        fontSize: 9.5,
+                        fontWeight: FontWeight.bold,
                         color: _currentNavIndex == 1
                             ? _manager.secondaryColor
                             : Colors.white60,
                       ),
-                      const SizedBox(height: 3),
-                      Text(
-                        'المفضلة',
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.bold,
-                          color: _currentNavIndex == 1
-                              ? _manager.secondaryColor
-                              : Colors.white60,
-                        ),
-                      ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
+            ),
 
-              // 3. زر حسابي
-              Expanded(
-                child: InkWell(
-                  onTap: () => setState(() => _currentNavIndex = 2),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.person_rounded,
-                        size: 24,
+            // مساحة مخصصة للزر الأوسط لعدم حجب أيقونة المفضلة
+            const SizedBox(width: 48),
+
+            // 3. زر المفضلة
+            Expanded(
+              child: InkWell(
+                onTap: () => setState(() => _currentNavIndex = 2),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.favorite_rounded,
+                      size: 20,
+                      color: _currentNavIndex == 2
+                          ? _manager.secondaryColor
+                          : Colors.white60,
+                    ),
+                    const SizedBox(height: 1),
+                    Text(
+                      'المفضلة',
+                      style: TextStyle(
+                        fontSize: 9.5,
+                        fontWeight: FontWeight.bold,
                         color: _currentNavIndex == 2
                             ? _manager.secondaryColor
                             : Colors.white60,
                       ),
-                      const SizedBox(height: 3),
-                      Text(
-                        'حسابي',
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.bold,
-                          color: _currentNavIndex == 2
-                              ? _manager.secondaryColor
-                              : Colors.white60,
-                        ),
-                      ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
-            ],
-          ),
+            ),
+
+            // 4. زر حسابي
+            Expanded(
+              child: InkWell(
+                onTap: () => setState(() => _currentNavIndex = 3),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.person_rounded,
+                      size: 20,
+                      color: _currentNavIndex == 3
+                          ? _manager.secondaryColor
+                          : Colors.white60,
+                    ),
+                    const SizedBox(height: 1),
+                    Text(
+                      'حسابي',
+                      style: TextStyle(
+                        fontSize: 9.5,
+                        fontWeight: FontWeight.bold,
+                        color: _currentNavIndex == 3
+                            ? _manager.secondaryColor
+                            : Colors.white60,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );
   }
-
 // ===========================================================================
 // ويدجت شاشة الأقسام الكاملة مع أسعار الذهب والبانوراما والإعلانات وخيارات العرض
 // ===========================================================================
@@ -12195,21 +12276,21 @@ class _FullAddAdScreenState extends State<FullAddAdScreen> {
           SnackBar(
             content: Text(
               _manager.isSuperAdmin
-                  ? '✅ تم نشر إعلانك بنجاح في السوق!'
-                  : '⏳ تم إرسال إعلانك بنجاح لغرفة العمليات للموافقة عليه من قبل الإدارة.',
+    ? '✅ تم نشر إعلانك بنجاح في السوق!'
+                  : '✅ تم استلام إعلانك بنجاح، وسيظهر في التطبيق فور اعتماده السريع ✨',
             ),
-            backgroundColor: Colors.green,
+            backgroundColor: const Color(0xFF16A34A),
           ),
         );
       }
     } catch (e) {
-      debugPrint('Save Ad Supabase Error: $e');
+      debugPrint('Save Ad Supabase Internal Log: $e');
       if (mounted) {
         setState(() => _isUploading = false);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('⚠️ تعذر الحفظ بالسيرفر: $e'),
-            backgroundColor: Colors.red,
+          const SnackBar(
+            content: Text('⚠️ تعذر إتمام النشر، يرجى التحقق من اتصال الإنترنت والمحاولة ثانية.'),
+            backgroundColor: Color(0xFFDC2626),
           ),
         );
       }
