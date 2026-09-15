@@ -4866,10 +4866,9 @@ class _FullAdDetailsScreenState extends State<FullAdDetailsScreen> {
         : (_manager.currentUserPhone.isNotEmpty
             ? _manager.currentUserPhone
             : 'عضو في السوق');
-// جلب رابط صورة الملف الشخصي الحقيقية للكاتب من جلسة السيرفر
-    final authUserMetadata = Supabase.instance.client.auth.currentUser?.userMetadata;
-    final String userAvatar = authUserMetadata?['avatar_url']?.toString() ??
-        authUserMetadata?['picture']?.toString() ??
+    final String userAvatar = Supabase
+            .instance.client.auth.currentUser?.userMetadata?['avatar_url']
+            ?.toString() ??
         '';
 
     final now = DateTime.now();
