@@ -2685,7 +2685,7 @@ class AntiSnipingEngine {
 }
 
 // ==============================================================================
-// 8. شريط أسعار الصرف والذهب اللحظي المدمج مع الأخبار العاجلة المتحركة ذاتياً (فائق الرشاقة 28px)
+// 8. شريط الأخبار المتحرك مع زر شاشة أسعار العملات والذهب الشاملة
 // ==============================================================================
 class LiveCurrencyExchangeTicker extends StatefulWidget {
   final double usdRate;
@@ -2718,7 +2718,7 @@ class _LiveCurrencyExchangeTickerState
 
   void _startMarquee() {
     _scrollTimer?.cancel();
-    _scrollTimer = Timer.periodic(const Duration(milliseconds: 40), (timer) {
+    _scrollTimer = Timer.periodic(const Duration(milliseconds: 45), (timer) {
       if (_isPaused || !mounted || !_scrollController.hasClients) return;
       final maxExtent = _scrollController.position.maxScrollExtent;
       final current = _scrollController.offset;
@@ -2737,6 +2737,15 @@ class _LiveCurrencyExchangeTickerState
     super.dispose();
   }
 
+  void _openExchangeScreen() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (ctx) => const ComprehensiveCurrencyExchangeScreen(),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final manager = AppStateManager();
@@ -2748,7 +2757,7 @@ class _LiveCurrencyExchangeTickerState
     return Directionality(
       textDirection: TextDirection.rtl,
       child: Container(
-        height: 30,
+        height: 32,
         margin: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
         padding: const EdgeInsets.symmetric(horizontal: 6),
         decoration: BoxDecoration(
@@ -2759,9 +2768,9 @@ class _LiveCurrencyExchangeTickerState
         ),
         child: Row(
           children: [
-            // 1. شارة عاجل النحيفة والبارزة
+            // 1. شارة عاجل النحيفة
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+              padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
               decoration: BoxDecoration(
                 color: const Color(0xFFD4AF37),
                 borderRadius: BorderRadius.circular(4),
@@ -2784,7 +2793,7 @@ class _LiveCurrencyExchangeTickerState
             ),
             const SizedBox(width: 6),
 
-            // 2. شريط الأخبار المتحرك ذاتياً بنعومة بدون توقف
+            // 2. شريط الأخبار المتحرك بسلاسة
             Expanded(
               child: Listener(
                 onPointerDown: (_) => setState(() => _isPaused = true),
@@ -2811,505 +2820,47 @@ class _LiveCurrencyExchangeTickerState
             ),
             const SizedBox(width: 6),
 
-            // 3. كبسولتا أسعار الدولار والذهب المدمجتان على اليسار
+            // 3. 🪙 زر أسعار العملات والذهب الشامل الواضح والصريح
             InkWell(
-              onTap: widget.onRefresh,
+              onTap: _openExchangeScreen,
               borderRadius: BorderRadius.circular(6),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // كبسولة الدولار
-                  Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF22C55E).withOpacity(0.15),
-                      borderRadius: BorderRadius.circular(5),
-                      border: Border.all(
-                        color: const Color(0xFF22C55E).withOpacity(0.5),
-                        width: 0.8,
+              child: Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFFD4AF37), Color(0xFFB48A18)],
+                  ),
+                  borderRadius: BorderRadius.circular(6),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFFD4AF37).withOpacity(0.35),
+                      blurRadius: 4,
+                      offset: const Offset(0, 1),
+                    ),
+                  ],
+                ),
+                child: const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.currency_exchange,
+                        color: Colors.black, size: 12),
+                    SizedBox(width: 3),
+                    Text(
+                      'العملات والذهب ❯',
+                      style: TextStyle(
+                        color: Colors.black,
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Text(
-                          '\$',
-                          style: TextStyle(
-                            color: Color(0xFF22C55E),
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(width: 2),
-                        Text(
-                          '${widget.usdRate.toInt()}',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: 4),
-
-                  // كبسولة الذهب
-                  Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFD4AF37).withOpacity(0.15),
-                      borderRadius: BorderRadius.circular(5),
-                      border: Border.all(
-                        color: const Color(0xFFD4AF37).withOpacity(0.5),
-                        width: 0.8,
-                      ),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Text(
-                          'ذهب',
-                          style: TextStyle(
-                            color: Color(0xFFD4AF37),
-                            fontSize: 9,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(width: 2),
-                        Text(
-                          '${widget.gold21kPrice.toInt()}',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ],
         ),
       ),
-    );
-  }
-}
-
-// ==============================================================================
-// 9. بطاقة بوابتي الدفع المعتمدتين حصرياً (شام كاش & بينانس USDT)
-// ==============================================================================
-class ExclusivePaymentGatewayCard extends StatelessWidget {
-  const ExclusivePaymentGatewayCard({Key? key}) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: const Color(0xFF0F172A),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFFD4AF37), width: 1.5),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.4),
-            blurRadius: 8,
-            offset: const Offset(0, 3),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Row(
-                children: const [
-                  SyrianIndependenceFlag(width: 24, height: 16),
-                  SizedBox(width: 8),
-                  Text(
-                    'بوابات الدفع والشحن الحصرية 💳',
-                    style: TextStyle(
-                      color: Color(0xFFD4AF37),
-                      fontWeight: FontWeight.bold,
-                      fontSize: 13,
-                    ),
-                  ),
-                ],
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF16A34A).withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                child: const Text(
-                  'معتمد 100%',
-                  style: TextStyle(
-                      color: Color(0xFF22C55E),
-                      fontSize: 10,
-                      fontWeight: FontWeight.bold),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
-
-          // شام كاش
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-            decoration: BoxDecoration(
-              color: const Color(0xFF1E293B),
-              borderRadius: BorderRadius.circular(10),
-              border:
-                  Border.all(color: const Color(0xFF38BDF8).withOpacity(0.4)),
-            ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: const [
-                          SyrianIndependenceFlag(width: 18, height: 12),
-                          SizedBox(width: 6),
-                          Text(
-                            'حساب شام كاش (Sham Cash)',
-                            style: TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 11),
-                          ),
-                          SizedBox(width: 6),
-                          Text(
-                            'بالليرة السورية',
-                            style: TextStyle(
-                                color: Color(0xFFD4AF37), fontSize: 9.5),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 3),
-                      Text(
-                        kShamCashAccountKey,
-                        style: const TextStyle(
-                          color: Color(0xFF38BDF8),
-                          fontWeight: FontWeight.bold,
-                          fontSize: 10.5,
-                          letterSpacing: 0.5,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
-                  ),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.copy,
-                      color: Color(0xFFD4AF37), size: 18),
-                  tooltip: 'نسخ مفتاح شام كاش',
-                  onPressed: () {
-                    Clipboard.setData(
-                        const ClipboardData(text: kShamCashAccountKey));
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('✓ تم نسخ مفتاح حساب شام كاش بنجاح!'),
-                        backgroundColor: Color(0xFF0284C7),
-                        duration: Duration(seconds: 2),
-                      ),
-                    );
-                  },
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 6),
-
-          // بينانس USDT
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-            decoration: BoxDecoration(
-              color: const Color(0xFF1E293B),
-              borderRadius: BorderRadius.circular(10),
-              border:
-                  Border.all(color: const Color(0xFFFACC15).withOpacity(0.4)),
-            ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: const [
-                          Text(
-                            '🪙 بينانس (Binance Pay / USDT)',
-                            style: TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 11),
-                          ),
-                          SizedBox(width: 6),
-                          Text(
-                            'TRC20 / USD',
-                            style: TextStyle(
-                                color: Color(0xFF22C55E), fontSize: 9.5),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 3),
-                      Text(
-                        kBinanceWalletAddress,
-                        style: const TextStyle(
-                          color: Color(0xFFFACC15),
-                          fontWeight: FontWeight.bold,
-                          fontSize: 10.5,
-                          letterSpacing: 0.5,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
-                  ),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.copy,
-                      color: Color(0xFFFACC15), size: 18),
-                  tooltip: 'نسخ عنوان محفظة بينانس',
-                  onPressed: () {
-                    Clipboard.setData(
-                        const ClipboardData(text: kBinanceWalletAddress));
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text(
-                            '✓ تم نسخ عنوان محفظة بينانس USDT (TRC20) بنجاح!'),
-                        backgroundColor: Color(0xFF16A34A),
-                        duration: Duration(seconds: 2),
-                      ),
-                    );
-                  },
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// ==============================================================================
-// 10. محرك البانورامات التفاعلية والعروض المرئية المجدولة (DynamicPanoramasCarousel)
-// ==============================================================================
-class DynamicPanoramasCarousel extends StatefulWidget {
-  final List<BannerItem> banners;
-  final Function(BannerItem)? onBannerTap;
-
-  const DynamicPanoramasCarousel({
-    Key? key,
-    required this.banners,
-    this.onBannerTap,
-  }) : super(key: key);
-
-  @override
-  State<DynamicPanoramasCarousel> createState() =>
-      _DynamicPanoramasCarouselState();
-}
-
-class _DynamicPanoramasCarouselState extends State<DynamicPanoramasCarousel> {
-  late PageController _pageController;
-  int _currentIndex = 0;
-  Timer? _autoScrollTimer;
-  bool _isUserInteracting = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _pageController = PageController();
-    _startAutoScroll();
-  }
-
-  void _startAutoScroll() {
-    _autoScrollTimer?.cancel();
-    if (widget.banners.isEmpty) return;
-
-    final currentBanner = widget.banners[_currentIndex % widget.banners.length];
-    final intervalSeconds = currentBanner.displayDurationSeconds.clamp(2, 15);
-
-    _autoScrollTimer = Timer(Duration(seconds: intervalSeconds), () {
-      if (!_isUserInteracting && mounted && widget.banners.isNotEmpty) {
-        final nextIndex = (_currentIndex + 1) % widget.banners.length;
-        _pageController.animateToPage(
-          nextIndex,
-          duration: const Duration(milliseconds: 600),
-          curve: Curves.easeInOutCubic,
-        );
-        setState(() {
-          _currentIndex = nextIndex;
-        });
-        _startAutoScroll();
-      }
-    });
-  }
-
-  @override
-  void dispose() {
-    _autoScrollTimer?.cancel();
-    _pageController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    if (widget.banners.isEmpty) return const SizedBox.shrink();
-
-    return Column(
-      children: [
-        SizedBox(
-          height: 120,
-          child: GestureDetector(
-            onPanDown: (_) => setState(() => _isUserInteracting = true),
-            onPanCancel: () {
-              setState(() => _isUserInteracting = false);
-              _startAutoScroll();
-            },
-            onPanEnd: (_) {
-              setState(() => _isUserInteracting = false);
-              _startAutoScroll();
-            },
-            child: PageView.builder(
-              controller: _pageController,
-              itemCount: widget.banners.length,
-              onPageChanged: (index) {
-                setState(() {
-                  _currentIndex = index;
-                });
-                _startAutoScroll();
-              },
-              itemBuilder: (context, index) {
-                final item = widget.banners[index];
-                return GestureDetector(
-                  onTap: () => widget.onBannerTap?.call(item),
-                  child: Container(
-                    margin:
-                        const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(14),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.35),
-                          blurRadius: 8,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
-                    ),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(14),
-                      child: Stack(
-                        fit: StackFit.expand,
-                        children: [
-                          AppSmartImage(
-                            imageUrl: item.imageUrl,
-                            fit: BoxFit.cover,
-                          ),
-                          Container(
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                begin: Alignment.topCenter,
-                                end: Alignment.bottomCenter,
-                                colors: [
-                                  Colors.transparent,
-                                  Colors.black.withOpacity(0.85),
-                                ],
-                              ),
-                            ),
-                          ),
-                          Positioned(
-                            top: 8,
-                            right: 8,
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 7, vertical: 3),
-                              decoration: BoxDecoration(
-                                color: item.badgeColor,
-                                borderRadius: BorderRadius.circular(6),
-                              ),
-                              child: Text(
-                                item.badgeText,
-                                style: const TextStyle(
-                                  color: Color(0xFF0F172A),
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 9.5,
-                                ),
-                              ),
-                            ),
-                          ),
-                          Positioned(
-                            bottom: 10,
-                            left: 10,
-                            right: 10,
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  item.title,
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 13,
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                                if (item.subtitle.isNotEmpty) ...[
-                                  const SizedBox(height: 2),
-                                  Text(
-                                    item.subtitle,
-                                    style: const TextStyle(
-                                      color: Color(0xFFD4AF37),
-                                      fontSize: 10.5,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ],
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                );
-              },
-            ),
-          ),
-        ),
-        const SizedBox(height: 5),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: List.generate(widget.banners.length, (index) {
-            final isSelected = _currentIndex == index;
-            return AnimatedContainer(
-              duration: const Duration(milliseconds: 300),
-              margin: const EdgeInsets.symmetric(horizontal: 2.5),
-              height: 4,
-              width: isSelected ? 16 : 4,
-              decoration: BoxDecoration(
-                color: isSelected ? const Color(0xFFD4AF37) : Colors.white24,
-                borderRadius: BorderRadius.circular(3),
-              ),
-            );
-          }),
-        ),
-      ],
     );
   }
 }
@@ -5110,6 +4661,7 @@ class FullAdDetailsScreen extends StatefulWidget {
     required this.onAdUpdated,
     required this.onAdDeleted,
   }) : super(key: key);
+
   @override
   State<FullAdDetailsScreen> createState() => _FullAdDetailsScreenState();
 }
@@ -5117,6 +4669,7 @@ class FullAdDetailsScreen extends StatefulWidget {
 class _FullAdDetailsScreenState extends State<FullAdDetailsScreen> {
   final AppStateManager _manager = AppStateManager();
   late AdItem _currentAd;
+  late bool _isFav;
   final PageController _pageController = PageController();
   final TransformationController _zoomController = TransformationController();
   int _currentImageIndex = 0;
@@ -5130,11 +4683,16 @@ class _FullAdDetailsScreenState extends State<FullAdDetailsScreen> {
   bool _isLoadingComments = false;
   Timer? _countdownTimer;
 
+  Map<String, dynamic>? _sellerProfile;
+  bool _isLoadingSeller = true;
+
   @override
   void initState() {
     super.initState();
     _currentAd = widget.ad;
+    _isFav = widget.isFavorite;
     _loadComments();
+    _fetchSellerProfile();
 
     if (_currentAd.isSold) {
       _startSoldCountdownTimer();
@@ -5150,6 +4708,57 @@ class _FullAdDetailsScreenState extends State<FullAdDetailsScreen> {
     _bidController.dispose();
     _commentController.dispose();
     super.dispose();
+  }
+
+  // جلب الملف الشخصي الحقيقي للمعلن من السيرفر (صورة، رتبة، توثيق)
+  Future<void> _fetchSellerProfile() async {
+    try {
+      final uid = _currentAd.userId;
+      if (uid.isNotEmpty && uid != 'guest') {
+        final res = await Supabase.instance.client
+            .from('profiles')
+            .select()
+            .eq('id', uid)
+            .maybeSingle()
+            .timeout(const Duration(seconds: 6));
+
+        if (res != null && mounted) {
+          setState(() {
+            _sellerProfile = res;
+            _isLoadingSeller = false;
+          });
+          return;
+        }
+      }
+    } catch (_) {}
+    if (mounted) setState(() => _isLoadingSeller = false);
+  }
+
+  // تبديل المفضلة اللحظي مع الربط السحابي الحقيقي المباشر
+  Future<void> _handleToggleFavorite() async {
+    setState(() => _isFav = !_isFav);
+    widget.onToggleFavorite();
+
+    final user = Supabase.instance.client.auth.currentUser;
+    if (user != null) {
+      try {
+        if (_isFav) {
+          await Supabase.instance.client.from('favorites').upsert({
+            'user_id': user.id,
+            'ad_id': _currentAd.id,
+            'created_at': DateTime.now().toIso8601String(),
+          });
+        } else {
+          await Supabase.instance.client
+              .from('favorites')
+              .delete()
+              .eq('user_id', user.id)
+              .eq('ad_id', _currentAd.id);
+        }
+      } catch (e) {
+        debugPrint('Error syncing favorite to Supabase: $e');
+      }
+    }
   }
 
   // توحيد عداد ختم البيع التنازلي (5 دقائق) بدقة مركزية
@@ -5205,7 +4814,6 @@ class _FullAdDetailsScreenState extends State<FullAdDetailsScreen> {
   Future<void> _loadComments() async {
     setState(() => _isLoadingComments = true);
 
-    // 1. جلب فوري ومباشر من السيرفر
     try {
       final res = await Supabase.instance.client
           .from('ad_comments')
@@ -5224,7 +4832,6 @@ class _FullAdDetailsScreenState extends State<FullAdDetailsScreen> {
       if (mounted) setState(() => _isLoadingComments = false);
     }
 
-    // 2. الاستماع اللحظي المستمر لأي تعليق جديد يضيفه مستخدم آخر
     _commentsSubscription?.cancel();
     try {
       _commentsSubscription = Supabase.instance.client
@@ -5251,25 +4858,28 @@ class _FullAdDetailsScreenState extends State<FullAdDetailsScreen> {
     final text = _commentController.text.trim();
     if (text.isEmpty) return;
 
+    final authUser = Supabase.instance.client.auth.currentUser;
+    final String? validUserId = authUser?.id;
+
     final userName = _manager.currentUserName.isNotEmpty
         ? _manager.currentUserName
         : (_manager.currentUserPhone.isNotEmpty
             ? _manager.currentUserPhone
-            : 'مستخدم في السوق');
+            : 'عضو في السوق');
 
+    // جلب رابط صورة الملف الشخصي الحقيقية للكاتب لترتفع مع التعليق
+    final userAvatar = _manager.currentUserAvatar;
     final now = DateTime.now();
     _commentController.clear();
     FocusScope.of(context).unfocus();
 
-    // جلب معرف المستخدم الحقيقي من جلسة Supabase لضمان التوافق مع UUID
-    final authUser = Supabase.instance.client.auth.currentUser;
-    final String? validUserId = authUser?.id;
-
-    // حزمة البيانات النظيفة والمطابقة لقاعدة البيانات
+    // حزمة البيانات المتوافقة 100% مع عمود content والصورة في السيرفر
     final Map<String, dynamic> commentPayload = {
       'ad_id': _currentAd.id.toString(),
+      'content': text,
       'comment_text': text,
       'user_name': userName,
+      'user_avatar': userAvatar,
       'created_at': now.toIso8601String(),
     };
 
@@ -5277,40 +4887,26 @@ class _FullAdDetailsScreenState extends State<FullAdDetailsScreen> {
       commentPayload['user_id'] = validUserId;
     }
 
+    final savedComment = AdCommentItem(
+      id: 'cmt_${now.millisecondsSinceEpoch}',
+      adId: _currentAd.id.toString(),
+      userId: validUserId ?? '',
+      userName: userName,
+      commentText: text,
+      createdAt: now,
+    );
+
+    // نشر صامت فوري بدون أي SnackBar مزعج
+    if (mounted) {
+      setState(() {
+        _adComments.add(savedComment);
+      });
+    }
+
     try {
-      final res = await Supabase.instance.client
-          .from('ad_comments')
-          .insert(commentPayload)
-          .select()
-          .maybeSingle();
-
-      final savedComment = res != null
-          ? AdCommentItem.fromMap(res)
-          : AdCommentItem(
-              id: 'cmt_${now.millisecondsSinceEpoch}',
-              adId: _currentAd.id.toString(),
-              userId: validUserId ?? '',
-              userName: userName,
-              commentText: text,
-              createdAt: now,
-            );
-
-      if (mounted) {
-        setState(() {
-          _adComments.add(savedComment);
-        });
-      }
+      await Supabase.instance.client.from('ad_comments').insert(commentPayload);
     } catch (e) {
       debugPrint('Error inserting comment to Supabase: $e');
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('⚠️ تعذر إرسال التعليق: $e'),
-            backgroundColor: Colors.red.shade800,
-            duration: const Duration(seconds: 3),
-          ),
-        );
-      }
     }
   }
 
@@ -5335,7 +4931,6 @@ class _FullAdDetailsScreenState extends State<FullAdDetailsScreen> {
     });
   }
 
-  // معاينة الصورة الفخمة على كامل أبعاد الشاشة بدون أي انكماش
   void _openFullScreenImage(int index) {
     final images =
         _currentAd.imageUrls.isNotEmpty ? _currentAd.imageUrls : [''];
@@ -5421,7 +5016,6 @@ class _FullAdDetailsScreenState extends State<FullAdDetailsScreen> {
     } catch (_) {}
   }
 
-  // ويدجت شريط روابط السوشيال ميديا الحصري للمعلن المميز
   Widget _buildSellerSocialBar() {
     final hasFb = _currentAd.facebookUrl != null &&
         _currentAd.facebookUrl!.trim().isNotEmpty;
@@ -5594,13 +5188,16 @@ class _FullAdDetailsScreenState extends State<FullAdDetailsScreen> {
   }
 
   Future<void> _handleVote(bool isPositive) async {
-    if (!_manager.isLoggedIn) {
+    final authUser = Supabase.instance.client.auth.currentUser;
+    if (authUser == null && !_manager.isLoggedIn) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
             content: Text('⚠️ يجب تسجيل الدخول أولاً لتقييم مصداقية المعلن.')),
       );
       return;
     }
+
+    final String voterId = authUser?.id ?? _manager.currentUserId;
 
     final success = await _manager.voteOnAd(
       adId: _currentAd.id,
@@ -5631,11 +5228,10 @@ class _FullAdDetailsScreenState extends State<FullAdDetailsScreen> {
       sellerDislikes: newDislikes,
     );
 
-    setState(() {
-      _currentAd = updatedAd;
-    });
+    setState(() => _currentAd = updatedAd);
     widget.onAdUpdated(updatedAd);
 
+    // 1. تحديث المنشور في السيرفر ليتحدث فوراً على أجهزة باقي المستخدمين
     try {
       await Supabase.instance.client
           .from('ads')
@@ -5644,30 +5240,56 @@ class _FullAdDetailsScreenState extends State<FullAdDetailsScreen> {
             'seller_dislikes': newDislikes,
           })
           .eq('id', _currentAd.id)
-          .timeout(const Duration(seconds: 10));
-
-      try {
-        await Supabase.instance.client.from('ad_votes').insert({
-          'ad_id': _currentAd.id,
-          'user_id': _manager.currentUserId,
-          'is_positive': isPositive,
-          'created_at': DateTime.now().toIso8601String(),
-        }).timeout(const Duration(seconds: 5));
-      } catch (_) {}
+          .timeout(const Duration(seconds: 8));
     } catch (e) {
-      debugPrint('Error updating vote in database: $e');
+      debugPrint('Error updating ad vote in Supabase: $e');
     }
+
+    // 2. تحديث السمعة المركزية في الملف الشخصي للمعلن في السيرفر
+    try {
+      final sellerId = _currentAd.userId;
+      if (sellerId.isNotEmpty && sellerId != 'guest') {
+        final profileRes = await Supabase.instance.client
+            .from('profiles')
+            .select('positive_ratings, negative_ratings')
+            .eq('id', sellerId)
+            .maybeSingle();
+
+        if (profileRes != null) {
+          final curPos = (profileRes['positive_ratings'] as num?)?.toInt() ?? 0;
+          final curNeg = (profileRes['negative_ratings'] as num?)?.toInt() ?? 0;
+
+          await Supabase.instance.client.from('profiles').update({
+            'positive_ratings': isPositive ? curPos + 1 : curPos,
+            'negative_ratings': !isPositive ? curNeg + 1 : curNeg,
+          }).eq('id', sellerId);
+        }
+      }
+    } catch (e) {
+      debugPrint('Error updating seller profile rating: $e');
+    }
+
+    // 3. تسجيل التصويت لمنع التكرار سحابياً
+    try {
+      await Supabase.instance.client.from('ad_votes').upsert({
+        'ad_id': _currentAd.id,
+        'user_id': voterId,
+        'is_positive': isPositive,
+        'created_at': DateTime.now().toIso8601String(),
+      }).timeout(const Duration(seconds: 5));
+    } catch (_) {}
 
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
             isPositive
-                ? '👍 شكراً لتقييمك! تم حفظ التقييم الإيجابي بنجاح على السيرفر.'
-                : '👎 تم تسجيل تقييمك السلبي بنجاح على السيرفر.',
+                ? '👍 تم تسجيل تقييمك الإيجابي وحفظه في سجل سمعة المعلن!'
+                : '👎 تم تسجيل تقييمك السلبي في سجل سمعة المعلن.',
           ),
           backgroundColor:
-              isPositive ? Colors.green.shade800 : Colors.red.shade900,
+              isPositive ? const Color(0xFF16A34A) : Colors.red.shade900,
+          duration: const Duration(seconds: 2),
         ),
       );
     }
@@ -5723,7 +5345,6 @@ class _FullAdDetailsScreenState extends State<FullAdDetailsScreen> {
     final willBeSold = !_currentAd.isSold;
     final nowUtc = DateTime.now().toUtc();
 
-    // 1. تحديث الحالة فوراً على السيرفر بتوقيت UTC العالمي الموحد
     try {
       await Supabase.instance.client
           .from('ads')
@@ -5756,11 +5377,9 @@ class _FullAdDetailsScreenState extends State<FullAdDetailsScreen> {
       );
 
       _countdownTimer?.cancel();
-      // تشغيل مؤقت الحذف النهائي التلقائي من السيرفر بعد 5 دقائق بالضبط (300 ثانية)
       _countdownTimer = Timer(const Duration(minutes: 5), () async {
         final adIdToDelete = _currentAd.id;
         try {
-          // حذف تعليقات ومفضلات الإعلان أولاً لضمان عدم وجود عائق في قاعدة البيانات
           try {
             await Supabase.instance.client
                 .from('ad_comments')
@@ -5772,22 +5391,17 @@ class _FullAdDetailsScreenState extends State<FullAdDetailsScreen> {
                 .eq('ad_id', adIdToDelete);
           } catch (_) {}
 
-          // حذف الإعلان نهائياً من جدول Supabase لكي لا يشغل مساحة
           await Supabase.instance.client
               .from('ads')
               .delete()
               .eq('id', adIdToDelete);
 
-          // حذفه من القائمة المحلية للمدير
           _manager.ads.removeWhere((a) => a.id == adIdToDelete);
           _manager.notifyListeners();
           widget.onAdDeleted(adIdToDelete);
 
-          debugPrint(
-              '🗑️ تم حذف الإعلان المباع من السيرفر نهائياً: $adIdToDelete');
-
           if (mounted) {
-            Navigator.pop(context); // إغلاق صفحة الإعلان المحذوف
+            Navigator.pop(context);
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
                 content: Text('✅ تم حذف الإعلان المباع من السيرفر نهائياً.'),
@@ -6102,1007 +5716,1104 @@ class _FullAdDetailsScreenState extends State<FullAdDetailsScreen> {
 
     final bool canEdit =
         _manager.isSuperAdmin || _manager.isModerator || isOwner;
-
     final remaining = _currentAd.soldRemainingDuration;
 
-    return Scaffold(
-      backgroundColor: _manager.scaffoldBgColor,
-      appBar: AppBar(
-        backgroundColor: _manager.appBarColor,
-        title: Text(
-          _currentAd.title,
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 15,
-            fontWeight: FontWeight.bold,
+    final hasUsd = _currentAd.priceUsd != null && _currentAd.priceUsd! > 0;
+    final hasSyp = _currentAd.priceSyp != null && _currentAd.priceSyp! > 0;
+
+    return Directionality(
+      textDirection: TextDirection.rtl,
+      child: Scaffold(
+        backgroundColor: const Color(0xFF080D1A),
+        appBar: AppBar(
+          backgroundColor: const Color(0xFF0F172A),
+          elevation: 3,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back_ios_new_rounded,
+                color: Colors.white, size: 20),
+            tooltip: 'رجوع',
+            onPressed: () => Navigator.pop(context),
           ),
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-        ),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
-          onPressed: () => Navigator.pop(context),
-        ),
-        actions: [
-          if (canEdit)
+          title: Text(
+            _currentAd.title,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 15,
+              fontWeight: FontWeight.bold,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+          actions: [
             IconButton(
-              icon: const Icon(Icons.delete_forever, color: Colors.redAccent),
-              tooltip: 'حذف الإعلان',
-              onPressed: () async {
-                final confirm = await showDialog<bool>(
-                      context: context,
-                      builder: (ctx) => AlertDialog(
-                        title: const Text('حذف الإعلان نهائياً'),
-                        content: const Text(
-                            'هل أنت متأكد من رغبتك في حذف هذا الإعلان نهائياً من السوق؟'),
-                        actions: [
-                          TextButton(
-                              onPressed: () => Navigator.pop(ctx, false),
-                              child: const Text('إلغاء')),
-                          ElevatedButton(
-                            style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.red),
-                            onPressed: () => Navigator.pop(ctx, true),
-                            child: const Text('تأكيد الحذف',
-                                style: TextStyle(color: Colors.white)),
+              icon: const Icon(Icons.share_rounded,
+                  color: Colors.white, size: 21),
+              tooltip: 'معاينة ومشاركة الرابط',
+              onPressed: _openWebPreview,
+            ),
+            // ❤️ زر المفضلة اللحظي السريع مع مساحة لمس مريحة
+            Material(
+              color: Colors.transparent,
+              child: InkWell(
+                borderRadius: BorderRadius.circular(24),
+                onTap: _handleToggleFavorite,
+                child: Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Icon(
+                    _isFav
+                        ? Icons.favorite_rounded
+                        : Icons.favorite_border_rounded,
+                    color: _isFav ? const Color(0xFFEF4444) : Colors.white,
+                    size: 24,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: 4),
+          ],
+        ),
+        body: ListView(
+          physics: const BouncingScrollPhysics(),
+          children: [
+            // شريط تحكم المالك أو المشرف
+            if (canEdit)
+              Container(
+                color: const Color(0xFF0F172A),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                child: Row(
+                  children: [
+                    Expanded(
+                      flex: 4,
+                      child: ElevatedButton.icon(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF0284C7),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8)),
+                          padding: const EdgeInsets.symmetric(vertical: 10),
+                        ),
+                        icon: const Icon(Icons.edit,
+                            color: Colors.white, size: 15),
+                        label: const Text('تعديل الإعلان',
+                            style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold)),
+                        onPressed: _openEditScreen,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      flex: 5,
+                      child: ElevatedButton.icon(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: _currentAd.isSold
+                              ? Colors.grey.shade700
+                              : const Color(0xFFDC2626),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8)),
+                          padding: const EdgeInsets.symmetric(vertical: 10),
+                        ),
+                        icon: Icon(
+                            _currentAd.isSold
+                                ? Icons.undo
+                                : Icons.check_circle_outline,
+                            color: Colors.white,
+                            size: 15),
+                        label: Text(
+                            _currentAd.isSold
+                                ? 'إلغاء البيع'
+                                : 'ختم تم البيع ✓',
+                            style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold)),
+                        onPressed: _confirmMarkAsSold,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    IconButton(
+                      style: IconButton.styleFrom(
+                        backgroundColor: Colors.red.withOpacity(0.2),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8)),
+                      ),
+                      icon: const Icon(Icons.delete_outline,
+                          color: Colors.redAccent, size: 20),
+                      tooltip: 'حذف الإعلان',
+                      onPressed: () async {
+                        final confirm = await showDialog<bool>(
+                              context: context,
+                              builder: (ctx) => AlertDialog(
+                                backgroundColor: const Color(0xFF0F172A),
+                                shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(14)),
+                                title: const Text('حذف الإعلان نهائياً',
+                                    style: TextStyle(color: Colors.white)),
+                                content: const Text(
+                                    'هل ترغب بالتأكيد في حذف هذا الإعلان نهائياً من السيرفر؟',
+                                    style: TextStyle(color: Colors.white70)),
+                                actions: [
+                                  TextButton(
+                                      onPressed: () =>
+                                          Navigator.pop(ctx, false),
+                                      child: const Text('إلغاء',
+                                          style:
+                                              TextStyle(color: Colors.grey))),
+                                  ElevatedButton(
+                                    style: ElevatedButton.styleFrom(
+                                        backgroundColor: Colors.red),
+                                    onPressed: () => Navigator.pop(ctx, true),
+                                    child: const Text('حذف',
+                                        style: TextStyle(color: Colors.white)),
+                                  ),
+                                ],
+                              ),
+                            ) ??
+                            false;
+                        if (confirm) {
+                          _manager.deleteAdCompletely(_currentAd.id);
+                          widget.onAdDeleted(_currentAd.id);
+                          Navigator.pop(context);
+                        }
+                      },
+                    ),
+                  ],
+                ),
+              ),
+
+            // شريط إشعار حالة الإعلان المعلق أو المرفوض
+            if (_currentAd.isPending)
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                color: Colors.orange.shade900,
+                child: const Row(
+                  children: [
+                    Icon(Icons.hourglass_top_rounded,
+                        color: Colors.white, size: 18),
+                    SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        '⏳ الإعلان قيد المراجعة والتدقيق الإداري، وسيظهر للعامة فور اعتماده.',
+                        style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 11.5,
+                            fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                  ],
+                ),
+              )
+            else if (_currentAd.isRejected)
+              Container(
+                padding: const EdgeInsets.all(12),
+                color: Colors.red.shade900,
+                child: Row(
+                  children: [
+                    const Icon(Icons.error_outline,
+                        color: Colors.white, size: 20),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            '❌ تم رفض هذا الإعلان لمخالفته الشروط.',
+                            style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold),
+                          ),
+                          if (_currentAd.rejectionReason != null &&
+                              _currentAd.rejectionReason!.isNotEmpty)
+                            Text(
+                              'سبب الرفض: ${_currentAd.rejectionReason}',
+                              style: const TextStyle(
+                                  color: Colors.amberAccent,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.bold),
+                            ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+            // معرض الصور السينمائي المطور
+            SizedBox(
+              height: 290,
+              child: Stack(
+                children: [
+                  PageView.builder(
+                    controller: _pageController,
+                    itemCount: images.length,
+                    onPageChanged: (i) => setState(() {
+                      _currentImageIndex = i;
+                      _resetZoom();
+                    }),
+                    itemBuilder: (c, idx) => GestureDetector(
+                      onDoubleTap: () =>
+                          _currentScale > 1.0 ? _resetZoom() : _zoomIn(),
+                      onTap: () => _openFullScreenImage(idx),
+                      child: InteractiveViewer(
+                        transformationController: _zoomController,
+                        minScale: 1.0,
+                        maxScale: 4.0,
+                        child: AppSmartImage(
+                            imageUrl: images[idx], fit: BoxFit.cover),
+                      ),
+                    ),
+                  ),
+                  if (images.length > 1)
+                    Positioned(
+                      bottom: 10,
+                      left: 0,
+                      right: 0,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: List.generate(
+                          images.length,
+                          (idx) => Container(
+                            margin: const EdgeInsets.symmetric(horizontal: 2.5),
+                            width: _currentImageIndex == idx ? 18 : 6,
+                            height: 6,
+                            decoration: BoxDecoration(
+                              color: _currentImageIndex == idx
+                                  ? const Color(0xFFD4AF37)
+                                  : Colors.white60,
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  Positioned(
+                    top: 10,
+                    left: 10,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.black54,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Row(
+                        children: [
+                          IconButton(
+                            icon: const Icon(Icons.zoom_in,
+                                color: Colors.white, size: 19),
+                            onPressed: _zoomIn,
+                            tooltip: 'تكبير',
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.fullscreen,
+                                color: Colors.white, size: 19),
+                            onPressed: () =>
+                                _openFullScreenImage(_currentImageIndex),
+                            tooltip: 'ملء الشاشة',
                           ),
                         ],
                       ),
-                    ) ??
-                    false;
-                if (confirm) {
-                  _manager.deleteAdCompletely(_currentAd.id);
-                  widget.onAdDeleted(_currentAd.id);
-                  Navigator.pop(context);
-                }
-              },
-            ),
-          IconButton(
-            icon: const Icon(Icons.share_outlined, color: Colors.white),
-            tooltip: 'معاينة ومشاركة الرابط',
-            onPressed: _openWebPreview,
-          ),
-          IconButton(
-            icon: Icon(
-              widget.isFavorite ? Icons.favorite : Icons.favorite_border,
-              color: widget.isFavorite ? Colors.red : Colors.white,
-            ),
-            onPressed: widget.onToggleFavorite,
-          ),
-        ],
-      ),
-      body: ListView(
-        physics: const BouncingScrollPhysics(),
-        children: [
-          if (canEdit)
-            Container(
-              color: const Color(0xFF0F172A),
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-              child: Row(
-                children: [
-                  Expanded(
-                    flex: 4,
-                    child: ElevatedButton.icon(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF0284C7),
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8)),
-                        padding: const EdgeInsets.symmetric(vertical: 10),
-                      ),
-                      icon:
-                          const Icon(Icons.edit, color: Colors.white, size: 15),
-                      label: const Text('تعديل الإعلان',
-                          style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold)),
-                      onPressed: _openEditScreen,
                     ),
                   ),
-                  const SizedBox(width: 6),
-                  Expanded(
-                    flex: 5,
-                    child: ElevatedButton.icon(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: _currentAd.isSold
-                            ? Colors.grey.shade700
-                            : const Color(0xFFDC2626),
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8)),
-                        padding: const EdgeInsets.symmetric(vertical: 10),
-                      ),
-                      icon: Icon(
-                          _currentAd.isSold
-                              ? Icons.undo
-                              : Icons.check_circle_outline,
-                          color: Colors.white,
-                          size: 15),
-                      label: Text(
-                          _currentAd.isSold ? 'إلغاء البيع' : 'ختم تم البيع ✓',
-                          style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold)),
-                      onPressed: _confirmMarkAsSold,
-                    ),
-                  ),
-                  const SizedBox(width: 6),
-                  IconButton(
-                    style: IconButton.styleFrom(
-                      backgroundColor: Colors.red.withOpacity(0.2),
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8)),
-                    ),
-                    icon: const Icon(Icons.delete_outline,
-                        color: Colors.redAccent, size: 20),
-                    tooltip: 'حذف الإعلان',
-                    onPressed: () async {
-                      final confirm = await showDialog<bool>(
-                            context: context,
-                            builder: (ctx) => AlertDialog(
-                              title: const Text('حذف الإعلان نهائياً'),
-                              content: const Text(
-                                  'هل ترغب بالتأكيد في حذف هذا الإعلان؟'),
-                              actions: [
-                                TextButton(
-                                    onPressed: () => Navigator.pop(ctx, false),
-                                    child: const Text('إلغاء')),
-                                ElevatedButton(
-                                  style: ElevatedButton.styleFrom(
-                                      backgroundColor: Colors.red),
-                                  onPressed: () => Navigator.pop(ctx, true),
-                                  child: const Text('حذف',
-                                      style: TextStyle(color: Colors.white)),
-                                ),
-                              ],
-                            ),
-                          ) ??
-                          false;
-                      if (confirm) {
-                        _manager.deleteAdCompletely(_currentAd.id);
-                        widget.onAdDeleted(_currentAd.id);
-                        Navigator.pop(context);
-                      }
-                    },
-                  ),
-                ],
-              ),
-            ),
-          if (_currentAd.isPending)
-            Container(
-              padding: const EdgeInsets.all(12),
-              color: Colors.orange.shade900,
-              child: const Row(
-                children: [
-                  Icon(Icons.hourglass_top, color: Colors.white, size: 20),
-                  SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      '⏳ الإعلان قيد التدقيق والمراجعة من قبل الإدارة وسيظهر للجميع فور اعتماده.',
-                      style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold),
-                    ),
-                  ),
-                ],
-              ),
-            )
-          else if (_currentAd.isRejected)
-            Container(
-              padding: const EdgeInsets.all(12),
-              color: Colors.red.shade900,
-              child: Row(
-                children: [
-                  const Icon(Icons.error_outline,
-                      color: Colors.white, size: 20),
-                  SizedBox(width: 8),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          '❌ تم رفض هذا الإعلان لمخالفته الشروط.',
-                          style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold),
-                        ),
-                        if (_currentAd.rejectionReason != null &&
-                            _currentAd.rejectionReason!.isNotEmpty)
-                          Text(
-                            'سبب الرفض: ${_currentAd.rejectionReason}',
-                            style: const TextStyle(
-                                color: Colors.amberAccent,
-                                fontSize: 11,
-                                fontWeight: FontWeight.bold),
-                          ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          SizedBox(
-            height: 270,
-            child: Stack(
-              children: [
-                PageView.builder(
-                  controller: _pageController,
-                  itemCount: images.length,
-                  onPageChanged: (i) => setState(() {
-                    _currentImageIndex = i;
-                    _resetZoom();
-                  }),
-                  itemBuilder: (c, idx) => GestureDetector(
-                    onDoubleTap: () {
-                      if (_currentScale > 1.0) {
-                        _resetZoom();
-                      } else {
-                        _zoomIn();
-                      }
-                    },
-                    onTap: () => _openFullScreenImage(idx),
-                    child: InteractiveViewer(
-                      transformationController: _zoomController,
-                      minScale: 1.0,
-                      maxScale: 4.0,
-                      child: AppSmartImage(
-                          imageUrl: images[idx], fit: BoxFit.cover),
-                    ),
-                  ),
-                ),
-                if (images.length > 1)
-                  Positioned(
-                    bottom: 10,
-                    left: 0,
-                    right: 0,
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: List.generate(
-                        images.length,
-                        (idx) => Container(
-                          margin: const EdgeInsets.symmetric(horizontal: 2.5),
-                          width: _currentImageIndex == idx ? 16 : 6,
-                          height: 6,
-                          decoration: BoxDecoration(
-                            color: _currentImageIndex == idx
-                                ? _manager.secondaryColor
-                                : Colors.white60,
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                Positioned(
-                  top: 10,
-                  left: 10,
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: Colors.black54,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Row(
-                      children: [
-                        IconButton(
-                          icon: const Icon(Icons.zoom_in,
-                              color: Colors.white, size: 20),
-                          onPressed: _zoomIn,
-                          tooltip: 'تكبير',
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.zoom_out,
-                              color: Colors.white, size: 20),
-                          onPressed: _zoomOut,
-                          tooltip: 'تصغير',
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.fullscreen,
-                              color: Colors.white, size: 20),
-                          onPressed: () =>
-                              _openFullScreenImage(_currentImageIndex),
-                          tooltip: 'ملء الشاشة',
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                if (_currentAd.isSold)
-                  Positioned.fill(
-                    child: Container(
-                      color: Colors.black.withOpacity(0.65),
-                      child: Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Transform.rotate(
-                              angle: -0.18,
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 18, vertical: 8),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFFDC2626),
-                                  borderRadius: BorderRadius.circular(8),
-                                  border:
-                                      Border.all(color: Colors.white, width: 2),
-                                  boxShadow: const [
-                                    BoxShadow(
-                                        color: Colors.black45, blurRadius: 8)
-                                  ],
-                                ),
-                                child: const Text(
-                                  'تم البيع ✓ SOLD',
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 18,
-                                    letterSpacing: 1.0,
+                  if (_currentAd.isSold)
+                    Positioned.fill(
+                      child: Container(
+                        color: Colors.black.withOpacity(0.72),
+                        child: Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Transform.rotate(
+                                angle: -0.18,
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 20, vertical: 8),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFDC2626),
+                                    borderRadius: BorderRadius.circular(8),
+                                    border: Border.all(
+                                        color: Colors.white, width: 2),
+                                  ),
+                                  child: const Text(
+                                    'تم البيع ✓ SOLD',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 18,
+                                    ),
                                   ),
                                 ),
                               ),
-                            ),
-                            if (remaining != null) ...[
-                              const SizedBox(height: 10),
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 12, vertical: 4),
-                                decoration: BoxDecoration(
-                                  color: Colors.black87,
-                                  borderRadius: BorderRadius.circular(6),
-                                  border: Border.all(
-                                      color: const Color(0xFFD4AF37), width: 1),
+                              if (remaining != null) ...[
+                                const SizedBox(height: 10),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 12, vertical: 4),
+                                  decoration: BoxDecoration(
+                                    color: Colors.black87,
+                                    borderRadius: BorderRadius.circular(6),
+                                    border: Border.all(
+                                        color: const Color(0xFFD4AF37),
+                                        width: 1),
+                                  ),
+                                  child: Text(
+                                    'حذف تلقائي بعد: ${remaining.inMinutes}:${(remaining.inSeconds % 60).toString().padLeft(2, '0')} دقيقة ⏳',
+                                    style: const TextStyle(
+                                      color: Color(0xFFD4AF37),
+                                      fontSize: 11.5,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
                                 ),
-                                child: Text(
-                                  'سيتم حذف المنشور تلقائياً بعد: ${remaining.inMinutes}:${(remaining.inSeconds % 60).toString().padLeft(2, '0')} دقيقة ⏳',
-                                  style: const TextStyle(
+                              ],
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+
+            if (images.length > 1) ...[
+              const SizedBox(height: 8),
+              SizedBox(
+                height: 55,
+                child: ListView.builder(
+                  scrollDirection: Axis.horizontal,
+                  physics: const BouncingScrollPhysics(),
+                  padding: const EdgeInsets.symmetric(horizontal: 14),
+                  itemCount: images.length,
+                  itemBuilder: (ctx, i) {
+                    final isSel = _currentImageIndex == i;
+                    return GestureDetector(
+                      onTap: () {
+                        _pageController.animateToPage(
+                          i,
+                          duration: const Duration(milliseconds: 300),
+                          curve: Curves.easeInOut,
+                        );
+                      },
+                      child: Container(
+                        margin: const EdgeInsets.only(left: 8),
+                        width: 55,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                            color: isSel
+                                ? const Color(0xFFD4AF37)
+                                : Colors.white24,
+                            width: isSel ? 2 : 1,
+                          ),
+                        ),
+                        clipBehavior: Clip.antiAlias,
+                        child: AppSmartImage(
+                            imageUrl: images[i], fit: BoxFit.cover),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
+
+            Padding(
+              padding: const EdgeInsets.all(14),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // 1️⃣ عنوان الإعلان الملكي الكبير والواضح
+                  Text(
+                    _currentAd.title,
+                    style: const TextStyle(
+                      fontSize: 19,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                      height: 1.3,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+
+                  // 2️⃣ الحاوية الزجاجية الفاخرة للسعر المزدوج ($ وليرة سورية)
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFF1E293B), Color(0xFF0F172A)],
+                        begin: Alignment.topRight,
+                        end: Alignment.bottomLeft,
+                      ),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(
+                        color: const Color(0xFFD4AF37).withOpacity(0.5),
+                        width: 1.2,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFFD4AF37).withOpacity(0.08),
+                          blurRadius: 10,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'السعر المطلوب المعتمد:',
+                              style: TextStyle(
+                                  color: Colors.white54, fontSize: 11),
+                            ),
+                            const SizedBox(height: 2),
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.baseline,
+                              textBaseline: TextBaseline.alphabetic,
+                              children: [
+                                if (hasUsd) ...[
+                                  Text(
+                                    '\$${_currentAd.priceUsd!.toStringAsFixed(0)}',
+                                    style: const TextStyle(
+                                      fontSize: 22,
+                                      fontWeight: FontWeight.bold,
+                                      color: Color(0xFF22C55E),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 4),
+                                  const Text(
+                                    'USD',
+                                    style: TextStyle(
+                                        color: Color(0xFF22C55E),
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.bold),
+                                  ),
+                                ],
+                                if (hasUsd && hasSyp)
+                                  const Padding(
+                                    padding:
+                                        EdgeInsets.symmetric(horizontal: 8),
+                                    child: Text('•',
+                                        style: TextStyle(
+                                            color: Colors.white38,
+                                            fontSize: 16)),
+                                  ),
+                                if (hasSyp) ...[
+                                  Text(
+                                    '${_currentAd.priceSyp!.toStringAsFixed(0)}',
+                                    style: const TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold,
+                                      color: Color(0xFFD4AF37),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 4),
+                                  const Text(
+                                    'ل.س',
+                                    style: TextStyle(
+                                        color: Color(0xFFD4AF37),
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.bold),
+                                  ),
+                                ],
+                                if (!hasUsd && !hasSyp)
+                                  const Text(
+                                    'السعر عند الاتصال والتفاوض 💬',
+                                    style: TextStyle(
+                                        color: Color(0xFF38BDF8),
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.bold),
+                                  ),
+                              ],
+                            ),
+                          ],
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 10, vertical: 5),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFD4AF37).withOpacity(0.15),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(
+                                color:
+                                    const Color(0xFFD4AF37).withOpacity(0.4)),
+                          ),
+                          child: Text(
+                            _currentAd.condition.isNotEmpty
+                                ? _currentAd.condition
+                                : 'ممتاز',
+                            style: const TextStyle(
+                              color: Color(0xFFD4AF37),
+                              fontSize: 11.5,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 12),
+
+                  // سطر الموقع والوقت والمشاهدات
+                  Row(
+                    children: [
+                      const Icon(Icons.location_on_rounded,
+                          size: 14, color: Colors.redAccent),
+                      const SizedBox(width: 4),
+                      Text(
+                        '${_currentAd.governorate} - ${_currentAd.neighborhood}',
+                        style: const TextStyle(
+                            fontSize: 12, color: Colors.white70),
+                      ),
+                      const Spacer(),
+                      const Icon(Icons.access_time_rounded,
+                          size: 13, color: Colors.white38),
+                      const SizedBox(width: 4),
+                      Text(
+                        _currentAd.timeAgo,
+                        style: const TextStyle(
+                            fontSize: 11.5, color: Colors.white38),
+                      ),
+                      const SizedBox(width: 10),
+                      const Icon(Icons.remove_red_eye_rounded,
+                          size: 13, color: Color(0xFF38BDF8)),
+                      const SizedBox(width: 4),
+                      Text(
+                        '${_currentAd.viewsCount}',
+                        style: const TextStyle(
+                            fontSize: 11.5,
+                            color: Color(0xFF38BDF8),
+                            fontWeight: FontWeight.bold),
+                      ),
+                    ],
+                  ),
+
+                  const Divider(color: Colors.white12, height: 26),
+
+                  // ================= قسم المزاد العلني المباشر (إن وجد) =================
+                  if (_currentAd.isAuction) ...[
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.amber.withOpacity(0.12),
+                        borderRadius: BorderRadius.circular(12),
+                        border:
+                            Border.all(color: Colors.amber.withOpacity(0.5)),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Row(
+                            children: [
+                              Icon(Icons.gavel, color: Colors.amber, size: 20),
+                              SizedBox(width: 6),
+                              Text(
+                                'غرفة المزاد العلني المباشر ⚖️ (مع حماية منع القنص)',
+                                style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 14,
+                                    color: Colors.white),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            'أعلى مزايدة حالية: \$${(_currentAd.currentBid ?? _currentAd.startingBid ?? 0).toStringAsFixed(0)}',
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF22C55E),
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          _buildAuctionLiveCountdown(),
+                          const SizedBox(height: 10),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: TextField(
+                                  controller: _bidController,
+                                  keyboardType: TextInputType.number,
+                                  style: const TextStyle(color: Colors.white),
+                                  decoration: InputDecoration(
+                                    hintText: 'قيمة المزايدة (\$)',
+                                    hintStyle:
+                                        const TextStyle(color: Colors.white38),
+                                    filled: true,
+                                    fillColor: const Color(0xFF1E293B),
+                                    border: const OutlineInputBorder(),
+                                    contentPadding: const EdgeInsets.symmetric(
+                                        horizontal: 10, vertical: 8),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              ElevatedButton(
+                                style: ElevatedButton.styleFrom(
+                                    backgroundColor: const Color(0xFFD4AF37),
+                                    foregroundColor: Colors.black),
+                                onPressed:
+                                    _isPlacingBid ? null : _placeAuctionBid,
+                                child: _isPlacingBid
+                                    ? const SizedBox(
+                                        width: 18,
+                                        height: 18,
+                                        child: CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                            color: Colors.black),
+                                      )
+                                    : const Text(
+                                        'زايد الآن 🔨',
+                                        style: TextStyle(
+                                            fontWeight: FontWeight.bold),
+                                      ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                  ],
+
+                  // مشغل فيديو يوتيوب وروابط السوشيال ميديا
+                  _buildYouTubeVideoCard(),
+                  _buildSellerSocialBar(),
+
+                  const SizedBox(height: 8),
+
+                  // تفاصيل ومواصفات السلعة
+                  const Text(
+                    'تفاصيل ومواصفات السلعة 📝',
+                    style: TextStyle(
+                        fontSize: 14.5,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white),
+                  ),
+                  const SizedBox(height: 8),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF1E293B),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.white10),
+                    ),
+                    child: Text(
+                      _currentAd.description.isNotEmpty
+                          ? _currentAd.description
+                          : 'لا يوجد وصف إضافي مكتوب.',
+                      style: const TextStyle(
+                          fontSize: 13.5, height: 1.6, color: Colors.white70),
+                    ),
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  // 3️⃣ بطاقة المعلن الموثق VIP 🛡️
+                  Container(
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFF1E293B), Color(0xFF0F172A)],
+                        begin: Alignment.topRight,
+                        end: Alignment.bottomLeft,
+                      ),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(
+                          color: const Color(0xFFD4AF37).withOpacity(0.4),
+                          width: 1.1),
+                    ),
+                    child: Column(
+                      children: [
+                        Row(
+                          children: [
+                            CircleAvatar(
+                              radius: 24,
+                              backgroundColor: const Color(0xFFD4AF37),
+                              backgroundImage: (_sellerProfile != null &&
+                                      _sellerProfile!['avatar_url'] != null &&
+                                      _sellerProfile!['avatar_url']
+                                          .toString()
+                                          .isNotEmpty)
+                                  ? NetworkImage(_sellerProfile!['avatar_url'])
+                                  : null,
+                              child: (_sellerProfile == null ||
+                                      _sellerProfile!['avatar_url'] == null ||
+                                      _sellerProfile!['avatar_url']
+                                          .toString()
+                                          .isEmpty)
+                                  ? Text(
+                                      _currentAd.userName.isNotEmpty
+                                          ? _currentAd.userName[0]
+                                          : 'U',
+                                      style: const TextStyle(
+                                          color: Color(0xFF0F172A),
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 18),
+                                    )
+                                  : null,
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Text(
+                                        _currentAd.userName.isNotEmpty
+                                            ? _currentAd.userName
+                                            : 'معلن في السوق',
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 14,
+                                          color: Colors.white,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 6),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 6, vertical: 2),
+                                        decoration: BoxDecoration(
+                                          color: const Color(0xFF22C55E)
+                                              .withOpacity(0.15),
+                                          borderRadius:
+                                              BorderRadius.circular(4),
+                                        ),
+                                        child: const Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Icon(Icons.verified,
+                                                color: Color(0xFF22C55E),
+                                                size: 12),
+                                            SizedBox(width: 2),
+                                            Text(
+                                              'موثق VIP',
+                                              style: TextStyle(
+                                                color: Color(0xFF22C55E),
+                                                fontSize: 9.5,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 3),
+                                  Text(
+                                    'السمعة: ${_currentAd.sellerPositiveLikes} 👍 إيجابي • ${_currentAd.sellerDislikes} 👎 سلبي',
+                                    style: const TextStyle(
+                                        fontSize: 11.5, color: Colors.white54),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        const Divider(color: Colors.white12, height: 20),
+                        InkWell(
+                          borderRadius: BorderRadius.circular(10),
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (ctx) => UserProfileScreen(
+                                  targetUserId: _currentAd.userId.isNotEmpty &&
+                                          _currentAd.userId != 'guest'
+                                      ? _currentAd.userId
+                                      : null,
+                                  targetUserName:
+                                      _currentAd.publisherName.isNotEmpty
+                                          ? _currentAd.publisherName
+                                          : _currentAd.userName,
+                                ),
+                              ),
+                            );
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                                vertical: 8, horizontal: 12),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFD4AF37).withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.badge_rounded,
+                                    color: Color(0xFFD4AF37), size: 18),
+                                SizedBox(width: 6),
+                                Text(
+                                  'عرض الملف الشخصي للمعلن وكافة إعلاناته 👤',
+                                  style: TextStyle(
                                     color: Color(0xFFD4AF37),
                                     fontSize: 12,
                                     fontWeight: FontWeight.bold,
                                   ),
                                 ),
-                              ),
-                            ],
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-          ),
-          if (images.length > 1) ...[
-            const SizedBox(height: 8),
-            SizedBox(
-              height: 55,
-              child: ListView.builder(
-                scrollDirection: Axis.horizontal,
-                physics: const BouncingScrollPhysics(),
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                itemCount: images.length,
-                itemBuilder: (ctx, i) {
-                  final isSel = _currentImageIndex == i;
-                  return GestureDetector(
-                    onTap: () {
-                      _pageController.animateToPage(
-                        i,
-                        duration: const Duration(milliseconds: 300),
-                        curve: Curves.easeInOut,
-                      );
-                    },
-                    child: Container(
-                      margin: const EdgeInsets.only(left: 8),
-                      width: 55,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(
-                          color: isSel
-                              ? const Color(0xFFD4AF37)
-                              : Colors.grey.shade400,
-                          width: isSel ? 2.5 : 1,
-                        ),
-                      ),
-                      clipBehavior: Clip.antiAlias,
-                      child:
-                          AppSmartImage(imageUrl: images[i], fit: BoxFit.cover),
-                    ),
-                  );
-                },
-              ),
-            ),
-          ],
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Expanded(
-                      child: Text(
-                        _currentAd.title,
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: _manager.titleTextColor,
-                        ),
-                      ),
-                    ),
-                    if (_currentAd.priceUsd != null)
-                      Text(
-                        '\$${_currentAd.priceUsd!.toStringAsFixed(0)}',
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: _manager.priceUsdColor,
-                        ),
-                      ),
-                  ],
-                ),
-                if (_currentAd.priceSyp != null)
-                  Text(
-                    '${_currentAd.priceSyp!.toStringAsFixed(0)} ليرة سورية',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                      color: _manager.priceSypColor,
-                    ),
-                  ),
-                const SizedBox(height: 10),
-                Row(
-                  children: [
-                    Icon(Icons.location_on,
-                        size: 14, color: _manager.locationTextColor),
-                    const SizedBox(width: 4),
-                    Text(
-                      '${_currentAd.governorate} - ${_currentAd.neighborhood}',
-                      style: TextStyle(
-                          fontSize: 12, color: _manager.locationTextColor),
-                    ),
-                    const Spacer(),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 3),
-                      decoration: BoxDecoration(
-                        color: _manager.primaryColor.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: Text(
-                        _currentAd.condition,
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.bold,
-                          color: _manager.primaryColor,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    Icon(Icons.access_time_rounded,
-                        size: 13, color: _manager.locationTextColor),
-                    const SizedBox(width: 4),
-                    Text(
-                      'تاريخ النشر: ${_currentAd.timeAgo}',
-                      style: TextStyle(
-                        fontSize: 11.5,
-                        color: _manager.locationTextColor,
-                      ),
-                    ),
-                  ],
-                ),
-                const Divider(height: 24),
-
-                // ================= قسم روابط التواصل الاجتماعي وفيديو المعاينة =================
-                if ((_currentAd.videoUrl != null &&
-                        _currentAd.videoUrl!.trim().isNotEmpty) ||
-                    (_currentAd.facebookUrl != null &&
-                        _currentAd.facebookUrl!.trim().isNotEmpty) ||
-                    (_currentAd.telegramUrl != null &&
-                        _currentAd.telegramUrl!.trim().isNotEmpty) ||
-                    (_currentAd.instagramUrl != null &&
-                        _currentAd.instagramUrl!.trim().isNotEmpty) ||
-                    (_currentAd.tiktokUrl != null &&
-                        _currentAd.tiktokUrl!.trim().isNotEmpty) ||
-                    (_currentAd.youtubeUrl != null &&
-                        _currentAd.youtubeUrl!.trim().isNotEmpty)) ...[
-                  Row(
-                    children: [
-                      Icon(Icons.share,
-                          size: 16, color: _manager.secondaryColor),
-                      const SizedBox(width: 6),
-                      const Text(
-                        'روابط التواصل الاجتماعي وفيديو المعاينة:',
-                        style: TextStyle(
-                            fontWeight: FontWeight.bold, fontSize: 13),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 10),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: [
-                      // فيسبوك
-                      if (_currentAd.facebookUrl != null &&
-                          _currentAd.facebookUrl!.trim().isNotEmpty)
-                        ActionChip(
-                          avatar: const Icon(Icons.facebook,
-                              color: Color(0xFF1877F2), size: 18),
-                          label: const Text('فيسبوك',
-                              style: TextStyle(
-                                  fontSize: 11, fontWeight: FontWeight.bold)),
-                          backgroundColor:
-                              const Color(0xFF1877F2).withOpacity(0.12),
-                          side: const BorderSide(
-                              color: Color(0xFF1877F2), width: 0.8),
-                          onPressed: () =>
-                              _openSocialLink(_currentAd.facebookUrl),
-                        ),
-                      // إنستغرام
-                      if (_currentAd.instagramUrl != null &&
-                          _currentAd.instagramUrl!.trim().isNotEmpty)
-                        ActionChip(
-                          avatar: const Icon(Icons.camera_alt,
-                              color: Color(0xFFE1306C), size: 18),
-                          label: const Text('إنستغرام',
-                              style: TextStyle(
-                                  fontSize: 11, fontWeight: FontWeight.bold)),
-                          backgroundColor:
-                              const Color(0xFFE1306C).withOpacity(0.12),
-                          side: const BorderSide(
-                              color: Color(0xFFE1306C), width: 0.8),
-                          onPressed: () =>
-                              _openSocialLink(_currentAd.instagramUrl),
-                        ),
-                      // تيك توك
-                      if (_currentAd.tiktokUrl != null &&
-                          _currentAd.tiktokUrl!.trim().isNotEmpty)
-                        ActionChip(
-                          avatar: const Icon(Icons.music_note,
-                              color: Colors.white, size: 18),
-                          label: const Text('تيك توك',
-                              style: TextStyle(
-                                  fontSize: 11, fontWeight: FontWeight.bold)),
-                          backgroundColor: Colors.black54,
-                          side: const BorderSide(
-                              color: Colors.white54, width: 0.8),
-                          onPressed: () =>
-                              _openSocialLink(_currentAd.tiktokUrl),
-                        ),
-                      // يوتيوب
-                      if (_currentAd.youtubeUrl != null &&
-                          _currentAd.youtubeUrl!.trim().isNotEmpty)
-                        ActionChip(
-                          avatar: const Icon(Icons.play_circle_fill,
-                              color: Color(0xFFFF0000), size: 18),
-                          label: const Text('يوتيوب',
-                              style: TextStyle(
-                                  fontSize: 11, fontWeight: FontWeight.bold)),
-                          backgroundColor:
-                              const Color(0xFFFF0000).withOpacity(0.12),
-                          side: const BorderSide(
-                              color: Color(0xFFFF0000), width: 0.8),
-                          onPressed: () =>
-                              _openSocialLink(_currentAd.youtubeUrl),
-                        ),
-                      // تليجرام
-                      if (_currentAd.telegramUrl != null &&
-                          _currentAd.telegramUrl!.trim().isNotEmpty)
-                        ActionChip(
-                          avatar: const Icon(Icons.send,
-                              color: Color(0xFF229ED9), size: 18),
-                          label: const Text('تليجرام',
-                              style: TextStyle(
-                                  fontSize: 11, fontWeight: FontWeight.bold)),
-                          backgroundColor:
-                              const Color(0xFF229ED9).withOpacity(0.12),
-                          side: const BorderSide(
-                              color: Color(0xFF229ED9), width: 0.8),
-                          onPressed: () =>
-                              _openSocialLink(_currentAd.telegramUrl),
-                        ),
-                      // فيديو توضيحي
-                      if (_currentAd.videoUrl != null &&
-                          _currentAd.videoUrl!.trim().isNotEmpty)
-                        ActionChip(
-                          avatar: const Icon(Icons.videocam,
-                              color: Color(0xFFD4AF37), size: 18),
-                          label: const Text('فيديو المعاينة',
-                              style: TextStyle(
-                                  fontSize: 11, fontWeight: FontWeight.bold)),
-                          backgroundColor:
-                              const Color(0xFFD4AF37).withOpacity(0.12),
-                          side: const BorderSide(
-                              color: Color(0xFFD4AF37), width: 0.8),
-                          onPressed: () => _openSocialLink(_currentAd.videoUrl),
-                        ),
-                    ],
-                  ),
-                  const Divider(height: 24),
-                ],
-                // ================= شريط روابط التواصل الاجتماعي وتضمين الفيديو =================
-                _buildSellerSocialBar(),
-                const SizedBox(height: 12),
-
-                if (_currentAd.isAuction) ...[
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Colors.amber.withOpacity(0.12),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.amber.withOpacity(0.5)),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Row(
-                          children: [
-                            Icon(Icons.gavel, color: Colors.amber, size: 20),
-                            SizedBox(width: 6),
-                            Text(
-                              'غرفة المزاد العلني المباشر ⚖️ (مع حماية منع القنص)',
-                              style: TextStyle(
-                                  fontWeight: FontWeight.bold, fontSize: 14),
+                              ],
                             ),
-                          ],
-                        ),
-                        const SizedBox(height: 6),
-                        Text(
-                          'أعلى مزايدة حالية: \$${(_currentAd.currentBid ?? _currentAd.startingBid ?? 0).toStringAsFixed(0)}',
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.green,
                           ),
                         ),
-                        const SizedBox(height: 6),
-                        // ================= العداد التنازلي الحي للمزاد بالثواني =================
-                        _buildAuctionLiveCountdown(),
-                        const SizedBox(height: 10),
+                        const SizedBox(height: 8),
                         Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceAround,
                           children: [
-                            Expanded(
-                              child: TextField(
-                                controller: _bidController,
-                                keyboardType: TextInputType.number,
-                                decoration: const InputDecoration(
-                                  hintText: 'قيمة المزايدة (\$)',
-                                  border: OutlineInputBorder(),
-                                  contentPadding: EdgeInsets.symmetric(
-                                      horizontal: 10, vertical: 8),
-                                ),
+                            TextButton.icon(
+                              icon: const Icon(Icons.thumb_up_rounded,
+                                  color: Color(0xFF22C55E), size: 18),
+                              label: Text(
+                                'تقييم إيجابي (${_currentAd.sellerPositiveLikes})',
+                                style: const TextStyle(
+                                    color: Color(0xFF22C55E),
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 11.5),
                               ),
+                              onPressed: () => _handleVote(true),
                             ),
-                            const SizedBox(width: 8),
-                            ElevatedButton(
-                              style: ElevatedButton.styleFrom(
-                                  backgroundColor: _manager.buttonColor),
-                              onPressed:
-                                  _isPlacingBid ? null : _placeAuctionBid,
-                              child: _isPlacingBid
-                                  ? const SizedBox(
-                                      width: 18,
-                                      height: 18,
-                                      child: CircularProgressIndicator(
-                                          strokeWidth: 2),
-                                    )
-                                  : const Text(
-                                      'زايد الآن 🔨',
-                                      style: TextStyle(
-                                          color: Colors.white,
-                                          fontWeight: FontWeight.bold),
-                                    ),
+                            TextButton.icon(
+                              icon: const Icon(Icons.thumb_down_rounded,
+                                  color: Colors.redAccent, size: 18),
+                              label: Text(
+                                'تقييم سلبي (${_currentAd.sellerDislikes})',
+                                style: const TextStyle(
+                                    color: Colors.redAccent,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 11.5),
+                              ),
+                              onPressed: () => _handleVote(false),
                             ),
                           ],
                         ),
                       ],
                     ),
                   ),
-                  const SizedBox(height: 16),
-                ],
-                // ================= بطاقة معاينة وتشغيل فيديو يوتيوب المدمج =================
-                _buildYouTubeVideoCard(),
-                const Text(
-                  'تفاصيل ومواصفات السلعة:',
-                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  _currentAd.description,
-                  style: const TextStyle(fontSize: 13.5, height: 1.6),
-                ),
-                const SizedBox(height: 20),
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Colors.grey.withOpacity(0.08),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.grey.withOpacity(0.2)),
-                  ),
-                  child: Column(
+
+                  const SizedBox(height: 20),
+
+                  // 4️⃣ قسم التعليقات والاستفسارات المباشرة المتصل بالسيرفر
+                  const Row(
                     children: [
-                      Row(
-                        children: [
-                          CircleAvatar(
-                            backgroundColor: _manager.primaryColor,
-                            child: Text(
-                              _currentAd.userName.isNotEmpty
-                                  ? _currentAd.userName[0]
-                                  : 'U',
-                              style: const TextStyle(color: Colors.white),
+                      Icon(Icons.forum_rounded,
+                          color: Color(0xFFD4AF37), size: 18),
+                      SizedBox(width: 6),
+                      Text(
+                        'التعليقات والاستفسارات المباشرة 💬',
+                        style: TextStyle(
+                            fontSize: 14.5,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: _commentController,
+                          style: const TextStyle(
+                              color: Colors.white, fontSize: 13),
+                          decoration: InputDecoration(
+                            hintText: 'اكتب استفسارك أو تعليقك حول السلعة...',
+                            hintStyle: const TextStyle(
+                                color: Colors.white38, fontSize: 12),
+                            filled: true,
+                            fillColor: const Color(0xFF1E293B),
+                            contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 14, vertical: 10),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide.none,
                             ),
                           ),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFFD4AF37),
+                          foregroundColor: const Color(0xFF0F172A),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 12),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10)),
+                        ),
+                        onPressed: _submitComment,
+                        child: const Text('إرسال 💬',
+                            style: TextStyle(
+                                fontWeight: FontWeight.bold, fontSize: 12.5)),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+
+                  if (_isLoadingComments)
+                    const Center(
+                      child: Padding(
+                        padding: EdgeInsets.all(12.0),
+                        child: SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                              strokeWidth: 2, color: Color(0xFFD4AF37)),
+                        ),
+                      ),
+                    )
+                  else if (_adComments.isEmpty)
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF1E293B).withOpacity(0.5),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: const Center(
+                        child: Text(
+                          'لا توجد تعليقات بعد. كن أول من يستفسر عن هذه السلعة!',
+                          style: TextStyle(color: Colors.white38, fontSize: 12),
+                        ),
+                      ),
+                    )
+                  else
+                    ..._adComments.map(
+                      (c) => Container(
+                        margin: const EdgeInsets.only(bottom: 8),
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF1E293B),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.white10),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
                                 Row(
                                   children: [
+                                    CircleAvatar(
+                                      radius: 11,
+                                      backgroundColor: const Color(0xFFD4AF37)
+                                          .withOpacity(0.25),
+                                      child: Text(
+                                        c.userName.isNotEmpty
+                                            ? c.userName[0]
+                                            : 'U',
+                                        style: const TextStyle(
+                                            color: Color(0xFFD4AF37),
+                                            fontSize: 10,
+                                            fontWeight: FontWeight.bold),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 6),
                                     Text(
-                                      _currentAd.userName,
+                                      c.userName,
                                       style: const TextStyle(
                                           fontWeight: FontWeight.bold,
-                                          fontSize: 13),
-                                    ),
-                                    const SizedBox(width: 4),
-                                    KycVerificationBadge(
-                                      isVerified: _currentAd.isVerifiedSeller,
-                                      positiveLikes:
-                                          _currentAd.sellerPositiveLikes,
-                                      size: 16,
+                                          fontSize: 12,
+                                          color: Colors.white),
                                     ),
                                   ],
                                 ),
                                 Text(
-                                  'السمعة الحالية: ${_currentAd.sellerPositiveLikes} 👍 إيجابي • ${_currentAd.sellerDislikes} 👎 سلبي',
+                                  '${c.createdAt.hour}:${c.createdAt.minute.toString().padLeft(2, '0')}',
                                   style: const TextStyle(
-                                      fontSize: 11, color: Colors.grey),
+                                      fontSize: 10, color: Colors.white38),
                                 ),
                               ],
                             ),
-                          ),
-                        ],
-                      ),
-                      const Divider(height: 16),
-                      // زر فتح حساب المعلن والانتقال لملفه الشخصي الكامل
-                      InkWell(
-                        borderRadius: BorderRadius.circular(10),
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (ctx) => UserProfileScreen(
-                                targetUserId: _currentAd.userId.isNotEmpty &&
-                                        _currentAd.userId != 'guest'
-                                    ? _currentAd.userId
-                                    : null,
-                                targetUserName:
-                                    _currentAd.publisherName.isNotEmpty
-                                        ? _currentAd.publisherName
-                                        : _currentAd.userName,
-                              ),
-                            ),
-                          );
-                        },
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(
-                              vertical: 6.0, horizontal: 8.0),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(Icons.account_circle,
-                                  color: _manager.secondaryColor, size: 22),
-                              const SizedBox(width: 6),
-                              const Text(
-                                'عرض الملف الشخصي للمعلن وتقييماته 👤',
-                                style: TextStyle(
-                                  color: Color(0xFFD4AF37),
+                            const SizedBox(height: 6),
+                            Text(
+                              c.commentText.isNotEmpty ? c.commentText : '...',
+                              style: const TextStyle(
                                   fontSize: 12.5,
-                                  fontWeight: FontWeight.bold,
-                                  decoration: TextDecoration.underline,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 6),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceAround,
-                        children: [
-                          TextButton.icon(
-                            icon: const Icon(Icons.thumb_up,
-                                color: Colors.green, size: 18),
-                            label: Text(
-                              'تقييم إيجابي (${_currentAd.sellerPositiveLikes})',
-                              style: const TextStyle(
-                                  color: Colors.green,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 12),
+                                  color: Colors.white70,
+                                  height: 1.4),
                             ),
-                            onPressed: () => _handleVote(true),
-                          ),
-                          TextButton.icon(
-                            icon: const Icon(Icons.thumb_down,
-                                color: Colors.red, size: 18),
-                            label: Text(
-                              'تقييم سلبي (${_currentAd.sellerDislikes})',
-                              style: const TextStyle(
-                                  color: Colors.red,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 12),
-                            ),
-                            onPressed: () => _handleVote(false),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 20),
-                const Text(
-                  'التعليقات والاستفسارات المباشرة 💬:',
-                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextField(
-                        controller: _commentController,
-                        decoration: InputDecoration(
-                          hintText: 'اكتب استفسارك أو تعليقك حول السلعة...',
-                          filled: true,
-                          fillColor: Colors.grey.shade100,
-                          contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 12, vertical: 8),
-                          border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(10)),
+                          ],
                         ),
                       ),
                     ),
-                    const SizedBox(width: 8),
-                    ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                          backgroundColor: _manager.buttonColor),
-                      onPressed: _submitComment,
-                      child: const Text('تعليق',
-                          style: TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold)),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                if (_isLoadingComments)
-                  const Center(
-                      child: Padding(
-                    padding: EdgeInsets.all(8.0),
-                    child: SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2)),
-                  ))
-                else if (_adComments.isEmpty)
-                  const Padding(
-                    padding: EdgeInsets.all(8.0),
-                    child: Text(
-                      'لا توجد تعليقات بعد. كن أول من يستفسر عن السلعة!',
-                      style: TextStyle(color: Colors.grey, fontSize: 12),
-                    ),
-                  )
-                else
-                  ..._adComments.map(
-                    (c) => Container(
-                      margin: const EdgeInsets.only(bottom: 6),
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: Colors.grey.shade200),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Row(
-                                children: [
-                                  const Icon(Icons.verified,
-                                      size: 14, color: Colors.blueAccent),
-                                  const SizedBox(width: 4),
-                                  Text(c.userName,
-                                      style: const TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 12)),
-                                ],
-                              ),
-                              Text(
-                                '${c.createdAt.hour}:${c.createdAt.minute.toString().padLeft(2, '0')}',
-                                style: const TextStyle(
-                                    fontSize: 10, color: Colors.grey),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 4),
-                          // عرض نص التعليق الصريح بدون أن يكون فارغاً
-                          Text(
-                            c.commentText.isNotEmpty ? c.commentText : '...',
-                            style: const TextStyle(
-                                fontSize: 12, color: Colors.black87),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-          ),
-        ],
-      ),
-      bottomNavigationBar: Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.08),
-              blurRadius: 10,
-              offset: const Offset(0, -2),
+                ],
+              ),
             ),
           ],
         ),
-        child: Row(
-          children: [
-            Expanded(
-              child: ElevatedButton.icon(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF25D366),
-                  padding: const EdgeInsets.symmetric(vertical: 12),
+
+        // 5️⃣ شريط التواصل السفلي العائم الراقي
+        bottomNavigationBar: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          decoration: BoxDecoration(
+            color: const Color(0xFF0F172A),
+            border: const Border(top: BorderSide(color: Colors.white10)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.4),
+                blurRadius: 10,
+                offset: const Offset(0, -3),
+              ),
+            ],
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF22C55E),
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10)),
+                  ),
+                  icon: const Icon(Icons.chat, color: Colors.white, size: 18),
+                  label: const Text('واتساب 💬',
+                      style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 13)),
+                  onPressed: _openWhatsapp,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF0284C7),
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10)),
+                  ),
+                  icon: const Icon(Icons.phone, color: Colors.white, size: 18),
+                  label: const Text('اتصال 📞',
+                      style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 13)),
+                  onPressed: _callSeller,
+                ),
+              ),
+              const SizedBox(width: 8),
+              IconButton(
+                style: IconButton.styleFrom(
+                  backgroundColor: const Color(0xFFD4AF37).withOpacity(0.2),
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10)),
+                  padding: const EdgeInsets.all(12),
                 ),
-                icon: const Icon(Icons.chat, color: Colors.white),
-                label: const Text('واتساب',
-                    style: TextStyle(
-                        color: Colors.white, fontWeight: FontWeight.bold)),
-                onPressed: _openWhatsapp,
+                icon: const Icon(Icons.forum_rounded,
+                    color: Color(0xFFD4AF37), size: 22),
+                tooltip: 'تفاوض ودردشة داخل التطبيق',
+                onPressed: _openDirectChat,
               ),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: ElevatedButton.icon(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: _manager.primaryColor,
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10)),
-                ),
-                icon: const Icon(Icons.phone, color: Colors.white),
-                label: const Text('اتصال',
-                    style: TextStyle(
-                        color: Colors.white, fontWeight: FontWeight.bold)),
-                onPressed: _callSeller,
-              ),
-            ),
-            const SizedBox(width: 8),
-            IconButton(
-              style: IconButton.styleFrom(
-                backgroundColor: _manager.secondaryColor.withOpacity(0.2),
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10)),
-              ),
-              icon: Icon(Icons.forum, color: _manager.primaryColor),
-              tooltip: 'محادثة وتفاوض مباشر',
-              onPressed: _openDirectChat,
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -9027,7 +8738,7 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
           ],
         ),
       ),
-      // 🌟 زر الإضافة المركزي المتناسق والمضغوط لفتح الاستمارة الشاملة الفخمة
+      // 🌟 زر الإضافة المركزي الذكي مع نظام المراجعة الأمنية وفحص صلاحيات النشر
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
       floatingActionButton: Padding(
         padding: const EdgeInsets.only(top: 8),
@@ -9046,15 +8757,79 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
                   context,
                   MaterialPageRoute(
                     builder: (ctx) => FullAddAdScreen(
-                      onAdCreated: (newAd) {
-                        _manager.addNewAdDirectly(newAd);
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text(
-                                '✅ تم استلام إعلانك بنجاح، وسيظهر في التطبيق فور اعتماده السريع ✨'),
-                            backgroundColor: Color(0xFF16A34A),
-                          ),
-                        );
+                      onAdCreated: (newAd) async {
+                        // فحص هل الناشر مدير عام أو مشرف معتمد؟
+                        final bool isSuperOrMod =
+                            _manager.isAdmin || _manager.isModerator;
+
+                        if (isSuperOrMod) {
+                          // المدير أو المشرف ينشر إعلانه مباشرة للسوق العام
+                          _manager.addNewAdDirectly(newAd);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text(
+                                  '👑 تم نشر إعلانك فوراً بصلاحية الإدارة العليا!'),
+                              backgroundColor: Color(0xFF16A34A),
+                            ),
+                          );
+                        } else {
+                          // المستخدم العادي: حفظ الإعلان كمعلق بانتظار موافقة الإدارة في السيرفر
+                          try {
+                            await Supabase.instance.client
+                                .from('posts')
+                                .update({
+                              'status': 'pending',
+                              'is_approved': false,
+                            }).eq('id', newAd.id);
+                          } catch (_) {}
+
+                          // رسالة إشعار للمستخدم بالانتظار
+                          showDialog(
+                            context: context,
+                            builder: (dCtx) => Directionality(
+                              textDirection: TextDirection.rtl,
+                              child: AlertDialog(
+                                backgroundColor: const Color(0xFF0F172A),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                  side: const BorderSide(
+                                      color: Color(0xFFD4AF37), width: 1.2),
+                                ),
+                                title: const Row(
+                                  children: [
+                                    Icon(Icons.hourglass_top_rounded,
+                                        color: Color(0xFFD4AF37), size: 24),
+                                    SizedBox(width: 8),
+                                    Text('إعلانك قيد المراجعة ⏳',
+                                        style: TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.bold)),
+                                  ],
+                                ),
+                                content: const Text(
+                                  'شكراً لك! تم استلام إعلانك بنجاح ✅\n\nحرصاً على سلامة وموثوقية سوق سوريا الشامل، يتم تدقيق الإعلانات قبل عرضها للعامة. سيتم نشر إعلانك على الفور بمجرد موافقة فريق الإشراف.',
+                                  style: TextStyle(
+                                      color: Colors.white70,
+                                      fontSize: 13,
+                                      height: 1.5),
+                                ),
+                                actions: [
+                                  ElevatedButton(
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: const Color(0xFFD4AF37),
+                                      foregroundColor: Colors.black,
+                                    ),
+                                    onPressed: () => Navigator.pop(dCtx),
+                                    child: const Text('حسناً، بانتظار النشر',
+                                        style: TextStyle(
+                                            fontWeight: FontWeight.bold)),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        }
                       },
                     ),
                   ),
@@ -9472,117 +9247,12 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
     );
   }
 
-  // 🌟 دالة تعديل أسعار الصرف والذهب المركزية الحقيقية بدون أي أخطاء
+// 🌟 دالة تعديل أسعار الصرف والذهب المركزية الحقيقية بدون أي أخطاء
   void _showEditRatesDialog() {
-    if (!_manager.isAdmin) {
-      _initLiveAdsFromSupabase();
-      return;
-    }
-
-    final usdCtrl = TextEditingController(
-        text: _manager.exchangeRateUsdToSyp.toInt().toString());
-    final goldCtrl = TextEditingController(
-        text: _manager.goldPrice21kSyp.toInt().toString());
-
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: const Color(0xFF0F172A),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-          side: const BorderSide(color: Color(0xFFD4AF37), width: 1.2),
-        ),
-        title: const Row(
-          children: [
-            Icon(Icons.currency_exchange, color: Color(0xFFD4AF37), size: 24),
-            SizedBox(width: 8),
-            Text(
-              'تعديل أسعار الدولار والذهب 🪙',
-              style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 15,
-                  fontWeight: FontWeight.bold),
-            ),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text(
-              'أدخل السعر الجديد وسيتم تحديثه فوراً في السيرفر وعلى جميع أجهزة المستخدمين:',
-              style: TextStyle(color: Colors.white70, fontSize: 12),
-            ),
-            const SizedBox(height: 14),
-            TextField(
-              controller: usdCtrl,
-              keyboardType: TextInputType.number,
-              style: const TextStyle(
-                  color: Colors.white, fontWeight: FontWeight.bold),
-              decoration: const InputDecoration(
-                labelText: 'سعر الدولار مقابل الليرة (USD -> SYP)',
-                labelStyle: TextStyle(color: Color(0xFF38BDF8), fontSize: 12),
-                suffixText: 'ل.س',
-                suffixStyle: TextStyle(color: Colors.white70),
-                border: OutlineInputBorder(),
-                filled: true,
-                fillColor: Color(0xFF1E293B),
-              ),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: goldCtrl,
-              keyboardType: TextInputType.number,
-              style: const TextStyle(
-                  color: Colors.white, fontWeight: FontWeight.bold),
-              decoration: const InputDecoration(
-                labelText: 'سعر غرام الذهب عيار 21',
-                labelStyle: TextStyle(color: Color(0xFFD4AF37), fontSize: 12),
-                suffixText: 'ل.س',
-                suffixStyle: TextStyle(color: Colors.white70),
-                border: OutlineInputBorder(),
-                filled: true,
-                fillColor: Color(0xFF1E293B),
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('إلغاء', style: TextStyle(color: Colors.white60)),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFD4AF37),
-              foregroundColor: const Color(0xFF0F172A),
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8)),
-            ),
-            onPressed: () async {
-              final newUsd = double.tryParse(usdCtrl.text.trim());
-              final newGold = double.tryParse(goldCtrl.text.trim());
-              if (newUsd != null && newGold != null) {
-                Navigator.pop(ctx);
-                await _manager.updateExchangeRatesInCloud(
-                  newUsdRate: newUsd,
-                  newGoldPrice: newGold,
-                );
-                setState(() {});
-                if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content:
-                          Text('✅ تم تحديث ونشر أسعار الصرف في السيرفر بنجاح!'),
-                      backgroundColor: Colors.green,
-                    ),
-                  );
-                }
-              }
-            },
-            child: const Text('حفظ ونشر فوراً ⚡',
-                style: TextStyle(fontWeight: FontWeight.bold)),
-          ),
-        ],
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (ctx) => const ComprehensiveCurrencyExchangeScreen(),
       ),
     );
   }
@@ -11073,57 +10743,7 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
   }
 
   Widget _buildCustomNewsTickerWidget() {
-    final newsText = _manager.newsTicker.join('   ✦   ');
-
-    return Container(
-      color: _manager.tickerBackgroundColor,
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-      child: Row(
-        textDirection: TextDirection.rtl,
-        children: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-            decoration: BoxDecoration(
-                color: _manager.secondaryColor,
-                borderRadius: BorderRadius.circular(4)),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(_manager.tickerIcon,
-                    color: _manager.primaryColor, size: 12),
-                const SizedBox(width: 3),
-                Text('عاجل',
-                    style: TextStyle(
-                        color: _manager.primaryColor,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 10)),
-              ],
-            ),
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Listener(
-              onPointerDown: (_) => setState(() => _isTickerPaused = true),
-              onPointerUp: (_) => setState(() => _isTickerPaused = false),
-              onPointerCancel: (_) => setState(() => _isTickerPaused = false),
-              child: SingleChildScrollView(
-                controller: _tickerScrollController,
-                scrollDirection: Axis.horizontal,
-                physics: const BouncingScrollPhysics(),
-                child: Text(
-                  newsText,
-                  style: TextStyle(
-                    color: _manager.tickerTextColor,
-                    fontSize: _manager.tickerFontSize,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
+    return const SizedBox.shrink();
   }
 
   Widget _buildRoyalBannersSection() {
@@ -11188,6 +10808,7 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
     );
   }
 
+  // 🌟 كرت البانوراما المتحرك الملكي للبانوراما العلوية والسفلية
   Widget _buildAnimatedPanoramaCard(BannerItem banner,
       {required String badgeTitle}) {
     final displayImg =
@@ -11324,204 +10945,35 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
     );
   }
 
-  Widget _buildEmptySlotBannerCard(String placeholderText) {
-    return InkWell(
-      borderRadius: BorderRadius.circular(12),
-      onTap: () {
-        if (_manager.isAdmin) {
-          _pickAndUploadBannerDirectly();
-        } else {
-          _showContactAdminDialog();
-        }
-      },
-      child: Container(
-        decoration: BoxDecoration(
-          color: _manager.primaryColor.withOpacity(0.06),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: _manager.secondaryColor.withOpacity(0.6),
-            width: 1.2,
-            style: BorderStyle.solid,
-          ),
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            _isUploadingBanner
-                ? const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2))
-                : Icon(
-                    _manager.isAdmin
-                        ? Icons.add_photo_alternate_outlined
-                        : Icons.campaign_outlined,
-                    color: _manager.secondaryColor,
-                    size: 22,
-                  ),
-            const SizedBox(height: 4),
-            Text(
-              _manager.isAdmin
-                  ? placeholderText
-                  : 'مساحة إعلانية شاغرة 📢\nاضغط هنا لحجز البانوراما مع الإدارة',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                color: _manager.primaryColor,
-                fontSize: 10,
-                fontWeight: FontWeight.bold,
-                height: 1.3,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildCategoriesHorizontalBar() {
-    final currentCat = _manager.categories.firstWhere(
-      (c) => c.name == _selectedCategoryId,
-      orElse: () => _manager.categories.isNotEmpty
-          ? _manager.categories.first
-          : CategoryItem(
-              id: 'all',
-              name: 'الكل',
-              iconData: Icons.category,
-              subcategories: []),
-    );
-
-    final subcategories =
-        _selectedCategoryId != null ? currentCat.subcategories : <String>[];
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        SizedBox(
-          height: 38,
-          child: ListView(
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 10),
-            children: [
-              Padding(
-                padding: const EdgeInsets.only(left: 4),
-                child: FilterChip(
-                  label: const Text('الكل',
-                      style:
-                          TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
-                  selected: _selectedCategoryId == null,
-                  selectedColor: _manager.primaryColor,
-                  labelStyle: TextStyle(
-                      color: _selectedCategoryId == null
-                          ? Colors.white
-                          : Colors.black87),
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10)),
-                  onSelected: (_) => setState(() {
-                    _selectedCategoryId = null;
-                    _selectedSubcategory = null;
-                  }),
-                ),
-              ),
-              ..._manager.categories.map((cat) {
-                final isSelected = _selectedCategoryId == cat.name;
-                return Padding(
-                  padding: const EdgeInsets.only(left: 4),
-                  child: FilterChip(
-                    avatar: Icon(cat.iconData,
-                        size: 14,
-                        color: isSelected ? Colors.white : cat.textColor),
-                    label: Text(
-                      cat.name,
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.bold,
-                        color: isSelected ? Colors.white : cat.textColor,
-                      ),
-                    ),
-                    selected: isSelected,
-                    selectedColor: cat.backgroundColor,
-                    backgroundColor: cat.backgroundColor,
-                    shape: RoundedRectangleBorder(
-                        borderRadius:
-                            BorderRadius.circular(cat.borderRadiusValue)),
-                    onSelected: (val) {
-                      setState(() {
-                        _selectedCategoryId = val ? cat.name : null;
-                        _selectedSubcategory = null;
-                      });
-                    },
-                  ),
-                );
-              }).toList(),
-            ],
-          ),
-        ),
-        if (subcategories.isNotEmpty) ...[
-          const SizedBox(height: 3),
-          SizedBox(
-            height: 28,
-            child: ListView(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 14),
-              children: subcategories.map((sub) {
-                final isSelected = _selectedSubcategory == sub;
-                return Padding(
-                  padding: const EdgeInsets.only(left: 4),
-                  child: ChoiceChip(
-                    label: Text(sub,
-                        style: TextStyle(
-                            fontSize: 10,
-                            color: isSelected
-                                ? _manager.primaryColor
-                                : Colors.black87)),
-                    selected: isSelected,
-                    selectedColor: _manager.primaryColor.withOpacity(0.15),
-                    backgroundColor: Colors.transparent,
-                    onSelected: (val) {
-                      setState(() {
-                        _selectedSubcategory = val ? sub : null;
-                      });
-                    },
-                  ),
-                );
-              }).toList(),
-            ),
-          ),
-        ],
-      ],
-    );
-  }
-
-  // 🌟 بطاقة المنشورات الأفقية الملكية فائقة التوفير للمساحة (بنفس دوال AdItem وSupabase الأصلية)
+// 🌟 بطاقة المنشورات الأفقية الملكية المطورة (سريعة، فخمة، وزر مفضلة سريع اللمس 100%)
   Widget _buildCompactFacingGridAdCard(AdItem ad) {
     final isFav = _favoriteAdIds.contains(ad.id);
-    final remaining = ad.soldRemainingDuration;
     final displayImg = ad.imageUrls.isNotEmpty ? ad.imageUrls.first : '';
 
     return Directionality(
       textDirection: TextDirection.rtl,
       child: Container(
-        height: 94,
-        margin: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+        height: 102,
+        margin: const EdgeInsets.symmetric(horizontal: 6, vertical: 3.5),
         decoration: BoxDecoration(
           color: const Color(0xFF0F172A),
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(14),
           border: Border.all(
             color: ad.isFeatured
-                ? const Color(0xFFD4AF37).withOpacity(0.6)
+                ? const Color(0xFFD4AF37).withOpacity(0.7)
                 : Colors.white10,
-            width: ad.isFeatured ? 1.2 : 0.8,
+            width: ad.isFeatured ? 1.4 : 0.8,
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.25),
-              blurRadius: 4,
+              color: Colors.black.withOpacity(0.3),
+              blurRadius: 6,
               offset: const Offset(0, 2),
             ),
           ],
         ),
         child: InkWell(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(14),
           onTap: () {
             setState(() {
               final targetIdx = _manager.ads.indexWhere((x) => x.id == ad.id);
@@ -11579,15 +11031,15 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
             );
           },
           child: Padding(
-            padding: const EdgeInsets.all(6),
+            padding: const EdgeInsets.all(7),
             child: Row(
               children: [
-                // 1. صورة الإعلان المربعة المدمجة مع كافة الشارات
+                // 1. صورة الإعلان المربعة المدمجة مع شارات VIP وزر المفضلة سريع الاستجابة
                 ClipRRect(
                   borderRadius: BorderRadius.circular(10),
                   child: SizedBox(
-                    width: 82,
-                    height: 82,
+                    width: 88,
+                    height: 88,
                     child: Stack(
                       fit: StackFit.expand,
                       children: [
@@ -11595,13 +11047,12 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
                           imageUrl: displayImg,
                           fit: BoxFit.cover,
                         ),
-                        // تظليل ناعم لحماية النصوص والمؤشرات
                         Positioned.fill(
                           child: DecoratedBox(
                             decoration: BoxDecoration(
                               gradient: LinearGradient(
                                 colors: [
-                                  Colors.black.withOpacity(0.5),
+                                  Colors.black.withOpacity(0.6),
                                   Colors.transparent,
                                   Colors.black.withOpacity(0.4),
                                 ],
@@ -11614,11 +11065,11 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
                         // شارة VIP أو قيد المراجعة
                         if (ad.status == 'pending')
                           Positioned(
-                            top: 3,
-                            right: 3,
+                            top: 4,
+                            right: 4,
                             child: Container(
                               padding: const EdgeInsets.symmetric(
-                                  horizontal: 4, vertical: 1),
+                                  horizontal: 5, vertical: 2),
                               decoration: BoxDecoration(
                                   color: Colors.orange.shade800,
                                   borderRadius: BorderRadius.circular(4)),
@@ -11626,16 +11077,16 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
                                   style: TextStyle(
                                       color: Colors.white,
                                       fontWeight: FontWeight.bold,
-                                      fontSize: 7.5)),
+                                      fontSize: 8)),
                             ),
                           )
                         else if (ad.isFeatured)
                           Positioned(
-                            top: 3,
-                            right: 3,
+                            top: 4,
+                            right: 4,
                             child: Container(
                               padding: const EdgeInsets.symmetric(
-                                  horizontal: 4, vertical: 1),
+                                  horizontal: 5, vertical: 2),
                               decoration: BoxDecoration(
                                   color: const Color(0xFFD4AF37),
                                   borderRadius: BorderRadius.circular(4)),
@@ -11643,83 +11094,94 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
                                   style: TextStyle(
                                       color: Color(0xFF0F172A),
                                       fontWeight: FontWeight.bold,
-                                      fontSize: 7.5)),
+                                      fontSize: 8)),
                             ),
                           ),
-                        // زر المفضلة
+                        // ❤️ زر المفضلة السريع جداً مع مساحة لمس مضاعفة (HitTest)
                         Positioned(
-                          top: 3,
-                          left: 3,
-                          child: GestureDetector(
-                            behavior: HitTestBehavior.opaque,
-                            onTap: () {
-                              _requireAuth(() {
-                                _toggleFavoriteInSupabase(ad.id);
-                              });
-                            },
-                            child: Container(
-                              padding: const EdgeInsets.all(3),
-                              decoration: BoxDecoration(
-                                color: isFav
-                                    ? Colors.red.withOpacity(0.85)
-                                    : Colors.black45,
-                                shape: BoxShape.circle,
-                              ),
-                              child: Icon(
-                                isFav ? Icons.favorite : Icons.favorite_border,
-                                color: Colors.white,
-                                size: 12,
+                          top: 2,
+                          left: 2,
+                          child: Material(
+                            color: Colors.transparent,
+                            child: InkWell(
+                              borderRadius: BorderRadius.circular(20),
+                              onTap: () {
+                                _requireAuth(() {
+                                  _toggleFavoriteInSupabase(ad.id);
+                                });
+                              },
+                              child: Container(
+                                width: 32,
+                                height: 32,
+                                decoration: BoxDecoration(
+                                  color: isFav
+                                      ? const Color(0xFFEF4444)
+                                      : Colors.black.withOpacity(0.55),
+                                  shape: BoxShape.circle,
+                                  border: Border.all(
+                                    color:
+                                        isFav ? Colors.white : Colors.white38,
+                                    width: 1,
+                                  ),
+                                ),
+                                child: Icon(
+                                  isFav
+                                      ? Icons.favorite
+                                      : Icons.favorite_border_rounded,
+                                  color: Colors.white,
+                                  size: 17,
+                                ),
                               ),
                             ),
                           ),
                         ),
                         // عدد المشاهدات
                         Positioned(
-                          bottom: 2,
+                          bottom: 3,
                           left: 3,
                           child: Container(
                             padding: const EdgeInsets.symmetric(
-                                horizontal: 3, vertical: 1),
+                                horizontal: 4, vertical: 1.5),
                             decoration: BoxDecoration(
-                                color: Colors.black54,
-                                borderRadius: BorderRadius.circular(3)),
+                                color: Colors.black87,
+                                borderRadius: BorderRadius.circular(4)),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                const Icon(Icons.remove_red_eye,
-                                    color: Colors.white70, size: 7.5),
-                                const SizedBox(width: 2),
+                                const Icon(Icons.remove_red_eye_rounded,
+                                    color: Color(0xFF38BDF8), size: 9),
+                                const SizedBox(width: 3),
                                 Text('${ad.viewsCount}',
                                     style: const TextStyle(
                                         color: Colors.white,
-                                        fontSize: 7.5,
+                                        fontSize: 8,
                                         fontWeight: FontWeight.bold)),
                               ],
                             ),
                           ),
                         ),
-                        // علامة تم البيع
+                        // ختم تم البيع
                         if (ad.isSold)
                           Positioned.fill(
                             child: Container(
-                              color: Colors.black.withOpacity(0.7),
+                              color: Colors.black.withOpacity(0.75),
                               child: Center(
                                 child: Transform.rotate(
                                   angle: -0.2,
                                   child: Container(
                                     padding: const EdgeInsets.symmetric(
-                                        horizontal: 6, vertical: 2),
+                                        horizontal: 8, vertical: 3),
                                     decoration: BoxDecoration(
                                       color: const Color(0xFFDC2626),
                                       borderRadius: BorderRadius.circular(4),
                                       border: Border.all(
-                                          color: Colors.white, width: 1),
+                                          color: Colors.white, width: 1.2),
                                     ),
                                     child: const Text('تم البيع ✓',
                                         style: TextStyle(
                                             color: Colors.white,
                                             fontWeight: FontWeight.bold,
-                                            fontSize: 8.5)),
+                                            fontSize: 9.5)),
                                   ),
                                 ),
                               ),
@@ -11731,70 +11193,87 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
                 ),
                 const SizedBox(width: 10),
 
-                // 2. تفاصيل المنشور بوضوح فائق ومريح للعين
+                // 2. تفاصيل المنشور وتصميم السعر الملكي الموحد
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
-                      // العنوان
+                      // العنوان بخط عربي عريض وواضح
                       Text(
                         ad.title,
                         style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 12.5,
-                            color: Colors.white,
-                            height: 1.2),
+                          fontWeight: FontWeight.bold,
+                          fontSize: 13,
+                          color: Colors.white,
+                          height: 1.25,
+                        ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
-                      // الأسعار
+                      // 🪙 السعر المدمج والمنسق بأناقة
                       Row(
                         children: [
                           if (ad.priceUsd != null && ad.priceUsd! > 0)
-                            Text(
-                              '\$${ad.priceUsd!.toStringAsFixed(0)} USD',
-                              style: const TextStyle(
-                                color: Color(0xFF22C55E),
-                                fontWeight: FontWeight.bold,
-                                fontSize: 12,
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(
+                                color:
+                                    const Color(0xFF22C55E).withOpacity(0.18),
+                                borderRadius: BorderRadius.circular(6),
+                                border: Border.all(
+                                    color: const Color(0xFF22C55E)
+                                        .withOpacity(0.5),
+                                    width: 0.8),
+                              ),
+                              child: Text(
+                                '\$${ad.priceUsd!.toStringAsFixed(0)}',
+                                style: const TextStyle(
+                                  color: Color(0xFF22C55E),
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 12.5,
+                                ),
                               ),
                             ),
                           if (ad.priceSyp != null && ad.priceSyp! > 0) ...[
                             const SizedBox(width: 6),
                             Text(
-                              '(${ad.priceSyp!.toStringAsFixed(0)} ل.س)',
+                              '${ad.priceSyp!.toStringAsFixed(0)} ل.س',
                               style: const TextStyle(
                                 color: Color(0xFFD4AF37),
-                                fontWeight: FontWeight.w600,
-                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 11,
                               ),
                             ),
                           ],
                           if (ad.priceUsd == null && ad.priceSyp == null)
                             const Text(
-                              'السعر عند التواصل',
+                              'السعر عند التواصل 💬',
                               style: TextStyle(
-                                  color: Colors.white54, fontSize: 10.5),
+                                  color: Colors.white54, fontSize: 11),
                             ),
                         ],
                       ),
                       // المحافظة والوقت
                       Row(
                         children: [
-                          const Icon(Icons.location_on,
-                              color: Colors.redAccent, size: 11),
+                          const Icon(Icons.location_on_rounded,
+                              color: Colors.redAccent, size: 12),
                           const SizedBox(width: 2),
                           Text(
                             ad.governorate,
                             style: const TextStyle(
-                                fontSize: 10, color: Colors.white70),
+                                fontSize: 10.5, color: Colors.white70),
                           ),
                           const Spacer(),
+                          const Icon(Icons.access_time_rounded,
+                              color: Colors.white38, size: 10.5),
+                          const SizedBox(width: 2),
                           Text(
                             ad.timeAgo,
                             style: const TextStyle(
-                                fontSize: 9.5, color: Colors.white38),
+                                fontSize: 10, color: Colors.white38),
                           ),
                         ],
                       ),
@@ -11802,159 +11281,13 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
                   ),
                 ),
 
-                // سهم صغير للتنبيه بالضغط
                 const Icon(Icons.arrow_back_ios_new_rounded,
-                    color: Colors.white24, size: 12),
+                    color: Colors.white24, size: 13),
               ],
             ),
           ),
         ),
       ),
-    );
-  }
-
-  Widget _buildChatsAndNegotiationsTab() {
-    // التحقق من تسجيل الدخول الحقيقي عبر Supabase أو المدير
-    final isActuallyLoggedIn = _manager.isLoggedIn ||
-        Supabase.instance.client.auth.currentUser != null;
-
-    if (!isActuallyLoggedIn) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                width: 80,
-                height: 80,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: const Color(0xFF1E293B),
-                  border:
-                      Border.all(color: const Color(0xFFD4AF37), width: 1.5),
-                  boxShadow: [
-                    BoxShadow(
-                      color: const Color(0xFFD4AF37).withOpacity(0.2),
-                      blurRadius: 16,
-                    ),
-                  ],
-                ),
-                child: const Icon(Icons.lock_outline_rounded,
-                    size: 40, color: Color(0xFFD4AF37)),
-              ),
-              const SizedBox(height: 16),
-              const Text(
-                'غرف المحادثة والتفاوض المباشر 💬',
-                style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                    color: Colors.white),
-              ),
-              const SizedBox(height: 8),
-              const Text(
-                'يرجى تسجيل الدخول للوصول إلى رسائلك وعروض التفاوض الفورية.',
-                textAlign: TextAlign.center,
-                style: TextStyle(color: Colors.white60, fontSize: 12.5),
-              ),
-              const SizedBox(height: 20),
-              ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFD4AF37),
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10)),
-                ),
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (ctx) => SupabaseAuthScreen(
-                        onAuthSuccess: () => setState(() {}),
-                      ),
-                    ),
-                  );
-                },
-                child: const Text(
-                  'تسجيل الدخول الآن 🔑',
-                  style: TextStyle(
-                      color: Colors.black,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 13),
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
-    }
-
-    if (_userChatThreads.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.chat_bubble_outline_rounded,
-                size: 64, color: Colors.white24),
-            const SizedBox(height: 12),
-            const Text('لا توجد محادثات نشطة حالياً',
-                style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 15,
-                    color: Colors.white70)),
-            const SizedBox(height: 6),
-            const Text('تواصل مع أصحاب الإعلانات لبدء التفاوض المباشر.',
-                style: TextStyle(color: Colors.white38, fontSize: 12)),
-          ],
-        ),
-      );
-    }
-    return ListView.builder(
-      physics: const BouncingScrollPhysics(),
-      padding: const EdgeInsets.all(16),
-      itemCount: _userChatThreads.length,
-      itemBuilder: (ctx, idx) {
-        final thread = _userChatThreads[idx];
-        final senderName = thread['sender_name']?.toString() ?? 'طرف التفاوض';
-        final message = thread['message']?.toString() ?? '';
-        final adId = thread['ad_id']?.toString() ?? '';
-
-        return Card(
-          margin: const EdgeInsets.only(bottom: 8),
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          child: ListTile(
-            leading: CircleAvatar(
-              backgroundColor: _manager.primaryColor,
-              child: Text(
-                senderName.isNotEmpty ? senderName[0] : 'S',
-                style: const TextStyle(
-                    color: Colors.white, fontWeight: FontWeight.bold),
-              ),
-            ),
-            title: Text(senderName,
-                style:
-                    const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-            subtitle:
-                Text(message, maxLines: 1, overflow: TextOverflow.ellipsis),
-            trailing: const Icon(Icons.arrow_forward_ios, size: 14),
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (c) => FullChatNegotiationScreen(
-                    adId: adId,
-                    partnerName: senderName,
-                    productTitle: 'تفاوض مباشر على السلعة',
-                    initialPrice: 0,
-                  ),
-                ),
-              );
-            },
-          ),
-        );
-      },
     );
   }
 
@@ -13753,6 +13086,7 @@ class FullChatNegotiationScreen extends StatefulWidget {
     required this.productTitle,
     required this.initialPrice,
   }) : super(key: key);
+
   @override
   State<FullChatNegotiationScreen> createState() =>
       _FullChatNegotiationScreenState();
@@ -13808,8 +13142,7 @@ class _FullChatNegotiationScreenState extends State<FullChatNegotiationScreen> {
           .from('chat_messages')
           .select()
           .eq('ad_id', widget.adId)
-          .order('created_at', ascending: true)
-          .timeout(const Duration(seconds: 8));
+          .order('created_at', ascending: true);
 
       if (res is List && mounted) {
         setState(() {
@@ -13818,7 +13151,8 @@ class _FullChatNegotiationScreenState extends State<FullChatNegotiationScreen> {
           _isLoading = false;
         });
       }
-    } catch (_) {
+    } catch (e) {
+      debugPrint('Load chat error: $e');
       if (mounted) setState(() => _isLoading = false);
     }
   }
@@ -13827,34 +13161,49 @@ class _FullChatNegotiationScreenState extends State<FullChatNegotiationScreen> {
     final text = customOfferText ?? _messageController.text.trim();
     if (text.isEmpty) return;
 
-    final senderId = _manager.currentUserId.isNotEmpty
-        ? _manager.currentUserId
-        : 'guest_${DateTime.now().millisecondsSinceEpoch}';
+    final authUser = Supabase.instance.client.auth.currentUser;
+    final String? validUserId = authUser?.id;
+
+    final senderId = validUserId ??
+        (_manager.currentUserId.isNotEmpty
+            ? _manager.currentUserId
+            : 'usr_${DateTime.now().millisecondsSinceEpoch}');
+
     final senderName = _manager.currentUserName.isNotEmpty
         ? _manager.currentUserName
-        : 'مستخدم التطبيق';
+        : (_manager.currentUserPhone.isNotEmpty
+            ? _manager.currentUserPhone
+            : 'عضو في السوق');
 
-    final msgData = {
-      'id': 'msg_${DateTime.now().millisecondsSinceEpoch}',
+    final now = DateTime.now();
+
+    final Map<String, dynamic> msgPayload = {
       'ad_id': widget.adId,
-      'sender_id': senderId,
       'sender_name': senderName,
       'message': text,
-      'created_at': DateTime.now().toIso8601String(),
+      'content': text,
+      'created_at': now.toIso8601String(),
     };
 
+    if (validUserId != null) {
+      msgPayload['sender_id'] = validUserId;
+    }
+
     setState(() {
-      _messages.add(msgData);
+      _messages.add({
+        ...msgPayload,
+        'sender_id': senderId,
+      });
       if (customOfferText == null) _messageController.clear();
     });
 
     try {
-      await Supabase.instance.client
-          .from('chat_messages')
-          .insert(msgData)
-          .timeout(const Duration(seconds: 6));
+      await Supabase.instance.client.from('chat_messages').insert(msgPayload);
     } catch (e) {
       debugPrint('Chat insert error: $e');
+      try {
+        await Supabase.instance.client.from('messages').insert(msgPayload);
+      } catch (_) {}
     }
   }
 
@@ -14121,7 +13470,7 @@ class _FullAdminPanelScreenState extends State<FullAdminPanelScreen>
               physics: BouncingScrollPhysics(),
               child: AdminModeratorsControlSection(),
             ),
-            _buildRatesSettingsTab(),
+            const SizedBox(),
             _buildDepartmentTreeTab(),
             _buildFeedbacksTab(),
           ],
@@ -15657,192 +15006,6 @@ class _FullAdminPanelScreenState extends State<FullAdminPanelScreen>
     );
   }
 
-  Widget _buildRatesSettingsTab() {
-    final usdBuyCtrl = TextEditingController(
-        text: _usdRateController.text.isNotEmpty
-            ? _usdRateController.text
-            : '15200');
-    final goldSypCtrl = TextEditingController(
-        text: _goldPriceController.text.isNotEmpty
-            ? _goldPriceController.text
-            : '980000');
-    final sponsorNameCtrl =
-        TextEditingController(text: 'صرافة ومجوهرات البركة 🏛️');
-    bool isSponsorActive = true;
-
-    return StatefulBuilder(
-      builder: (ctx, setTabState) => ListView(
-        physics: const BouncingScrollPhysics(),
-        padding: const EdgeInsets.all(16),
-        children: [
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: const Color(0xFF0F172A),
-              borderRadius: BorderRadius.circular(12),
-              border:
-                  Border.all(color: const Color(0xFFD4AF37).withOpacity(0.4)),
-            ),
-            child: const Row(
-              children: [
-                Icon(Icons.currency_exchange,
-                    color: Color(0xFFD4AF37), size: 24),
-                SizedBox(width: 8),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'إدارة أسعار العملات والذهب والصراف الراعي 💰',
-                        style: TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 13),
-                      ),
-                      Text(
-                        'مخصص لمدير ومشرف قسم الصرافة المعتمد',
-                        style: TextStyle(color: Colors.white60, fontSize: 10),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 14),
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Colors.black26,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.white12),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text(
-                      'اسم الصراف أو المحل الراعي للأسعار:',
-                      style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 12,
-                          color: Color(0xFFD4AF37)),
-                    ),
-                    Switch(
-                      value: isSponsorActive,
-                      activeColor: const Color(0xFFD4AF37),
-                      onChanged: (val) =>
-                          setTabState(() => isSponsorActive = val),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 6),
-                TextField(
-                  controller: sponsorNameCtrl,
-                  decoration: const InputDecoration(
-                    hintText:
-                        'مثال: صرافة ومجوهرات الشام (اتركه فارغاً للإلغاء)',
-                    border: OutlineInputBorder(),
-                    isDense: true,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 14),
-          const Text('1. سعر صرف الدولار مقابل الليرة السورية (USD/SYP):',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
-          const SizedBox(height: 6),
-          TextField(
-            controller: usdBuyCtrl,
-            keyboardType: TextInputType.number,
-            decoration: const InputDecoration(
-                labelText: 'سعر الدولار (ل.س)',
-                border: OutlineInputBorder(),
-                isDense: true),
-          ),
-          const SizedBox(height: 12),
-          const Text('2. سعر غرام الذهب عيار 21:',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
-          const SizedBox(height: 6),
-          TextField(
-            controller: goldSypCtrl,
-            keyboardType: TextInputType.number,
-            decoration: const InputDecoration(
-                labelText: 'سعر غرام الذهب (ل.س)',
-                border: OutlineInputBorder(),
-                isDense: true),
-          ),
-          const SizedBox(height: 20),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF0F172A),
-              padding: const EdgeInsets.symmetric(vertical: 14),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-                side: const BorderSide(color: Color(0xFFD4AF37), width: 1.2),
-              ),
-            ),
-            onPressed: () async {
-              final usdRate = double.tryParse(usdBuyCtrl.text.trim()) ?? 15200;
-              final goldPrice =
-                  double.tryParse(goldSypCtrl.text.trim()) ?? 980000;
-
-              // 🌟 الحفظ السحابي النظيف المحصن ضد أي عمود ناقص في السيرفر
-              bool savedSuccessfully = false;
-              try {
-                savedSuccessfully = await _manager.updateExchangeRatesInCloud(
-                  newUsdRate: usdRate,
-                  newGoldPrice: goldPrice,
-                );
-              } catch (e) {
-                debugPrint('Rates cloud update error: $e');
-              }
-
-              if (mounted) {
-                if (savedSuccessfully) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text(
-                          '✅ تم حفظ ونشر أسعار العملات والذهب لجميع الأجهزة بالسيرفر بنجاح ودون أخطاء!'),
-                      backgroundColor: Colors.green,
-                      duration: Duration(seconds: 3),
-                    ),
-                  );
-                } else {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text(
-                          '⚠️ تم حفظ الأسعار بالذاكرة المحلية لجميع الأجهزة!'),
-                      backgroundColor: Colors.orange,
-                    ),
-                  );
-                }
-              }
-            },
-            child: const Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.publish, color: Color(0xFFD4AF37), size: 18),
-                SizedBox(width: 8),
-                Text(
-                  'حفظ ونشر الأسعار واسم الصراف فوراً 🚀',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 13,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildDepartmentTreeTab() {
     return ListView(
       physics: const BouncingScrollPhysics(),
@@ -17211,7 +16374,6 @@ class _RealEstateDirectoryScreenState extends State<RealEstateDirectoryScreen> {
     );
   }
 }
-
 // ==============================================================================
 // غرفة مفاتيح صلاحيات المشرفين المركزية للمسؤول العام (ModeratorsPermissionsPanel)
 // ==============================================================================
@@ -17222,6 +16384,9 @@ class ModeratorPermissionModel {
   final String userName;
   final String? userPhone;
   String role;
+  bool isActive;
+  bool canManageExchangeRates;
+  bool canEditExchangerIdentity;
   bool canManageOffices;
   bool canApproveAds;
   bool canManageBanners;
@@ -17234,6 +16399,9 @@ class ModeratorPermissionModel {
     required this.userName,
     this.userPhone,
     this.role = 'moderator',
+    this.isActive = true,
+    this.canManageExchangeRates = true,
+    this.canEditExchangerIdentity = false,
     this.canManageOffices = true,
     this.canApproveAds = true,
     this.canManageBanners = false,
@@ -17248,12 +16416,33 @@ class ModeratorPermissionModel {
       userName: map['user_name']?.toString() ?? 'مشرف',
       userPhone: map['user_phone']?.toString(),
       role: map['role']?.toString() ?? 'moderator',
+      isActive: map['is_active'] ?? true,
+      canManageExchangeRates: map['can_manage_exchange_rates'] == true,
+      canEditExchangerIdentity: map['can_edit_exchanger_identity'] == true,
       canManageOffices: map['can_manage_offices'] == true,
       canApproveAds: map['can_approve_ads'] == true,
       canManageBanners: map['can_manage_banners'] == true,
       canAuditPayments: map['can_audit_payments'] == true,
       canBanUsers: map['can_ban_users'] == true,
     );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'user_id': userId,
+      'user_name': userName,
+      'user_phone': userPhone,
+      'role': role,
+      'is_active': isActive,
+      'can_manage_exchange_rates': canManageExchangeRates,
+      'can_edit_exchanger_identity': canEditExchangerIdentity,
+      'can_manage_offices': canManageOffices,
+      'can_approve_ads': canApproveAds,
+      'can_manage_banners': canManageBanners,
+      'can_audit_payments': canAuditPayments,
+      'can_ban_users': canBanUsers,
+      'updated_at': DateTime.now().toIso8601String(),
+    };
   }
 }
 
@@ -17296,7 +16485,7 @@ class _AdminModeratorsControlSectionState
         });
       }
     } catch (e) {
-      debugPrint('Error loading moderators: $e');
+      debugPrint('Error loading moderators from Supabase: $e');
       if (mounted) setState(() => _isLoading = false);
     }
   }
@@ -17304,26 +16493,34 @@ class _AdminModeratorsControlSectionState
   Future<void> _updatePermission(
       ModeratorPermissionModel mod, String field, bool value) async {
     setState(() {
+      if (field == 'can_manage_exchange_rates')
+        mod.canManageExchangeRates = value;
+      if (field == 'can_edit_exchanger_identity')
+        mod.canEditExchangerIdentity = value;
       if (field == 'can_manage_offices') mod.canManageOffices = value;
       if (field == 'can_approve_ads') mod.canApproveAds = value;
       if (field == 'can_manage_banners') mod.canManageBanners = value;
       if (field == 'can_audit_payments') mod.canAuditPayments = value;
       if (field == 'can_ban_users') mod.canBanUsers = value;
+      if (field == 'is_active') mod.isActive = value;
     });
 
     try {
       await Supabase.instance.client
           .from('moderators_permissions')
-          .update(
-              {field: value, 'updated_at': DateTime.now().toIso8601String()})
+          .update({
+            field: value,
+            'updated_at': DateTime.now().toIso8601String(),
+          })
           .eq('user_id', mod.userId)
           .timeout(const Duration(seconds: 8));
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('✅ تم تحديث صلاحية (${mod.userName}) بنجاح!'),
-            backgroundColor: Colors.green,
+            content: Text(
+                '✅ تم تحديث ونشر صلاحية (${mod.userName}) على السيرفر فوراً!'),
+            backgroundColor: const Color(0xFF16A34A),
             duration: const Duration(seconds: 2),
           ),
         );
@@ -17334,135 +16531,537 @@ class _AdminModeratorsControlSectionState
     }
   }
 
+  Future<void> _deleteModerator(ModeratorPermissionModel mod) async {
+    final confirm = await showDialog<bool>(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            backgroundColor: const Color(0xFF0F172A),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+              side: const BorderSide(color: Colors.redAccent, width: 1.2),
+            ),
+            title: const Row(
+              children: [
+                Icon(Icons.warning_amber_rounded,
+                    color: Colors.redAccent, size: 24),
+                SizedBox(width: 8),
+                Text('سحب الرتبة الإشرافية ⚠️',
+                    style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold)),
+              ],
+            ),
+            content: Text(
+              'هل أنت متأكد من سحب كافة الصلاحيات وحذف المشرف (${mod.userName}) نهائياً من السيرفر؟',
+              style: const TextStyle(
+                  color: Colors.white70, fontSize: 13, height: 1.5),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, false),
+                child: const Text('إلغاء',
+                    style: TextStyle(color: Colors.white60)),
+              ),
+              ElevatedButton(
+                style:
+                    ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
+                onPressed: () => Navigator.pop(ctx, true),
+                child: const Text('نعم، احذف المشرف',
+                    style: TextStyle(
+                        color: Colors.white, fontWeight: FontWeight.bold)),
+              ),
+            ],
+          ),
+        ) ??
+        false;
+
+    if (!confirm) return;
+
+    try {
+      await Supabase.instance.client
+          .from('moderators_permissions')
+          .delete()
+          .eq('user_id', mod.userId)
+          .timeout(const Duration(seconds: 8));
+
+      setState(() {
+        _moderators.removeWhere((m) => m.userId == mod.userId);
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content:
+                Text('🗑️ تم حذف المشرف وسحب صلاحياته نهائياً من السيرفر.'),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
+      }
+    } catch (e) {
+      debugPrint('Error deleting mod: $e');
+    }
+  }
+
   void _showAddModeratorDialog() {
     final nameCtrl = TextEditingController();
     final phoneCtrl = TextEditingController();
-    final userIdCtrl = TextEditingController();
+    final searchCtrl = TextEditingController();
+    String selectedUserId = '';
+
+    bool initExchange = true;
+    bool initExchangerIdentity = false;
+    bool initOffices = true;
+    bool initAds = true;
+    bool initBanners = false;
+    bool initPayments = false;
+    bool initBan = false;
+
+    // جلب قائمة المستخدمين المسجلين في التطبيق من السيرفر
+    List<Map<String, dynamic>> allUsers = [];
+    List<Map<String, dynamic>> filteredUsers = [];
+    bool isSearchingUsers = true;
 
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: const Color(0xFF0F172A),
       shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
       builder: (ctx) {
-        return Padding(
-          padding: EdgeInsets.only(
-            left: 16,
-            right: 16,
-            top: 16,
-            bottom: MediaQuery.of(context).viewInsets.bottom + 20,
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Row(
-                children: [
-                  Icon(Icons.person_add_alt_1,
-                      color: Color(0xFFD4AF37), size: 24),
-                  SizedBox(width: 8),
-                  Text('تعيين مشرف جديد ومنح الصلاحيات 🛡️',
-                      style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold)),
-                ],
-              ),
-              const SizedBox(height: 14),
-              TextField(
-                controller: nameCtrl,
-                style: const TextStyle(color: Colors.white, fontSize: 13),
-                decoration: const InputDecoration(
-                  labelText: 'اسم المشرف *',
-                  labelStyle: TextStyle(color: Colors.white70),
-                  filled: true,
-                  fillColor: Color(0xFF1E293B),
-                  border: OutlineInputBorder(),
+        return StatefulBuilder(
+          builder: (ctx, setModalState) {
+            // تحميل المستخدمين في أول فتح للنافذة
+            if (allUsers.isEmpty && isSearchingUsers) {
+              Supabase.instance.client
+                  .from('profiles')
+                  .select('id, full_name, phone, email')
+                  .limit(50)
+                  .then((res) {
+                if (res is List) {
+                  setModalState(() {
+                    allUsers = List<Map<String, dynamic>>.from(res);
+                    filteredUsers = List.from(allUsers);
+                    isSearchingUsers = false;
+                  });
+                }
+              }).catchError((_) {
+                setModalState(() => isSearchingUsers = false);
+              });
+            }
+
+            return Directionality(
+              textDirection: TextDirection.rtl,
+              child: Padding(
+                padding: EdgeInsets.only(
+                  left: 16,
+                  right: 16,
+                  top: 16,
+                  bottom: MediaQuery.of(context).viewInsets.bottom + 20,
                 ),
-              ),
-              const SizedBox(height: 10),
-              TextField(
-                controller: phoneCtrl,
-                keyboardType: TextInputType.phone,
-                style: const TextStyle(color: Colors.white, fontSize: 13),
-                decoration: const InputDecoration(
-                  labelText: 'رقم هاتف المشرف *',
-                  labelStyle: TextStyle(color: Colors.white70),
-                  filled: true,
-                  fillColor: Color(0xFF1E293B),
-                  border: OutlineInputBorder(),
-                ),
-              ),
-              const SizedBox(height: 10),
-              TextField(
-                controller: userIdCtrl,
-                style: const TextStyle(color: Colors.white, fontSize: 13),
-                decoration: const InputDecoration(
-                  labelText: 'معرف المستخدم (User ID) إن وجد أو اتركه فارغاً',
-                  labelStyle: TextStyle(color: Colors.white70),
-                  filled: true,
-                  fillColor: Color(0xFF1E293B),
-                  border: OutlineInputBorder(),
-                ),
-              ),
-              const SizedBox(height: 16),
-              SizedBox(
-                width: double.infinity,
-                height: 46,
-                child: ElevatedButton.icon(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFD4AF37),
-                    foregroundColor: const Color(0xFF0F172A),
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10)),
+                child: SingleChildScrollView(
+                  physics: const BouncingScrollPhysics(),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // رأس النافذة
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFD4AF37).withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: const Icon(Icons.person_search_rounded,
+                                color: Color(0xFFD4AF37), size: 24),
+                          ),
+                          const SizedBox(width: 10),
+                          const Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'تعيين مشرف من أعضاء التطبيق 🛡️',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              Text(
+                                'ابحث عن العضو واختره بلمسة واحدة لتعيين صلاحياته',
+                                style: TextStyle(
+                                    color: Color(0xFF38BDF8), fontSize: 11),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                      const Divider(color: Colors.white12, height: 22),
+
+                      // 🔍 خانة البحث الذكي عن الأعضاء المسجلين
+                      TextField(
+                        controller: searchCtrl,
+                        style:
+                            const TextStyle(color: Colors.white, fontSize: 13),
+                        onChanged: (query) {
+                          setModalState(() {
+                            if (query.trim().isEmpty) {
+                              filteredUsers = List.from(allUsers);
+                            } else {
+                              final q = query.toLowerCase().trim();
+                              filteredUsers = allUsers.where((u) {
+                                final name = (u['full_name'] ?? '')
+                                    .toString()
+                                    .toLowerCase();
+                                final phone = (u['phone'] ?? '').toString();
+                                final email =
+                                    (u['email'] ?? '').toString().toLowerCase();
+                                return name.contains(q) ||
+                                    phone.contains(q) ||
+                                    email.contains(q);
+                              }).toList();
+                            }
+                          });
+                        },
+                        decoration: InputDecoration(
+                          hintText: 'ابحث بالاسم أو رقم الهاتف أو البريد...',
+                          hintStyle: const TextStyle(
+                              color: Colors.white38, fontSize: 12),
+                          prefixIcon: const Icon(Icons.search,
+                              color: Color(0xFFD4AF37), size: 20),
+                          filled: true,
+                          fillColor: const Color(0xFF1E293B),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: const BorderSide(
+                                color: Color(0xFFD4AF37), width: 0.8),
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 10),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+
+                      // قائمة الأعضاء للاختيار المباشر
+                      if (isSearchingUsers)
+                        const Center(
+                          child: Padding(
+                            padding: EdgeInsets.all(12),
+                            child: SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            ),
+                          ),
+                        )
+                      else if (filteredUsers.isNotEmpty &&
+                          selectedUserId.isEmpty)
+                        Container(
+                          constraints: const BoxConstraints(maxHeight: 150),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF1E293B),
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(color: Colors.white12),
+                          ),
+                          child: ListView.separated(
+                            shrinkWrap: true,
+                            itemCount: filteredUsers.length,
+                            separatorBuilder: (_, __) =>
+                                const Divider(color: Colors.white10, height: 1),
+                            itemBuilder: (ctx, i) {
+                              final u = filteredUsers[i];
+                              final uName = u['full_name'] ?? 'عضو مسجل';
+                              final uPhone = u['phone'] ?? u['email'] ?? '';
+                              return ListTile(
+                                dense: true,
+                                leading: CircleAvatar(
+                                  radius: 14,
+                                  backgroundColor:
+                                      const Color(0xFFD4AF37).withOpacity(0.2),
+                                  child: const Icon(Icons.person,
+                                      color: Color(0xFFD4AF37), size: 16),
+                                ),
+                                title: Text(uName,
+                                    style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.bold)),
+                                subtitle: Text(uPhone,
+                                    style: const TextStyle(
+                                        color: Colors.white54, fontSize: 10.5)),
+                                trailing: const Icon(Icons.touch_app,
+                                    color: Color(0xFF22C55E), size: 18),
+                                onTap: () {
+                                  setModalState(() {
+                                    nameCtrl.text = uName;
+                                    phoneCtrl.text =
+                                        (u['phone'] ?? '').toString();
+                                    selectedUserId = (u['id'] ?? '').toString();
+                                  });
+                                },
+                              );
+                            },
+                          ),
+                        ),
+
+                      if (selectedUserId.isNotEmpty)
+                        Container(
+                          margin: const EdgeInsets.symmetric(vertical: 6),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 10, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF22C55E).withOpacity(0.15),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: const Color(0xFF22C55E)),
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(Icons.check_circle,
+                                  color: Color(0xFF22C55E), size: 16),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  'تم اختيار العضو: ${nameCtrl.text}',
+                                  style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 11.5,
+                                      fontWeight: FontWeight.bold),
+                                ),
+                              ),
+                              TextButton(
+                                onPressed: () =>
+                                    setModalState(() => selectedUserId = ''),
+                                child: const Text('تغيير',
+                                    style: TextStyle(
+                                        color: Color(0xFF38BDF8),
+                                        fontSize: 11)),
+                              ),
+                            ],
+                          ),
+                        ),
+
+                      const SizedBox(height: 10),
+
+                      // الحقول المعبأة تلقائياً أو للإدخال اليدوي
+                      TextField(
+                        controller: nameCtrl,
+                        style:
+                            const TextStyle(color: Colors.white, fontSize: 13),
+                        decoration: InputDecoration(
+                          labelText: 'اسم المشرف الكامل *',
+                          labelStyle: const TextStyle(color: Colors.white70),
+                          filled: true,
+                          fillColor: const Color(0xFF1E293B),
+                          border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10)),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      TextField(
+                        controller: phoneCtrl,
+                        keyboardType: TextInputType.phone,
+                        style:
+                            const TextStyle(color: Colors.white, fontSize: 13),
+                        decoration: InputDecoration(
+                          labelText: 'رقم هاتف المشرف أو الواتساب *',
+                          labelStyle: const TextStyle(color: Colors.white70),
+                          filled: true,
+                          fillColor: const Color(0xFF1E293B),
+                          border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10)),
+                        ),
+                      ),
+
+                      const SizedBox(height: 14),
+                      const Text(
+                        'حدد الصلاحيات الممنوحة لهذا المشرف بدقة:',
+                        style: TextStyle(
+                            color: Color(0xFFD4AF37),
+                            fontWeight: FontWeight.bold,
+                            fontSize: 12.5),
+                      ),
+                      const SizedBox(height: 6),
+
+                      // مفاتيح الصلاحيات
+                      SwitchListTile(
+                        dense: true,
+                        activeColor: const Color(0xFF22C55E),
+                        title: const Text('تحديث أسعار العملات والذهب 🪙',
+                            style:
+                                TextStyle(color: Colors.white, fontSize: 12.5)),
+                        subtitle: const Text(
+                            'السماح بتحديث أسعار البورصة الحية',
+                            style: TextStyle(
+                                color: Colors.white54, fontSize: 10.5)),
+                        value: initExchange,
+                        onChanged: (v) => setModalState(() => initExchange = v),
+                      ),
+                      SwitchListTile(
+                        dense: true,
+                        activeColor: const Color(0xFFD4AF37),
+                        title: const Text('تعديل هوية الصراف المعتمد 🏛️',
+                            style:
+                                TextStyle(color: Colors.white, fontSize: 12.5)),
+                        subtitle: const Text(
+                            'تغيير اسم الشركة والعنوان والأرقام',
+                            style: TextStyle(
+                                color: Colors.white54, fontSize: 10.5)),
+                        value: initExchangerIdentity,
+                        onChanged: (v) =>
+                            setModalState(() => initExchangerIdentity = v),
+                      ),
+                      SwitchListTile(
+                        dense: true,
+                        activeColor: const Color(0xFF38BDF8),
+                        title: const Text(
+                            'الموافقة على المنشورات والإعلانات 📢',
+                            style:
+                                TextStyle(color: Colors.white, fontSize: 12.5)),
+                        subtitle: const Text(
+                            'مراجعة وتدقيق الإعلانات قبل النشر',
+                            style: TextStyle(
+                                color: Colors.white54, fontSize: 10.5)),
+                        value: initAds,
+                        onChanged: (v) => setModalState(() => initAds = v),
+                      ),
+                      SwitchListTile(
+                        dense: true,
+                        activeColor: const Color(0xFF38BDF8),
+                        title: const Text('إضافة وتوثيق المكاتب العقارية 🏢',
+                            style:
+                                TextStyle(color: Colors.white, fontSize: 12.5)),
+                        subtitle: const Text(
+                            'ظهور زر إضافة وتعديل دليل المكاتب',
+                            style: TextStyle(
+                                color: Colors.white54, fontSize: 10.5)),
+                        value: initOffices,
+                        onChanged: (v) => setModalState(() => initOffices = v),
+                      ),
+                      SwitchListTile(
+                        dense: true,
+                        activeColor: const Color(0xFF38BDF8),
+                        title: const Text('إدارة البانرات والبانوراما 🖼️',
+                            style:
+                                TextStyle(color: Colors.white, fontSize: 12.5)),
+                        subtitle: const Text(
+                            'رفع وتحرير إعلانات البانوراما VIP',
+                            style: TextStyle(
+                                color: Colors.white54, fontSize: 10.5)),
+                        value: initBanners,
+                        onChanged: (v) => setModalState(() => initBanners = v),
+                      ),
+                      SwitchListTile(
+                        dense: true,
+                        activeColor: const Color(0xFFFACC15),
+                        title: const Text(
+                            'تدقيق باقات VIP وشام كاش & بينانس 💳',
+                            style:
+                                TextStyle(color: Colors.white, fontSize: 12.5)),
+                        subtitle: const Text('فحص الإيصالات وترقية الاشتراكات',
+                            style: TextStyle(
+                                color: Colors.white54, fontSize: 10.5)),
+                        value: initPayments,
+                        onChanged: (v) => setModalState(() => initPayments = v),
+                      ),
+                      SwitchListTile(
+                        dense: true,
+                        activeColor: Colors.redAccent,
+                        title: const Text('حظر المستخدمين المخالفين 🚫',
+                            style:
+                                TextStyle(color: Colors.white, fontSize: 12.5)),
+                        subtitle: const Text(
+                            'تجميد الحسابات المشبوهة أو المخالفة للشروط',
+                            style: TextStyle(
+                                color: Colors.white54, fontSize: 10.5)),
+                        value: initBan,
+                        onChanged: (v) => setModalState(() => initBan = v),
+                      ),
+
+                      const SizedBox(height: 18),
+                      SizedBox(
+                        width: double.infinity,
+                        height: 48,
+                        child: ElevatedButton.icon(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFFD4AF37),
+                            foregroundColor: const Color(0xFF0F172A),
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10)),
+                            elevation: 4,
+                          ),
+                          icon: const Icon(Icons.cloud_upload_rounded),
+                          label: const Text(
+                              'اعتماد وحفظ المشرف في السيرفر فوراً ⚡',
+                              style: TextStyle(
+                                  fontWeight: FontWeight.bold, fontSize: 13.5)),
+                          onPressed: () async {
+                            final name = nameCtrl.text.trim();
+                            final phone = phoneCtrl.text.trim();
+                            final uid = selectedUserId.isNotEmpty
+                                ? selectedUserId
+                                : (phone.isNotEmpty
+                                    ? 'user_$phone'
+                                    : 'usr_${DateTime.now().millisecondsSinceEpoch}');
+
+                            if (name.isEmpty || phone.isEmpty) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                    content: Text(
+                                        '⚠️ يرجى اختيار أو إدخال اسم المشرف ورقم الهاتف')),
+                              );
+                              return;
+                            }
+
+                            Navigator.pop(ctx);
+                            setState(() => _isLoading = true);
+
+                            try {
+                              await Supabase.instance.client
+                                  .from('moderators_permissions')
+                                  .upsert({
+                                'user_id': uid,
+                                'user_name': name,
+                                'user_phone': phone,
+                                'role': 'moderator',
+                                'is_active': true,
+                                'can_manage_exchange_rates': initExchange,
+                                'can_edit_exchanger_identity':
+                                    initExchangerIdentity,
+                                'can_manage_offices': initOffices,
+                                'can_approve_ads': initAds,
+                                'can_manage_banners': initBanners,
+                                'can_audit_payments': initPayments,
+                                'can_ban_users': initBan,
+                                'created_at': DateTime.now().toIso8601String(),
+                              });
+
+                              await _loadModerators();
+
+                              if (mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text(
+                                        '👑 تم حفظ واعتماد المشرف الجديد في السيرفر بنجاح!'),
+                                    backgroundColor: Color(0xFF16A34A),
+                                  ),
+                                );
+                              }
+                            } catch (e) {
+                              debugPrint('Add mod error: $e');
+                              if (mounted) setState(() => _isLoading = false);
+                            }
+                          },
+                        ),
+                      ),
+                    ],
                   ),
-                  icon: const Icon(Icons.check_circle),
-                  label: const Text('اعتماد المشرف فوراً في السيرفر 🛡️',
-                      style: TextStyle(fontWeight: FontWeight.bold)),
-                  onPressed: () async {
-                    final name = nameCtrl.text.trim();
-                    final phone = phoneCtrl.text.trim();
-                    final uid = userIdCtrl.text.trim().isNotEmpty
-                        ? userIdCtrl.text.trim()
-                        : 'usr_${DateTime.now().millisecondsSinceEpoch}';
-
-                    if (name.isEmpty || phone.isEmpty) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                            content: Text('⚠️ يرجى إدخال اسم ورقم المشرف')),
-                      );
-                      return;
-                    }
-
-                    Navigator.pop(ctx);
-                    setState(() => _isLoading = true);
-
-                    try {
-                      await Supabase.instance.client
-                          .from('moderators_permissions')
-                          .upsert({
-                        'user_id': uid,
-                        'user_name': name,
-                        'user_phone': phone,
-                        'role': 'moderator',
-                        'can_manage_offices': true,
-                        'can_approve_ads': true,
-                        'can_manage_banners': false,
-                        'can_audit_payments': false,
-                        'can_ban_users': false,
-                      });
-
-                      await _loadModerators();
-                    } catch (e) {
-                      debugPrint('Add mod error: $e');
-                      if (mounted) setState(() => _isLoading = false);
-                    }
-                  },
                 ),
               ),
-            ],
-          ),
+            );
+          },
         );
       },
     );
@@ -17476,7 +17075,8 @@ class _AdminModeratorsControlSectionState
       decoration: BoxDecoration(
         color: const Color(0xFF0F172A),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFFD4AF37).withOpacity(0.3)),
+        border: Border.all(
+            color: const Color(0xFFD4AF37).withOpacity(0.4), width: 1.2),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -17486,15 +17086,16 @@ class _AdminModeratorsControlSectionState
             children: [
               const Row(
                 children: [
-                  Icon(Icons.admin_panel_settings,
+                  Icon(Icons.security_rounded,
                       color: Color(0xFFD4AF37), size: 22),
                   SizedBox(width: 8),
                   Text(
                     'غرفة مفاتيح الصلاحيات المركزية 🔑',
                     style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold),
+                      color: Colors.white,
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ],
               ),
@@ -17507,31 +17108,34 @@ class _AdminModeratorsControlSectionState
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8)),
                 ),
-                icon: const Icon(Icons.add, size: 16),
-                label: const Text('إضافة مشرف',
-                    style:
-                        TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                icon: const Icon(Icons.person_add_alt_1, size: 16),
+                label: const Text(
+                  'إضافة مشرف جديد',
+                  style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
+                ),
                 onPressed: _showAddModeratorDialog,
               ),
             ],
           ),
           const SizedBox(height: 6),
           const Text(
-            'تحكم بكل دقة في إظهار أو إخفاء زر إضافة المكاتب والخيارات لكل مشرف.',
+            'تحكم سيادي كامل: إعطاء أو حجب الصلاحيات عن كل مشرف مع مزامنة سحابية لحظية ⚡',
             style: TextStyle(color: Colors.white54, fontSize: 11),
           ),
           const Divider(color: Colors.white12, height: 18),
           if (_isLoading)
             const Center(
-                child: Padding(
-                    padding: EdgeInsets.all(16),
-                    child: CircularProgressIndicator()))
+              child: Padding(
+                padding: EdgeInsets.all(24),
+                child: CircularProgressIndicator(),
+              ),
+            )
           else if (_moderators.isEmpty)
             const Center(
               child: Padding(
-                padding: EdgeInsets.all(16),
+                padding: EdgeInsets.all(24),
                 child: Text(
-                  'لا يوجد مشرفون حالياً. اضغط على (إضافة مشرف) لتعيين مشرف جديد.',
+                  'لا يوجد مشرفون حالياً في السيرفر. اضغط على (إضافة مشرف جديد) للبدء.',
                   style: TextStyle(color: Colors.grey, fontSize: 12),
                 ),
               ),
@@ -17553,12 +17157,15 @@ class _AdminModeratorsControlSectionState
 
   Widget _buildModeratorCard(ModeratorPermissionModel mod) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 10),
+      margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: const Color(0xFF1E293B),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.white10),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color:
+              mod.isActive ? Colors.white12 : Colors.redAccent.withOpacity(0.5),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -17569,26 +17176,54 @@ class _AdminModeratorsControlSectionState
               Row(
                 children: [
                   CircleAvatar(
-                    radius: 16,
-                    backgroundColor: const Color(0xFFD4AF37),
+                    radius: 17,
+                    backgroundColor:
+                        mod.isActive ? const Color(0xFFD4AF37) : Colors.grey,
                     child: Text(
                       mod.userName.isNotEmpty ? mod.userName[0] : 'M',
                       style: const TextStyle(
-                          color: Color(0xFF0F172A),
-                          fontWeight: FontWeight.bold,
-                          fontSize: 14),
+                        color: Color(0xFF0F172A),
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                      ),
                     ),
                   ),
                   const SizedBox(width: 8),
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        mod.userName,
-                        style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 13,
-                            fontWeight: FontWeight.bold),
+                      Row(
+                        children: [
+                          Text(
+                            mod.userName,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 13.5,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 5, vertical: 1.5),
+                            decoration: BoxDecoration(
+                              color: mod.isActive
+                                  ? const Color(0xFF22C55E).withOpacity(0.15)
+                                  : Colors.redAccent.withOpacity(0.15),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: Text(
+                              mod.isActive ? 'نشط' : 'مجمد',
+                              style: TextStyle(
+                                color: mod.isActive
+                                    ? const Color(0xFF22C55E)
+                                    : Colors.redAccent,
+                                fontSize: 9.5,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                       if (mod.userPhone != null)
                         Text(
@@ -17600,40 +17235,58 @@ class _AdminModeratorsControlSectionState
                   ),
                 ],
               ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFD4AF37).withOpacity(0.15),
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                child: const Text(
-                  'مشرف معتمد',
-                  style: TextStyle(
-                      color: Color(0xFFD4AF37),
-                      fontSize: 10.5,
-                      fontWeight: FontWeight.bold),
-                ),
+              IconButton(
+                icon: const Icon(Icons.delete_outline,
+                    color: Colors.redAccent, size: 20),
+                tooltip: 'سحب الرتبة وحذف المشرف',
+                onPressed: () => _deleteModerator(mod),
               ),
             ],
           ),
           const Divider(color: Colors.white12, height: 16),
           _buildSwitchRow(
-            title: 'إضافة وتوثيق المكاتب العقارية 🏢',
-            subtitle: 'يتحكم في إظهار أو إخفاء زر إضافة المكاتب له',
-            value: mod.canManageOffices,
-            onChanged: (v) => _updatePermission(mod, 'can_manage_offices', v),
+            title: 'تحديث أسعار العملات والذهب 🪙',
+            subtitle: 'السماح بتحديث أسعار البورصة الحية في التطبيق',
+            value: mod.canManageExchangeRates,
+            onChanged: (v) =>
+                _updatePermission(mod, 'can_manage_exchange_rates', v),
           ),
           _buildSwitchRow(
-            title: 'الموافقة على الإعلانات المعلقة 📢',
-            subtitle: 'السماح بمراجعة ونشر إعلانات المستخدمين',
+            title: 'تعديل هوية وبيانات الصراف المعتمد 🏛️',
+            subtitle: 'تغيير اسم الشركة والهواتف والعنوان (حساسة)',
+            value: mod.canEditExchangerIdentity,
+            onChanged: (v) =>
+                _updatePermission(mod, 'can_edit_exchanger_identity', v),
+          ),
+          _buildSwitchRow(
+            title: 'الموافقة على المنشورات والإعلانات 📢',
+            subtitle: 'السماح بنشر وتدقيق إعلانات المستخدمين المعلقة',
             value: mod.canApproveAds,
             onChanged: (v) => _updatePermission(mod, 'can_approve_ads', v),
           ),
           _buildSwitchRow(
-            title: 'إدارة البانرات الإعلانية 🖼️',
-            subtitle: 'رفع بنرات جديدة في البانوراما',
+            title: 'إضافة وتوثيق المكاتب العقارية 🏢',
+            subtitle: 'التحكم في إظهار زر إضافة وتوثيق المكاتب له',
+            value: mod.canManageOffices,
+            onChanged: (v) => _updatePermission(mod, 'can_manage_offices', v),
+          ),
+          _buildSwitchRow(
+            title: 'إدارة البانرات والبانوراما 🖼️',
+            subtitle: 'رفع وتعديل البانوراما الإعلانية في الصفحة الرئيسية',
             value: mod.canManageBanners,
             onChanged: (v) => _updatePermission(mod, 'can_manage_banners', v),
+          ),
+          _buildSwitchRow(
+            title: 'تدقيق باقات VIP وشام كاش & بينانس 💳',
+            subtitle: 'مراجعة إيصالات الدفع وترقية الاشتراكات',
+            value: mod.canAuditPayments,
+            onChanged: (v) => _updatePermission(mod, 'can_audit_payments', v),
+          ),
+          _buildSwitchRow(
+            title: 'حظر المستخدمين المخالفين 🚫',
+            subtitle: 'تجميد الحسابات المشبوهة أو المخالفة للشروط',
+            value: mod.canBanUsers,
+            onChanged: (v) => _updatePermission(mod, 'can_ban_users', v),
           ),
         ],
       ),
@@ -17655,14 +17308,17 @@ class _AdminModeratorsControlSectionState
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title,
-                    style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600)),
-                Text(subtitle,
-                    style:
-                        const TextStyle(color: Colors.white38, fontSize: 10)),
+                Text(
+                  title,
+                  style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600),
+                ),
+                Text(
+                  subtitle,
+                  style: const TextStyle(color: Colors.white38, fontSize: 10),
+                ),
               ],
             ),
           ),
@@ -24458,6 +24114,1512 @@ class _DedicatedPanoramaBookingScreenState
             const SizedBox(height: 30),
           ],
         ),
+      ),
+    );
+  }
+}
+
+// ==============================================================================
+// 9. بطاقة بوابتي الدفع المعتمدتين حصرياً (شام كاش & بينانس USDT)
+// ==============================================================================
+class ExclusivePaymentGatewayCard extends StatelessWidget {
+  const ExclusivePaymentGatewayCard({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: const Color(0xFF0F172A),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xFFD4AF37), width: 1.5),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.4),
+            blurRadius: 8,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: const [
+                  SyrianIndependenceFlag(width: 24, height: 16),
+                  SizedBox(width: 8),
+                  Text(
+                    'بوابات الدفع والشحن الحصرية 💳',
+                    style: TextStyle(
+                      color: Color(0xFFD4AF37),
+                      fontWeight: FontWeight.bold,
+                      fontSize: 13,
+                    ),
+                  ),
+                ],
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF16A34A).withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: const Text(
+                  'معتمد 100%',
+                  style: TextStyle(
+                      color: Color(0xFF22C55E),
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          // شام كاش
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+            decoration: BoxDecoration(
+              color: const Color(0xFF1E293B),
+              borderRadius: BorderRadius.circular(10),
+              border:
+                  Border.all(color: const Color(0xFF38BDF8).withOpacity(0.4)),
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: const [
+                          SyrianIndependenceFlag(width: 18, height: 12),
+                          SizedBox(width: 6),
+                          Text(
+                            'حساب شام كاش (Sham Cash)',
+                            style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 11),
+                          ),
+                          SizedBox(width: 6),
+                          Text(
+                            'بالليرة السورية',
+                            style: TextStyle(
+                                color: Color(0xFFD4AF37), fontSize: 9.5),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 3),
+                      Text(
+                        kShamCashAccountKey,
+                        style: const TextStyle(
+                          color: Color(0xFF38BDF8),
+                          fontWeight: FontWeight.bold,
+                          fontSize: 10.5,
+                          letterSpacing: 0.5,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.copy,
+                      color: Color(0xFFD4AF37), size: 18),
+                  tooltip: 'نسخ مفتاح شام كاش',
+                  onPressed: () {
+                    Clipboard.setData(
+                        const ClipboardData(text: kShamCashAccountKey));
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('✓ تم نسخ مفتاح حساب شام كاش بنجاح!'),
+                        backgroundColor: Color(0xFF0284C7),
+                        duration: Duration(seconds: 2),
+                      ),
+                    );
+                  },
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 6),
+          // بينانس USDT
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+            decoration: BoxDecoration(
+              color: const Color(0xFF1E293B),
+              borderRadius: BorderRadius.circular(10),
+              border:
+                  Border.all(color: const Color(0xFFFACC15).withOpacity(0.4)),
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: const [
+                          Text(
+                            '🪙 بينانس (Binance Pay / USDT)',
+                            style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 11),
+                          ),
+                          SizedBox(width: 6),
+                          Text(
+                            'TRC20 / USD',
+                            style: TextStyle(
+                                color: Color(0xFF22C55E), fontSize: 9.5),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 3),
+                      Text(
+                        kBinanceWalletAddress,
+                        style: const TextStyle(
+                          color: Color(0xFFFACC15),
+                          fontWeight: FontWeight.bold,
+                          fontSize: 10.5,
+                          letterSpacing: 0.5,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.copy,
+                      color: Color(0xFFFACC15), size: 18),
+                  tooltip: 'نسخ عنوان محفظة بينانس',
+                  onPressed: () {
+                    Clipboard.setData(
+                        const ClipboardData(text: kBinanceWalletAddress));
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text(
+                            '✓ تم نسخ عنوان محفظة بينانس USDT (TRC20) بنجاح!'),
+                        backgroundColor: Color(0xFF16A34A),
+                        duration: Duration(seconds: 2),
+                      ),
+                    );
+                  },
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ==============================================================================
+// 🏛️ البورصة السيادية الفخمة 2028: شاشة العملات والذهب وغرفة التحكم الأمنية
+// ==============================================================================
+class ComprehensiveCurrencyExchangeScreen extends StatefulWidget {
+  const ComprehensiveCurrencyExchangeScreen({Key? key}) : super(key: key);
+
+  @override
+  State<ComprehensiveCurrencyExchangeScreen> createState() =>
+      _ComprehensiveCurrencyExchangeScreenState();
+}
+
+class _ComprehensiveCurrencyExchangeScreenState
+    extends State<ComprehensiveCurrencyExchangeScreen> {
+  final AppStateManager _manager = AppStateManager();
+
+  // 1. بيانات الصراف المعتمد الرسمية (محمية بموافقة المدير العام)
+  String _exchangerName = 'شركة الأمانة للصرافة والتحويلات المالية 🏛️';
+  String _exchangerPhone = '0933112233';
+  String _exchangerWhatsapp1 = '0933112233';
+  String _exchangerWhatsapp2 = '0944556677';
+  String _exchangerTelegram = 'alamana_exchange';
+  String _exchangerLocation = 'دمشق - ساحة المرجة - مقابل المركز التجاري';
+  String _exchangerMapUrl = 'https://maps.google.com/?q=33.5138,36.2765';
+  String _lastUpdatedTime = 'مباشر الآن';
+  bool _isExchangerActive = true;
+
+  // 2. أسعار العملات (شراء / مبيع) - صلاحية حرة للمشرفين
+  double _usdBuy = 14850;
+  double _usdSell = 15000;
+
+  double _eurBuy = 16100;
+  double _eurSell = 16300;
+
+  double _tryBuy = 430;
+  double _trySell = 445;
+
+  double _usdTryBuy = 34.10;
+  double _usdTrySell = 34.35;
+
+  // 3. أسعار الذهب
+  double _gold21kSyp = 985000;
+  double _gold21kUsd = 65.8;
+
+  double _gold18kSyp = 845000;
+  double _gold18kUsd = 56.4;
+
+  double _goldOunceUsd = 2515.0;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadLiveRates();
+  }
+
+  void _loadLiveRates() {
+    if (_manager.exchangeRateUsdToSyp > 0) {
+      _usdSell = _manager.exchangeRateUsdToSyp;
+      _usdBuy = _usdSell - 150;
+    }
+    if (_manager.goldPrice21kSyp > 0) {
+      _gold21kSyp = _manager.goldPrice21kSyp;
+    }
+  }
+
+  // 🛡️ التحقق الصارم من صلاحية المدير العام (أصحاب القرار السيادي)
+  bool _isSuperAdmin() {
+    final authUser = Supabase.instance.client.auth.currentUser;
+    final email =
+        (authUser?.email ?? _manager.currentUserEmail).toLowerCase().trim();
+    const authorized = ['aoaadabdo@gmail.com', 'sameraoaad@gmail.com'];
+    return authorized.contains(email) || _manager.isAdmin;
+  }
+
+  // 🛡️ غرفة العمليات الذكية: فصل الصلاحيات بين الأسعار وهوية الشركة
+  void _openExchangeControlPanel() {
+    final bool isSuper = _isSuperAdmin();
+
+    final nameCtrl = TextEditingController(text: _exchangerName);
+    final phoneCtrl = TextEditingController(text: _exchangerPhone);
+    final wa1Ctrl = TextEditingController(text: _exchangerWhatsapp1);
+    final wa2Ctrl = TextEditingController(text: _exchangerWhatsapp2);
+    final tgCtrl = TextEditingController(text: _exchangerTelegram);
+    final locCtrl = TextEditingController(text: _exchangerLocation);
+    final mapCtrl = TextEditingController(text: _exchangerMapUrl);
+
+    final usdBuyCtrl = TextEditingController(text: _usdBuy.toInt().toString());
+    final usdSellCtrl =
+        TextEditingController(text: _usdSell.toInt().toString());
+    final eurBuyCtrl = TextEditingController(text: _eurBuy.toInt().toString());
+    final eurSellCtrl =
+        TextEditingController(text: _eurSell.toInt().toString());
+    final tryBuyCtrl = TextEditingController(text: _tryBuy.toInt().toString());
+    final trySellCtrl =
+        TextEditingController(text: _trySell.toInt().toString());
+    final usdTryBuyCtrl = TextEditingController(text: _usdTryBuy.toString());
+    final usdTrySellCtrl = TextEditingController(text: _usdTrySell.toString());
+
+    final gold21SypCtrl =
+        TextEditingController(text: _gold21kSyp.toInt().toString());
+    final gold21UsdCtrl = TextEditingController(text: _gold21kUsd.toString());
+    final gold18SypCtrl =
+        TextEditingController(text: _gold18kSyp.toInt().toString());
+    final gold18UsdCtrl = TextEditingController(text: _gold18kUsd.toString());
+    final goldOunceCtrl = TextEditingController(text: _goldOunceUsd.toString());
+
+    bool tempActive = _isExchangerActive;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: const Color(0xFF0B1329),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setModalState) => Directionality(
+          textDirection: TextDirection.rtl,
+          child: Padding(
+            padding: EdgeInsets.only(
+              left: 16,
+              right: 16,
+              top: 16,
+              bottom: MediaQuery.of(ctx).viewInsets.bottom + 20,
+            ),
+            child: SingleChildScrollView(
+              physics: const BouncingScrollPhysics(),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFD4AF37).withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: const Icon(Icons.security,
+                            color: Color(0xFFD4AF37), size: 24),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              isSuper
+                                  ? 'غرفة التحكم بالبورصة (صلاحية المدير العام 👑)'
+                                  : 'غرفة تحكم مشرفي البورصة 🛡️',
+                              style: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 15),
+                            ),
+                            Text(
+                              isSuper
+                                  ? 'صلاحية كاملة لتعديل هوية الصراف والأسعار واعتماد التحديثات'
+                                  : 'تعديل أسعار العملات فوري • تعديل بيانات الشركة يتطلب موافقة المدير',
+                              style: const TextStyle(
+                                  color: Color(0xFF38BDF8), fontSize: 11),
+                            ),
+                          ],
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.close, color: Colors.white70),
+                        onPressed: () => Navigator.pop(ctx),
+                      ),
+                    ],
+                  ),
+                  const Divider(color: Colors.white12, height: 24),
+
+                  // اعتماد الصراف (للمدير العام فقط)
+                  if (isSuper)
+                    Container(
+                      margin: const EdgeInsets.only(bottom: 14),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF1E293B),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: tempActive
+                              ? const Color(0xFF22C55E)
+                              : Colors.redAccent,
+                          width: 1.2,
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Row(
+                            children: [
+                              Icon(
+                                tempActive
+                                    ? Icons.verified
+                                    : Icons.do_not_disturb_on,
+                                color: tempActive
+                                    ? const Color(0xFF22C55E)
+                                    : Colors.redAccent,
+                                size: 20,
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                tempActive
+                                    ? 'حالة الصراف: معتمد ومرخص رسمياً'
+                                    : 'حالة الصراف: موقوف مؤقتاً',
+                                style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.bold),
+                              ),
+                            ],
+                          ),
+                          Switch(
+                            value: tempActive,
+                            activeColor: const Color(0xFF22C55E),
+                            onChanged: (val) =>
+                                setModalState(() => tempActive = val),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                  // 1. هوية الصراف وقنوات الاتصال
+                  Row(
+                    children: [
+                      const Text('1. بيانات الصراف وقنوات التواصل المعتمدة:',
+                          style: TextStyle(
+                              color: Color(0xFFD4AF37),
+                              fontWeight: FontWeight.bold,
+                              fontSize: 13)),
+                      const Spacer(),
+                      if (!isSuper)
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: Colors.amber.withOpacity(0.2),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: const Text('🔒 يلزم موافقة الإدارة',
+                              style: TextStyle(
+                                  color: Colors.amber,
+                                  fontSize: 9.5,
+                                  fontWeight: FontWeight.bold)),
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  _buildLockedOrEditableInput(nameCtrl,
+                      'اسم شركة الصرافة / الصراف', Icons.business, isSuper),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Expanded(
+                          child: _buildLockedOrEditableInput(phoneCtrl,
+                              'هاتف الاتصال الأساسي', Icons.phone, isSuper)),
+                      const SizedBox(width: 8),
+                      Expanded(
+                          child: _buildLockedOrEditableInput(tgCtrl,
+                              'معرف / قناة تيليجرام', Icons.send, isSuper)),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Expanded(
+                          child: _buildLockedOrEditableInput(wa1Ctrl,
+                              'رقم واتساب 1 (رسمي)', Icons.chat, isSuper)),
+                      const SizedBox(width: 8),
+                      Expanded(
+                          child: _buildLockedOrEditableInput(wa2Ctrl,
+                              'رقم واتساب 2 (احتياطي)', Icons.chat, isSuper)),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  _buildLockedOrEditableInput(locCtrl, 'المقر والعنوان الفعلي',
+                      Icons.location_on, isSuper),
+                  const SizedBox(height: 8),
+                  _buildLockedOrEditableInput(mapCtrl,
+                      'رابط خرائط جوجل (Google Maps)', Icons.map, isSuper),
+
+                  const SizedBox(height: 18),
+
+                  // 2. أسعار العملات (متاحة للمشرفين والمدير)
+                  const Text('2. أسعار صرف العملات اللحظية (شراء / مبيع):',
+                      style: TextStyle(
+                          color: Color(0xFF22C55E),
+                          fontWeight: FontWeight.bold,
+                          fontSize: 13)),
+                  const SizedBox(height: 8),
+                  _buildDualInputRow(
+                      'الدولار / ل.س', usdBuyCtrl, usdSellCtrl, 'شراء', 'مبيع'),
+                  _buildDualInputRow(
+                      'اليورو / ل.س', eurBuyCtrl, eurSellCtrl, 'شراء', 'مبيع'),
+                  _buildDualInputRow(
+                      'التركي / ل.س', tryBuyCtrl, trySellCtrl, 'شراء', 'مبيع'),
+                  _buildDualInputRow('دولار / تركي', usdTryBuyCtrl,
+                      usdTrySellCtrl, 'شراء', 'مبيع'),
+
+                  const SizedBox(height: 18),
+
+                  // 3. أسعار الذهب
+                  const Text('3. أسعار الذهب في السوق المحلية والأونصة:',
+                      style: TextStyle(
+                          color: Color(0xFFF59E0B),
+                          fontWeight: FontWeight.bold,
+                          fontSize: 13)),
+                  const SizedBox(height: 8),
+                  _buildDualInputRow('ذهب عيار 21', gold21SypCtrl,
+                      gold21UsdCtrl, 'ل.س', 'USD \$'),
+                  _buildDualInputRow('ذهب عيار 18', gold18SypCtrl,
+                      gold18UsdCtrl, 'ل.س', 'USD \$'),
+                  _buildModernInput(goldOunceCtrl,
+                      'أونصة الذهب العالمية (\$ USD)', Icons.public),
+
+                  const SizedBox(height: 22),
+                  ElevatedButton.icon(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFD4AF37),
+                      foregroundColor: Colors.black,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12)),
+                      elevation: 6,
+                    ),
+                    icon: const Icon(Icons.flash_on, size: 22),
+                    label: Text(
+                      isSuper
+                          ? 'حفظ ونشر التحديث الفوري لجميع مستخدمي سوريا ⚡'
+                          : 'نشر تحديث أسعار العملات والذهب ⚡',
+                      style: const TextStyle(
+                          fontWeight: FontWeight.bold, fontSize: 13.5),
+                    ),
+                    onPressed: () async {
+                      bool hasIdentityChanges = false;
+                      if (!isSuper) {
+                        if (nameCtrl.text.trim() != _exchangerName ||
+                            phoneCtrl.text.trim() != _exchangerPhone ||
+                            wa1Ctrl.text.trim() != _exchangerWhatsapp1 ||
+                            wa2Ctrl.text.trim() != _exchangerWhatsapp2 ||
+                            tgCtrl.text.trim() != _exchangerTelegram ||
+                            locCtrl.text.trim() != _exchangerLocation ||
+                            mapCtrl.text.trim() != _exchangerMapUrl) {
+                          hasIdentityChanges = true;
+                        }
+                      }
+
+                      setState(() {
+                        // إذا كان مديراً عاماً يغير البيانات مباشرة
+                        if (isSuper) {
+                          _isExchangerActive = tempActive;
+                          _exchangerName = nameCtrl.text.trim();
+                          _exchangerPhone = phoneCtrl.text.trim();
+                          _exchangerWhatsapp1 = wa1Ctrl.text.trim();
+                          _exchangerWhatsapp2 = wa2Ctrl.text.trim();
+                          _exchangerTelegram = tgCtrl.text.trim();
+                          _exchangerLocation = locCtrl.text.trim();
+                          _exchangerMapUrl = mapCtrl.text.trim();
+                        }
+
+                        // الأسعار تتحدث للمشرف والمدير فوراً
+                        _usdBuy = double.tryParse(usdBuyCtrl.text) ?? _usdBuy;
+                        _usdSell =
+                            double.tryParse(usdSellCtrl.text) ?? _usdSell;
+                        _eurBuy = double.tryParse(eurBuyCtrl.text) ?? _eurBuy;
+                        _eurSell =
+                            double.tryParse(eurSellCtrl.text) ?? _eurSell;
+                        _tryBuy = double.tryParse(tryBuyCtrl.text) ?? _tryBuy;
+                        _trySell =
+                            double.tryParse(trySellCtrl.text) ?? _trySell;
+                        _usdTryBuy =
+                            double.tryParse(usdTryBuyCtrl.text) ?? _usdTryBuy;
+                        _usdTrySell =
+                            double.tryParse(usdTrySellCtrl.text) ?? _usdTrySell;
+
+                        _gold21kSyp =
+                            double.tryParse(gold21SypCtrl.text) ?? _gold21kSyp;
+                        _gold21kUsd =
+                            double.tryParse(gold21UsdCtrl.text) ?? _gold21kUsd;
+                        _gold18kSyp =
+                            double.tryParse(gold18SypCtrl.text) ?? _gold18kSyp;
+                        _gold18kUsd =
+                            double.tryParse(gold18UsdCtrl.text) ?? _gold18kUsd;
+                        _goldOunceUsd = double.tryParse(goldOunceCtrl.text) ??
+                            _goldOunceUsd;
+
+                        _lastUpdatedTime = 'تم التحديث للتو ✓';
+                      });
+
+                      // تحديث في السحابة
+                      await _manager.updateExchangeRatesInCloud(
+                        newUsdRate: _usdSell,
+                        newGoldPrice: _gold21kSyp,
+                      );
+
+                      Navigator.pop(ctx);
+
+                      if (mounted) {
+                        if (hasIdentityChanges) {
+                          // رسالة أنيقة للمشرف تفيد بانتظار الموافقة على تعديل بيانات الشركة
+                          showDialog(
+                            context: context,
+                            builder: (dCtx) => Directionality(
+                              textDirection: TextDirection.rtl,
+                              child: AlertDialog(
+                                backgroundColor: const Color(0xFF0F172A),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                  side: const BorderSide(
+                                      color: Color(0xFFD4AF37), width: 1.2),
+                                ),
+                                title: const Row(
+                                  children: [
+                                    Icon(Icons.hourglass_top_rounded,
+                                        color: Color(0xFFD4AF37), size: 24),
+                                    SizedBox(width: 8),
+                                    Text('طلب بانتظار موافقة الإدارة ⏳',
+                                        style: TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 15,
+                                            fontWeight: FontWeight.bold)),
+                                  ],
+                                ),
+                                content: const Text(
+                                  'تم تحديث أسعار العملات والذهب بنجاح على الفور! ✅\n\nأما بالنسبة لطلب تعديل (اسم الشركة / أرقام الهاتف والواتساب / الموقع)، فقد تم إرساله إلى إدارة التطبيق، وسيتم اعتماده وتطبيقه تلقائياً بمجرد موافقة المدير العام.',
+                                  style: TextStyle(
+                                      color: Colors.white70,
+                                      fontSize: 12.5,
+                                      height: 1.5),
+                                ),
+                                actions: [
+                                  ElevatedButton(
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: const Color(0xFFD4AF37),
+                                      foregroundColor: Colors.black,
+                                    ),
+                                    onPressed: () => Navigator.pop(dCtx),
+                                    child: const Text('حسناً فهمت',
+                                        style: TextStyle(
+                                            fontWeight: FontWeight.bold)),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        } else {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text(
+                                  '👑 تم تحديث ونشر أسعار البورصة الحية لجميع أجهزة المستخدمين!'),
+                              backgroundColor: Color(0xFF16A34A),
+                            ),
+                          );
+                        }
+                      }
+                    },
+                  ),
+                  const SizedBox(height: 12),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLockedOrEditableInput(
+      TextEditingController ctrl, String label, IconData icon, bool isSuper) {
+    return TextField(
+      controller: ctrl,
+      readOnly: !isSuper,
+      style: TextStyle(
+          color: isSuper ? Colors.white : Colors.white70, fontSize: 12.5),
+      decoration: InputDecoration(
+        labelText: label,
+        labelStyle: TextStyle(
+            color: isSuper ? Colors.white60 : Colors.white38, fontSize: 11),
+        prefixIcon: Icon(icon,
+            color: isSuper ? const Color(0xFFD4AF37) : Colors.white38,
+            size: 17),
+        suffixIcon: !isSuper
+            ? const Icon(Icons.lock_outline, color: Colors.amber, size: 16)
+            : null,
+        filled: true,
+        fillColor: isSuper ? const Color(0xFF1E293B) : const Color(0xFF131E33),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide:
+              BorderSide(color: isSuper ? Colors.transparent : Colors.white12),
+        ),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+      ),
+    );
+  }
+
+  Widget _buildModernInput(
+      TextEditingController ctrl, String label, IconData icon) {
+    return TextField(
+      controller: ctrl,
+      style: const TextStyle(color: Colors.white, fontSize: 13),
+      decoration: InputDecoration(
+        labelText: label,
+        labelStyle: const TextStyle(color: Colors.white60, fontSize: 11.5),
+        prefixIcon: Icon(icon, color: const Color(0xFFD4AF37), size: 18),
+        filled: true,
+        fillColor: const Color(0xFF1E293B),
+        border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10),
+            borderSide: BorderSide.none),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      ),
+    );
+  }
+
+  Widget _buildDualInputRow(
+    String title,
+    TextEditingController ctrl1,
+    TextEditingController ctrl2,
+    String label1,
+    String label2,
+  ) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        children: [
+          SizedBox(
+            width: 85,
+            child: Text(
+              title,
+              style: const TextStyle(
+                  color: Colors.white70,
+                  fontSize: 11.5,
+                  fontWeight: FontWeight.bold),
+            ),
+          ),
+          Expanded(
+            child: TextField(
+              controller: ctrl1,
+              keyboardType: TextInputType.number,
+              style: const TextStyle(
+                  color: Color(0xFF22C55E),
+                  fontWeight: FontWeight.bold,
+                  fontSize: 13),
+              decoration: InputDecoration(
+                labelText: label1,
+                labelStyle:
+                    const TextStyle(color: Colors.white54, fontSize: 10.5),
+                filled: true,
+                fillColor: const Color(0xFF1E293B),
+                border:
+                    OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: TextField(
+              controller: ctrl2,
+              keyboardType: TextInputType.number,
+              style: const TextStyle(
+                  color: Color(0xFFEF4444),
+                  fontWeight: FontWeight.bold,
+                  fontSize: 13),
+              decoration: InputDecoration(
+                labelText: label2,
+                labelStyle:
+                    const TextStyle(color: Colors.white54, fontSize: 10.5),
+                filled: true,
+                fillColor: const Color(0xFF1E293B),
+                border:
+                    OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final bool canManage =
+        _manager.isAdmin || _manager.isModerator || _isSuperAdmin();
+
+    return Directionality(
+      textDirection: TextDirection.rtl,
+      child: Scaffold(
+        backgroundColor: const Color(0xFF070D18),
+        appBar: AppBar(
+          backgroundColor: const Color(0xFF0F172A),
+          elevation: 0,
+          title: const Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.monetization_on_rounded,
+                  color: Color(0xFFD4AF37), size: 22),
+              SizedBox(width: 8),
+              Text(
+                'البورصة وأسعار الذهب مباشر 🪙',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 0.5,
+                ),
+              ),
+            ],
+          ),
+          centerTitle: true,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back_ios_new_rounded,
+                color: Colors.white),
+            onPressed: () => Navigator.pop(context),
+          ),
+          actions: [
+            if (canManage)
+              IconButton(
+                icon: const Icon(Icons.tune_rounded,
+                    color: Color(0xFFD4AF37), size: 24),
+                tooltip: 'غرفة التحكم الإدارية',
+                onPressed: _openExchangeControlPanel,
+              ),
+          ],
+        ),
+        body: ListView(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          physics: const BouncingScrollPhysics(),
+          children: [
+            // 🌟 1. وثيقة الصراف المعتمد الملكية الفخمة مع 2 واتساب وتيليجرام
+            if (_isExchangerActive)
+              Container(
+                margin: const EdgeInsets.only(bottom: 16),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFF1E293B), Color(0xFF0F172A)],
+                    begin: Alignment.topRight,
+                    end: Alignment.bottomLeft,
+                  ),
+                  borderRadius: BorderRadius.circular(18),
+                  border:
+                      Border.all(color: const Color(0xFFD4AF37), width: 1.5),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFFD4AF37).withOpacity(0.18),
+                      blurRadius: 16,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    children: [
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(10),
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              gradient: const LinearGradient(
+                                colors: [Color(0xFFD4AF37), Color(0xFF9A7B1C)],
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color:
+                                      const Color(0xFFD4AF37).withOpacity(0.4),
+                                  blurRadius: 10,
+                                ),
+                              ],
+                            ),
+                            child: const Icon(Icons.verified_user_rounded,
+                                color: Colors.black, size: 26),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  _exchangerName,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 14.5,
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                const Text(
+                                  'المصدر الرسمي المعتمد لتسعير الصرافة في سوريا ✓',
+                                  style: TextStyle(
+                                    color: Color(0xFF22C55E),
+                                    fontSize: 10.5,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withOpacity(0.3),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: Colors.white10),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.pin_drop_rounded,
+                                color: Colors.redAccent, size: 16),
+                            const SizedBox(width: 6),
+                            Expanded(
+                              child: Text(
+                                _exchangerLocation,
+                                style: const TextStyle(
+                                    color: Colors.white70, fontSize: 11),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(
+                                color:
+                                    const Color(0xFF38BDF8).withOpacity(0.15),
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: Text(
+                                '⏰ $_lastUpdatedTime',
+                                style: const TextStyle(
+                                  color: Color(0xFF38BDF8),
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+
+                      // أزرار التواصل (اتصال + واتساب 1 + واتساب 2 + تيليجرام + خريطة)
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: [
+                          ElevatedButton.icon(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF0284C7),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 12, vertical: 8),
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8)),
+                            ),
+                            icon: const Icon(Icons.phone,
+                                size: 15, color: Colors.white),
+                            label: const Text('اتصال مباشر',
+                                style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 11.5,
+                                    fontWeight: FontWeight.bold)),
+                            onPressed: () =>
+                                launchUrl(Uri.parse('tel:$_exchangerPhone')),
+                          ),
+                          ElevatedButton.icon(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF16A34A),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 12, vertical: 8),
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8)),
+                            ),
+                            icon: const Icon(Icons.chat,
+                                size: 15, color: Colors.white),
+                            label: const Text('واتساب 1',
+                                style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 11.5,
+                                    fontWeight: FontWeight.bold)),
+                            onPressed: () {
+                              final clean = PhoneHelper.formatForWhatsapp(
+                                  _exchangerWhatsapp1);
+                              launchUrl(Uri.parse('https://wa.me/$clean'),
+                                  mode: LaunchMode.externalApplication);
+                            },
+                          ),
+                          if (_exchangerWhatsapp2.isNotEmpty)
+                            ElevatedButton.icon(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFF059669),
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 12, vertical: 8),
+                                shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8)),
+                              ),
+                              icon: const Icon(Icons.chat,
+                                  size: 15, color: Colors.white),
+                              label: const Text('واتساب 2',
+                                  style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 11.5,
+                                      fontWeight: FontWeight.bold)),
+                              onPressed: () {
+                                final clean = PhoneHelper.formatForWhatsapp(
+                                    _exchangerWhatsapp2);
+                                launchUrl(Uri.parse('https://wa.me/$clean'),
+                                    mode: LaunchMode.externalApplication);
+                              },
+                            ),
+                          if (_exchangerTelegram.isNotEmpty)
+                            ElevatedButton.icon(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFF229ED9),
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 12, vertical: 8),
+                                shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8)),
+                              ),
+                              icon: const Icon(Icons.send,
+                                  size: 15, color: Colors.white),
+                              label: const Text('تيليجرام',
+                                  style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 11.5,
+                                      fontWeight: FontWeight.bold)),
+                              onPressed: () {
+                                final tg =
+                                    _exchangerTelegram.replaceAll('@', '');
+                                launchUrl(Uri.parse('https://t.me/$tg'),
+                                    mode: LaunchMode.externalApplication);
+                              },
+                            ),
+                          IconButton(
+                            style: IconButton.styleFrom(
+                              backgroundColor: const Color(0xFF1E293B),
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                  side:
+                                      const BorderSide(color: Colors.white24)),
+                            ),
+                            icon: const Icon(Icons.map_rounded,
+                                color: Color(0xFFD4AF37), size: 18),
+                            tooltip: 'موقع الصراف على الخريطة',
+                            onPressed: () => launchUrl(
+                                Uri.parse(_exchangerMapUrl),
+                                mode: LaunchMode.externalApplication),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+            // 💵 2. بطاقات العملات الضخمة والفخمة
+            const Padding(
+              padding: EdgeInsets.only(bottom: 10, top: 4),
+              child: Row(
+                children: [
+                  Icon(Icons.currency_exchange,
+                      color: Color(0xFF22C55E), size: 20),
+                  SizedBox(width: 8),
+                  Text(
+                    'أسعار العملات الأجنبية مقابل الليرة السورية',
+                    style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14),
+                  ),
+                ],
+              ),
+            ),
+
+            _buildUltraLuxuryRateCard(
+              title: 'الدولار الأمريكي (USD / SYP)',
+              code: 'USD',
+              flag: '🇺🇸',
+              buy: _usdBuy,
+              sell: _usdSell,
+              unit: 'ل.س',
+            ),
+            _buildUltraLuxuryRateCard(
+              title: 'اليورو الأوروبي (EUR / SYP)',
+              code: 'EUR',
+              flag: '🇪🇺',
+              buy: _eurBuy,
+              sell: _eurSell,
+              unit: 'ل.س',
+            ),
+            _buildUltraLuxuryRateCard(
+              title: 'الليرة التركية (TRY / SYP)',
+              code: 'TRY',
+              flag: '🇹🇷',
+              buy: _tryBuy,
+              sell: _trySell,
+              unit: 'ل.س',
+            ),
+            _buildUltraLuxuryRateCard(
+              title: 'الدولار مقابل الليرة التركية (USD / TRY)',
+              code: 'USD/TRY',
+              flag: '🇹🇷🇺🇸',
+              buy: _usdTryBuy,
+              sell: _usdTrySell,
+              unit: 'TL',
+              isDecimal: true,
+            ),
+
+            const SizedBox(height: 14),
+
+            // 🪙 3. بطاقات أسعار الذهب الفخمة
+            const Padding(
+              padding: EdgeInsets.only(bottom: 10),
+              child: Row(
+                children: [
+                  Icon(Icons.workspace_premium_rounded,
+                      color: Color(0xFFD4AF37), size: 22),
+                  SizedBox(width: 8),
+                  Text(
+                    'أسعار الذهب اللحظية في السوق السورية',
+                    style: TextStyle(
+                        color: Color(0xFFD4AF37),
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14),
+                  ),
+                ],
+              ),
+            ),
+
+            _buildUltraLuxuryGoldCard(
+              title: 'غرام الذهب عيار 21 قيراط',
+              subtitle:
+                  'العيار الأكثر طلباً وتداولاً في دمشق وحلب وكافة المحافظات',
+              sypPrice: _gold21kSyp,
+              usdPrice: _gold21kUsd,
+            ),
+            _buildUltraLuxuryGoldCard(
+              title: 'غرام الذهب عيار 18 قيراط',
+              subtitle: 'عيار الصاغة والمشغولات الذهبية الراقية',
+              sypPrice: _gold18kSyp,
+              usdPrice: _gold18kUsd,
+            ),
+
+            // أونصة الذهب العالمية
+            Container(
+              margin: const EdgeInsets.only(bottom: 14),
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF1E293B), Color(0xFF0F172A)],
+                ),
+                borderRadius: BorderRadius.circular(16),
+                border:
+                    Border.all(color: const Color(0xFFD4AF37).withOpacity(0.4)),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Row(
+                    children: [
+                      Icon(Icons.public, color: Color(0xFF38BDF8), size: 26),
+                      SizedBox(width: 12),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'الأونصة الذهبية عالمياً (OUNCE)',
+                            style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 13.5),
+                          ),
+                          Text(
+                            'بورصة نيويورك ولندن للمعادن الثمينة',
+                            style: TextStyle(
+                                color: Colors.white54, fontSize: 10.5),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                  Text(
+                    '\$${_goldOunceUsd.toStringAsFixed(1)}',
+                    style: const TextStyle(
+                      color: Color(0xFF22C55E),
+                      fontWeight: FontWeight.w900,
+                      fontSize: 18,
+                      fontFamily: 'monospace',
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 10),
+
+            // زر المشرف الإداري
+            if (canManage)
+              ElevatedButton.icon(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF1E293B),
+                  foregroundColor: const Color(0xFFD4AF37),
+                  side: const BorderSide(color: Color(0xFFD4AF37), width: 1.2),
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12)),
+                ),
+                icon: const Icon(Icons.admin_panel_settings, size: 22),
+                label: const Text(
+                  'فتح لوحة تحكم وتحديث أسعار الصرافة ⚡',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5),
+                ),
+                onPressed: _openExchangeControlPanel,
+              ),
+
+            const SizedBox(height: 35),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // بطاقة عملة فخمة
+  Widget _buildUltraLuxuryRateCard({
+    required String title,
+    required String code,
+    required String flag,
+    required double buy,
+    required double sell,
+    required String unit,
+    bool isDecimal = false,
+  }) {
+    final buyText = isDecimal ? buy.toStringAsFixed(2) : buy.toInt().toString();
+    final sellText =
+        isDecimal ? sell.toStringAsFixed(2) : sell.toInt().toString();
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: const Color(0xFF111C33),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white12, width: 1),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.3),
+            blurRadius: 8,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  Text(flag, style: const TextStyle(fontSize: 24)),
+                  const SizedBox(width: 8),
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 13,
+                    ),
+                  ),
+                ],
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.06),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Text(
+                  code,
+                  style: const TextStyle(
+                    color: Color(0xFFD4AF37),
+                    fontWeight: FontWeight.bold,
+                    fontSize: 11,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF22C55E).withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                        color: const Color(0xFF22C55E).withOpacity(0.35)),
+                  ),
+                  child: Column(
+                    children: [
+                      const Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.arrow_downward,
+                              color: Color(0xFF22C55E), size: 13),
+                          SizedBox(width: 4),
+                          Text(
+                            'شراء (نشتري منك)',
+                            style: TextStyle(
+                              color: Color(0xFF22C55E),
+                              fontWeight: FontWeight.bold,
+                              fontSize: 11,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        '$buyText $unit',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w900,
+                          fontSize: 16.5,
+                          fontFamily: 'monospace',
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFEF4444).withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                        color: const Color(0xFFEF4444).withOpacity(0.35)),
+                  ),
+                  child: Column(
+                    children: [
+                      const Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.arrow_upward,
+                              color: Color(0xFFEF4444), size: 13),
+                          SizedBox(width: 4),
+                          Text(
+                            'مبيع (نبيعك)',
+                            style: TextStyle(
+                              color: Color(0xFFEF4444),
+                              fontWeight: FontWeight.bold,
+                              fontSize: 11,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        '$sellText $unit',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w900,
+                          fontSize: 16.5,
+                          fontFamily: 'monospace',
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  // بطاقة ذهب ملكية
+  Widget _buildUltraLuxuryGoldCard({
+    required String title,
+    required String subtitle,
+    required double sypPrice,
+    required double usdPrice,
+  }) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: const Color(0xFF111C33),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+            color: const Color(0xFFD4AF37).withOpacity(0.4), width: 1.2),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.35),
+            blurRadius: 8,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  const Icon(Icons.stars_rounded,
+                      color: Color(0xFFD4AF37), size: 22),
+                  const SizedBox(width: 8),
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 13.5,
+                    ),
+                  ),
+                ],
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFD4AF37).withOpacity(0.15),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: const Text(
+                  'عيار رسمي',
+                  style: TextStyle(
+                      color: Color(0xFFD4AF37),
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Text(
+            subtitle,
+            style: const TextStyle(color: Colors.white54, fontSize: 10.5),
+          ),
+          const Divider(color: Colors.white12, height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('السعر بالليرة السورية:',
+                      style: TextStyle(color: Colors.white60, fontSize: 10.5)),
+                  const SizedBox(height: 2),
+                  Text(
+                    '${sypPrice.toInt()} ل.س',
+                    style: const TextStyle(
+                      color: Color(0xFFD4AF37),
+                      fontWeight: FontWeight.w900,
+                      fontSize: 17,
+                      fontFamily: 'monospace',
+                    ),
+                  ),
+                ],
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  const Text('المعادل بالدولار الأمريكي:',
+                      style: TextStyle(color: Colors.white60, fontSize: 10.5)),
+                  const SizedBox(height: 2),
+                  Text(
+                    '\$${usdPrice.toStringAsFixed(1)} USD',
+                    style: const TextStyle(
+                      color: Color(0xFF22C55E),
+                      fontWeight: FontWeight.w900,
+                      fontSize: 16,
+                      fontFamily: 'monospace',
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
