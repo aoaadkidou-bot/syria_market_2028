@@ -174,7 +174,8 @@ class _SouqSyriaAppState extends State<SouqSyriaApp> {
             ),
             callback: (payload) {
               if (payload.newRecord.isNotEmpty) {
-                final val = payload.newRecord['value']?.toString().toLowerCase();
+                final val =
+                    payload.newRecord['value']?.toString().toLowerCase();
                 final bool isMaint = (val == 'true');
                 if (_manager.isMaintenanceMode != isMaint) {
                   _manager.isMaintenanceMode = isMaint;
@@ -1744,7 +1745,8 @@ class AppStateManager extends ChangeNotifier {
             }
           } else if (row['key'] == 'maintenance_mode') {
             isMaintenanceMode = row['value'] == 'true' || row['value'] == true;
-          } else if (row['key'] == 'app_branding_title' && row['value'] != null) {
+          } else if (row['key'] == 'app_branding_title' &&
+              row['value'] != null) {
             appTitle = row['value'].toString();
           }
         }
@@ -2450,7 +2452,6 @@ class AppStateManager extends ChangeNotifier {
 
 // امتداد وتكملة ميثودات فئة إدارة الحالة العامة AppStateManager
 extension AppStateManagerAuditsAndCategories on AppStateManager {
-
   Future<bool> submitPaymentAuditRequest({
     required String planId,
     required String planName,
@@ -2566,9 +2567,8 @@ extension AppStateManagerAuditsAndCategories on AppStateManager {
           imageUrls: audit.bannerImages.isNotEmpty
               ? audit.bannerImages
               : [if (audit.receiptImageUrl != null) audit.receiptImageUrl!],
-          title: audit.bannerTitle.isNotEmpty
-              ? audit.bannerTitle
-              : 'إعلان مميز',
+          title:
+              audit.bannerTitle.isNotEmpty ? audit.bannerTitle : 'إعلان مميز',
           subtitle: audit.bannerSubtitle.isNotEmpty
               ? audit.bannerSubtitle
               : 'سوق سوريا الشامل',
@@ -3221,6 +3221,7 @@ class _LiveCurrencyExchangeTickerState
     );
   }
 }
+
 // ==============================================================================
 // 11. الشجرة الهيكلية للأقسام والفروع (DepartmentTreeItemWidget)
 // ==============================================================================
@@ -3462,24 +3463,19 @@ class _VoiceInputDialogState extends State<VoiceInputDialog> {
 }
 
 // ==============================================================================
-// 13. القائمة الجانبية السيادية المتقدمة (CustomServerDrawer)
-// مطابقة للشروط 3 و4 و6 (إزالة الأعلام، زر تسجيل خروج واضح، وحقوق النشر الديناميكية)
+// 🚪 القائمة الجانبية الملكية الكاملة مع تسجيل الخروج وتبديل الحساب
 // ==============================================================================
 class CustomServerDrawer extends StatelessWidget {
-  final String userId;
   final VoidCallback onOpenContactAdmin;
   final VoidCallback onOpenFeedback;
-  final VoidCallback onOpenPlans;
   final VoidCallback onOpenAdminPanel;
 
   const CustomServerDrawer({
-    Key? key,
-    required this.userId,
+    super.key,
     required this.onOpenContactAdmin,
     required this.onOpenFeedback,
-    required this.onOpenPlans,
     required this.onOpenAdminPanel,
-  }) : super(key: key);
+  });
 
   void _showDisclaimerDialog(BuildContext context) {
     showDialog(
@@ -3487,7 +3483,7 @@ class CustomServerDrawer extends StatelessWidget {
       builder: (ctx) => Directionality(
         textDirection: TextDirection.rtl,
         child: AlertDialog(
-          backgroundColor: const Color(0xFF0F172A),
+          backgroundColor: const Color(0xFF1E293B),
           shape:
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           title: const Row(
@@ -3550,6 +3546,7 @@ class CustomServerDrawer extends StatelessWidget {
       'sameraoaad@gmail.com',
     ];
     final bool isSuperAdmin = authorizedAdmins.contains(currentEmail);
+    final bool isLoggedIn = authUser != null || manager.isLoggedIn;
 
     return Directionality(
       textDirection: TextDirection.rtl,
@@ -3612,8 +3609,10 @@ class CustomServerDrawer extends StatelessWidget {
                           ),
                         ),
                         Text(
-                          manager.isLoggedIn
-                              ? manager.currentUserEmail
+                          isLoggedIn
+                              ? (currentEmail.isNotEmpty
+                                  ? currentEmail
+                                  : manager.currentUserEmail)
                               : 'زائر المنصة الكريم',
                           style: const TextStyle(
                               color: Colors.white60, fontSize: 10),
@@ -3629,6 +3628,45 @@ class CustomServerDrawer extends StatelessWidget {
                 padding: EdgeInsets.zero,
                 physics: const BouncingScrollPhysics(),
                 children: [
+                  // 🌟 إذا كان زائر: يظهر له زر تسجيل الدخول
+                  if (!isLoggedIn)
+                    Container(
+                      margin: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 8),
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFFD4AF37), Color(0xFFB48A18)],
+                        ),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: ListTile(
+                        leading: const Icon(Icons.login_rounded,
+                            color: Colors.black),
+                        title: const Text(
+                          'تسجيل الدخول / حساب جديد ✨',
+                          style: TextStyle(
+                            color: Colors.black,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 13.5,
+                          ),
+                        ),
+                        subtitle: const Text(
+                          'انضم لمنصة سوق سوريا وتمتع بكامل المزايا',
+                          style:
+                              TextStyle(color: Colors.black87, fontSize: 10.5),
+                        ),
+                        onTap: () {
+                          Navigator.pop(context);
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (ctx) => const SupabaseAuthScreen(),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+
                   ListTile(
                     leading:
                         Icon(Icons.headset_mic, color: manager.secondaryColor),
@@ -3782,25 +3820,94 @@ class CustomServerDrawer extends StatelessWidget {
                       _showDisclaimerDialog(context);
                     },
                   ),
-                  if (manager.isLoggedIn)
-                    ListTile(
-                      leading: const Icon(Icons.logout_rounded,
-                          color: Colors.redAccent),
-                      title: const Text(
-                        'تسجيل الخروج 🚪',
-                        style: TextStyle(
-                            color: Colors.redAccent,
-                            fontWeight: FontWeight.bold),
+
+                  // 🌟 زر تسجيل الخروج الملكي الأحمر الجاهز 100%
+                  const Divider(color: Colors.white12),
+                  ListTile(
+                    leading: const Icon(Icons.logout_rounded,
+                        color: Colors.redAccent),
+                    title: const Text(
+                      'تسجيل الخروج 🚪',
+                      style: TextStyle(
+                        color: Colors.redAccent,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
                       ),
-                      onTap: () {
-                        Navigator.pop(context);
-                        _handleLogout(context);
-                      },
                     ),
+                    subtitle: const Text(
+                      'الخروج من الحساب الحالي والتبديل',
+                      style: TextStyle(color: Colors.white38, fontSize: 11),
+                    ),
+                    onTap: () async {
+                      Navigator.pop(context);
+
+                      final confirm = await showDialog<bool>(
+                        context: context,
+                        builder: (ctx) => Directionality(
+                          textDirection: TextDirection.rtl,
+                          child: AlertDialog(
+                            backgroundColor: const Color(0xFF1E293B),
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(14)),
+                            title: const Row(
+                              children: [
+                                Icon(Icons.logout, color: Colors.redAccent),
+                                SizedBox(width: 8),
+                                Text('تسجيل الخروج',
+                                    style: TextStyle(
+                                        color: Colors.white, fontSize: 16)),
+                              ],
+                            ),
+                            content: const Text(
+                                'هل أنت متأكد من تسجيل الخروج من هذا الحساب؟',
+                                style: TextStyle(
+                                    color: Colors.white70, fontSize: 13)),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.pop(ctx, false),
+                                child: const Text('إلغاء',
+                                    style: TextStyle(color: Colors.white60)),
+                              ),
+                              ElevatedButton(
+                                style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.redAccent),
+                                onPressed: () => Navigator.pop(ctx, true),
+                                child: const Text('نعم، خروج',
+                                    style: TextStyle(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.bold)),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+
+                      if (confirm == true) {
+                        await Supabase.instance.client.auth.signOut();
+                        try {
+                          await AppStateManager().setSessionUser(
+                              userId: '', email: '', name: '', phone: '');
+                        } catch (_) {}
+
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                                content: Text('تم تسجيل الخروج بنجاح'),
+                                backgroundColor: Colors.orange),
+                          );
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (ctx) => const SupabaseAuthScreen()),
+                          );
+                        }
+                      }
+                    },
+                  ),
                 ],
               ),
             ),
-            // أسفل القائمة: حقوق الطبع والنشر وإخلاء المسؤولية ورقم الإصدار (البند 6)
+            // أسفل القائمة: حقوق الطبع والنشر وإخلاء المسؤولية ورقم الإصدار
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
               decoration: const BoxDecoration(
@@ -4048,8 +4155,8 @@ class FullBannerDetailsScreen extends StatelessWidget {
                               ),
                             ),
                             onPressed: () async {
-                              final clean =
-                                  PhoneHelper.formatForWhatsapp(banner.whatsapp);
+                              final clean = PhoneHelper.formatForWhatsapp(
+                                  banner.whatsapp);
                               final msg = Uri.encodeComponent(
                                   'مرحباً، بخصوص إعلانكم في بانوراما سوق سوريا (${banner.title}):');
                               final uri =
@@ -4444,6 +4551,7 @@ class _AppFeedbackScreenState extends State<AppFeedbackScreen> {
     );
   }
 }
+
 // ==============================================================================
 // 16. واجهة المصادقة واسترجاع كلمة المرور الحقيقية (AuthScreen)
 // ==============================================================================
@@ -4486,7 +4594,8 @@ class _AuthScreenState extends State<AuthScreen> {
         textDirection: TextDirection.rtl,
         child: AlertDialog(
           backgroundColor: const Color(0xFF0F172A),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           title: Row(
             children: [
               Icon(Icons.lock_reset, color: _manager.primaryColor),
@@ -4523,10 +4632,11 @@ class _AuthScreenState extends State<AuthScreen> {
           actions: [
             TextButton(
                 onPressed: () => Navigator.pop(ctx),
-                child: const Text('إلغاء', style: TextStyle(color: Colors.white60))),
+                child: const Text('إلغاء',
+                    style: TextStyle(color: Colors.white60))),
             ElevatedButton(
-              style:
-                  ElevatedButton.styleFrom(backgroundColor: _manager.buttonColor),
+              style: ElevatedButton.styleFrom(
+                  backgroundColor: _manager.buttonColor),
               onPressed: () async {
                 final email = resetEmailController.text.trim();
                 if (email.isEmpty || !email.contains('@')) {
@@ -4564,13 +4674,16 @@ class _AuthScreenState extends State<AuthScreen> {
                 } catch (e) {
                   if (mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('تعذر استرجاع كلمة المرور، يرجى المحاولة لاحقاً.')),
+                      const SnackBar(
+                          content: Text(
+                              'تعذر استرجاع كلمة المرور، يرجى المحاولة لاحقاً.')),
                     );
                   }
                 }
               },
               child: const Text('إرسال الرابط',
-                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                  style: TextStyle(
+                      color: Colors.white, fontWeight: FontWeight.bold)),
             ),
           ],
         ),
@@ -4710,7 +4823,8 @@ class _AuthScreenState extends State<AuthScreen> {
             ),
           ),
           leading: IconButton(
-            icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white),
+            icon: const Icon(Icons.arrow_back_ios_new_rounded,
+                color: Colors.white),
             onPressed: () => Navigator.pop(context),
           ),
         ),
@@ -4760,8 +4874,9 @@ class _AuthScreenState extends State<AuthScreen> {
                         border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(10)),
                       ),
-                      validator: (v) =>
-                          (v == null || v.trim().isEmpty) ? 'الاسم مطلوب' : null,
+                      validator: (v) => (v == null || v.trim().isEmpty)
+                          ? 'الاسم مطلوب'
+                          : null,
                     ),
                     const SizedBox(height: 12),
                     TextFormField(
@@ -4808,8 +4923,8 @@ class _AuthScreenState extends State<AuthScreen> {
                               ? Icons.visibility_off
                               : Icons.visibility,
                         ),
-                        onPressed: () =>
-                            setState(() => _obscurePassword = !_obscurePassword),
+                        onPressed: () => setState(
+                            () => _obscurePassword = !_obscurePassword),
                       ),
                       border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(10)),
@@ -4856,7 +4971,8 @@ class _AuthScreenState extends State<AuthScreen> {
                   ),
                   const SizedBox(height: 12),
                   TextButton(
-                    onPressed: () => setState(() => _isLoginMode = !_isLoginMode),
+                    onPressed: () =>
+                        setState(() => _isLoginMode = !_isLoginMode),
                     child: Text(
                       _isLoginMode
                           ? 'ليس لديك حساب؟ سجل حساباً جديداً الآن'
@@ -5183,12 +5299,38 @@ class _FullAdDetailsScreenState extends State<FullAdDetailsScreen> {
   @override
   void dispose() {
     _commentsSubscription?.cancel();
+    _commentsRealtimeChannel?.unsubscribe();
     _countdownTimer?.cancel();
     _pageController.dispose();
     _zoomController.dispose();
     _bidController.dispose();
     _commentController.dispose();
     super.dispose();
+  }
+
+  // 🔄 دالة التحديث الشاملة عند السحب في تفاصيل الإعلان
+  Future<void> _refreshAdDetails() async {
+    try {
+      final res = await Supabase.instance.client
+          .from('ads')
+          .select()
+          .eq('id', _currentAd.id)
+          .maybeSingle();
+
+      if (res != null && mounted) {
+        setState(() {
+          _currentAd = AdItem.fromMap(res);
+        });
+        widget.onAdUpdated(_currentAd);
+      }
+    } catch (_) {}
+
+    await Future.wait([
+      _loadComments(),
+      _fetchSellerProfile(),
+    ]);
+
+    if (mounted) setState(() {});
   }
 
   Future<void> _fetchSellerProfile() async {
@@ -5275,8 +5417,8 @@ class _FullAdDetailsScreenState extends State<FullAdDetailsScreen> {
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
-                content: Text(
-                    'انتهت مهلة العرض وتم إزالة المنشور المباع بنجاح.'),
+                content:
+                    Text('انتهت مهلة العرض وتم إزالة المنشور المباع بنجاح.'),
                 backgroundColor: Colors.redAccent,
               ),
             );
@@ -5801,8 +5943,7 @@ class _FullAdDetailsScreenState extends State<FullAdDetailsScreen> {
     final authUser = Supabase.instance.client.auth.currentUser;
     if (authUser == null && !_manager.isLoggedIn) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-            content: Text('يجب تسجيل الدخول أولاً لتقييم المعلن.')),
+        const SnackBar(content: Text('يجب تسجيل الدخول أولاً لتقييم المعلن.')),
       );
       return;
     }
@@ -5913,8 +6054,8 @@ class _FullAdDetailsScreenState extends State<FullAdDetailsScreen> {
             textDirection: TextDirection.rtl,
             child: AlertDialog(
               backgroundColor: const Color(0xFF0F172A),
-              shape:
-                  RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16)),
               title: const Row(
                 children: [
                   Icon(Icons.check_circle_outline,
@@ -6682,7 +6823,7 @@ class _FullAdDetailsScreenState extends State<FullAdDetailsScreen> {
                 ],
               ),
             ),
-     // ==============================================================================
+            // ==============================================================================
 // 🌟 سوق سوريا الشامل - المنظومة السحابية المتكاملة
 // [الجزء الرابع من 12: تفاصيل السعر، بطاقة المعلن، التعليقات، باقات VIP، وحجز البانوراما]
 // ==============================================================================
@@ -6956,8 +7097,7 @@ class _FullAdDetailsScreenState extends State<FullAdDetailsScreen> {
                                   style: const TextStyle(color: Colors.white),
                                   decoration: const InputDecoration(
                                     hintText: 'قيمة المزايدة (\$)',
-                                    hintStyle:
-                                        TextStyle(color: Colors.white38),
+                                    hintStyle: TextStyle(color: Colors.white38),
                                     filled: true,
                                     fillColor: Color(0xFF1E293B),
                                     border: OutlineInputBorder(),
@@ -7549,8 +7689,7 @@ class _SubscriptionPlansScreenState extends State<SubscriptionPlansScreen> {
     if (_receiptImageBytes == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content:
-              Text('يرجى إرفاق صورة إشعار أو إيصال التحويل لإثبات الدفع'),
+          content: Text('يرجى إرفاق صورة إشعار أو إيصال التحويل لإثبات الدفع'),
           backgroundColor: Colors.orange,
         ),
       );
@@ -7691,7 +7830,8 @@ class _SubscriptionPlansScreenState extends State<SubscriptionPlansScreen> {
                 color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
           ),
           leading: IconButton(
-            icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white),
+            icon: const Icon(Icons.arrow_back_ios_new_rounded,
+                color: Colors.white),
             onPressed: () => Navigator.pop(context),
           ),
         ),
@@ -7745,7 +7885,6 @@ class _SubscriptionPlansScreenState extends State<SubscriptionPlansScreen> {
                     fontSize: 14,
                     color: Colors.white)),
             const SizedBox(height: 8),
-
             StreamBuilder<List<Map<String, dynamic>>>(
               stream: Supabase.instance.client.from('vip_packages').stream(
                   primaryKey: ['id']).order('price_syp', ascending: true),
@@ -7874,7 +8013,6 @@ class _SubscriptionPlansScreenState extends State<SubscriptionPlansScreen> {
                                   ),
                                 ],
                               ),
-
                               if (featuresList.isNotEmpty) ...[
                                 const Divider(
                                     color: Colors.white12, height: 16),
@@ -7908,7 +8046,6 @@ class _SubscriptionPlansScreenState extends State<SubscriptionPlansScreen> {
                 );
               },
             ),
-
             const SizedBox(height: 10),
             Container(
               padding: const EdgeInsets.all(12),
@@ -8055,8 +8192,7 @@ class _SubscriptionPlansScreenState extends State<SubscriptionPlansScreen> {
               style: const TextStyle(color: Colors.white, fontSize: 13),
               decoration: const InputDecoration(
                 labelText: 'رقم العملية أو رمز المعاملة (اختياري)',
-                labelStyle:
-                    TextStyle(color: Colors.white54, fontSize: 12),
+                labelStyle: TextStyle(color: Colors.white54, fontSize: 12),
                 filled: true,
                 fillColor: Color(0xFF1E293B),
                 border: OutlineInputBorder(),
@@ -8306,12 +8442,16 @@ class _PanoramaBookingScreenState extends State<PanoramaBookingScreen> {
                 Icon(Icons.verified, color: Colors.green, size: 26),
                 SizedBox(width: 8),
                 Text('تم استلام طلب حجز البانوراما 🖼️',
-                    style: TextStyle(fontSize: 15, color: Colors.white, fontWeight: FontWeight.bold)),
+                    style: TextStyle(
+                        fontSize: 15,
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold)),
               ],
             ),
             content: Text(
               'تم إرسال صور البانوراما وإشعار الدفع بنجاح.\nسيتم تفعيل البانوراما فور تدقيق الإيصال لتبدأ مدة العرض (${_selectedDuration['label']}) مع العداد التنازلي التلقائي!',
-              style: const TextStyle(fontSize: 13, height: 1.5, color: Colors.white70),
+              style: const TextStyle(
+                  fontSize: 13, height: 1.5, color: Colors.white70),
             ),
             actions: [
               ElevatedButton(
@@ -8321,7 +8461,9 @@ class _PanoramaBookingScreenState extends State<PanoramaBookingScreen> {
                   Navigator.pop(ctx);
                   Navigator.pop(context);
                 },
-                child: const Text('حسناً', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
+                child: const Text('حسناً',
+                    style: TextStyle(
+                        color: Colors.black, fontWeight: FontWeight.bold)),
               ),
             ],
           ),
@@ -8347,7 +8489,8 @@ class _PanoramaBookingScreenState extends State<PanoramaBookingScreen> {
                 color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
           ),
           leading: IconButton(
-            icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white),
+            icon: const Icon(Icons.arrow_back_ios_new_rounded,
+                color: Colors.white),
             onPressed: () => Navigator.pop(context),
           ),
         ),
@@ -8356,7 +8499,10 @@ class _PanoramaBookingScreenState extends State<PanoramaBookingScreen> {
           padding: const EdgeInsets.all(16),
           children: [
             const Text('1. اختر مدة بقاء البانوراما في الرئيسية:',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.white)),
+                style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                    color: Colors.white)),
             const SizedBox(height: 8),
             Wrap(
               spacing: 8,
@@ -8371,8 +8517,8 @@ class _PanoramaBookingScreenState extends State<PanoramaBookingScreen> {
                   selected: isSel,
                   selectedColor: const Color(0xFFD4AF37),
                   backgroundColor: const Color(0xFF1E293B),
-                  labelStyle: TextStyle(
-                      color: isSel ? Colors.black : Colors.white70),
+                  labelStyle:
+                      TextStyle(color: isSel ? Colors.black : Colors.white70),
                   onSelected: (val) {
                     if (val) setState(() => _selectedDuration = opt);
                   },
@@ -8395,13 +8541,17 @@ class _PanoramaBookingScreenState extends State<PanoramaBookingScreen> {
                           fontWeight: FontWeight.bold, color: Colors.green)),
                   Text('$priceSyp ليرة سورية',
                       style: const TextStyle(
-                          fontWeight: FontWeight.bold, color: Color(0xFFD4AF37))),
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFFD4AF37))),
                 ],
               ),
             ),
             const SizedBox(height: 16),
             const Text('2. صور البانوراما (تتقلب تلقائياً):',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.white)),
+                style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                    color: Colors.white)),
             const SizedBox(height: 8),
             SizedBox(
               height: 85,
@@ -8426,7 +8576,9 @@ class _PanoramaBookingScreenState extends State<PanoramaBookingScreen> {
                           const SizedBox(height: 4),
                           const Text('إضافة صور',
                               style: TextStyle(
-                                  fontSize: 10, fontWeight: FontWeight.bold, color: Colors.white70)),
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white70)),
                         ],
                       ),
                     ),
@@ -8446,7 +8598,10 @@ class _PanoramaBookingScreenState extends State<PanoramaBookingScreen> {
             ),
             const SizedBox(height: 16),
             const Text('3. تفاصيل ونص الإعلان:',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.white)),
+                style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                    color: Colors.white)),
             const SizedBox(height: 8),
             TextField(
               controller: _titleController,
@@ -8512,7 +8667,10 @@ class _PanoramaBookingScreenState extends State<PanoramaBookingScreen> {
             ),
             const SizedBox(height: 16),
             const Text('4. التحويل وإرفاق صورة الإشعار:',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.white)),
+                style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                    color: Colors.white)),
             const SizedBox(height: 8),
             const ExclusivePaymentGatewayCard(),
             const SizedBox(height: 12),
@@ -8589,7 +8747,9 @@ class _PanoramaBookingScreenState extends State<PanoramaBookingScreen> {
                           SizedBox(height: 4),
                           Text('اضغط لإرفاق صورة إشعار أو لقطة شاشة التحويل 📸',
                               style: TextStyle(
-                                  fontWeight: FontWeight.bold, fontSize: 12, color: Colors.white70)),
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 12,
+                                  color: Colors.white70)),
                         ],
                       ),
               ),
@@ -8637,7 +8797,7 @@ class MainDashboardScreen extends StatefulWidget {
   @override
   State<MainDashboardScreen> createState() => _MainDashboardScreenState();
 }
-       // ==============================================================================
+// ==============================================================================
 // 🌟 سوق سوريا الشامل - المنظومة السحابية المتكاملة
 // [الجزء الخامس من 12: شاشة القسم والفروع، الواجهة الرئيسية، والتصفية بالمحافظات]
 // ==============================================================================
@@ -8793,7 +8953,6 @@ class _CategoryDetailScreenState extends State<CategoryDetailScreen> {
                   ],
                 ),
               ),
-
             Expanded(
               child: filteredAds.isEmpty
                   ? Center(
@@ -9142,8 +9301,9 @@ class _CategoryDetailScreenState extends State<CategoryDetailScreen> {
                               fontWeight: FontWeight.bold,
                               fontFamily: 'Cairo'),
                         ),
-                        onPressed: () =>
-                            _whatsappSeller(ad.whatsapp.isNotEmpty ? ad.whatsapp : ad.phone, ad.title),
+                        onPressed: () => _whatsappSeller(
+                            ad.whatsapp.isNotEmpty ? ad.whatsapp : ad.phone,
+                            ad.title),
                       ),
                     ),
                   ],
@@ -9194,6 +9354,50 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
   final AppStateManager _manager = AppStateManager();
   final ImagePicker _picker = ImagePicker();
   int _currentNavIndex = 0;
+  dynamic _adsRealtimeSubscription;
+  dynamic _categoriesRealtimeSubscription;
+
+  // 📡 بث مباشر حي: أي إعلان أو قسم ينزل بالسيرفر ينزل فوراً عند الجميع
+  void _setupRealtimeSync() {
+    try {
+      _adsRealtimeSubscription = Supabase.instance.client
+          .from('ads')
+          .stream(primaryKey: ['id']).listen((data) {
+        if (mounted) {
+          try {
+            _manager.notifyListeners();
+          } catch (_) {}
+          setState(() {});
+        }
+      });
+
+      _categoriesRealtimeSubscription = Supabase.instance.client
+          .from('categories')
+          .stream(primaryKey: ['id']).listen((data) {
+        if (mounted) setState(() {});
+      });
+    } catch (e) {
+      debugPrint('Realtime setup note: $e');
+    }
+  }
+
+  // 🔄 دالة السحب للتحديث التلقائي
+  Future<void> _handleRefresh() async {
+    try {
+      // إعادة تحميل بيانات السوق وتنبيه جميع الشاشات
+      _manager.notifyListeners();
+    } catch (_) {}
+    if (mounted) {
+      setState(() {});
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('✓ تم تحديث بيانات السوق بنجاح 🔄'),
+          backgroundColor: Color(0xFF0F172A),
+          duration: Duration(milliseconds: 900),
+        ),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -9386,6 +9590,43 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
                                 );
                               },
                             ),
+                            Card(
+                              color: const Color(0xFF1E293B),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                side: const BorderSide(
+                                    color: Color(0xFFD4AF37), width: 0.8),
+                              ),
+                              child: ListTile(
+                                leading: const Icon(Icons.category_rounded,
+                                    color: Color(0xFFD4AF37), size: 28),
+                                title: const Text(
+                                  'التحكم بالأقسام والأفرع والأيقونات 🏷️',
+                                  style: TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 14),
+                                ),
+                                subtitle: const Text(
+                                  'إضافة أقسام، تعديل المسميات، واختيار الأيقونات والفروع',
+                                  style: TextStyle(
+                                      color: Colors.white60, fontSize: 11),
+                                ),
+                                trailing: const Icon(
+                                    Icons.arrow_forward_ios_rounded,
+                                    color: Color(0xFFD4AF37),
+                                    size: 16),
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (ctx) =>
+                                          const AdminCategoriesManagerScreen(),
+                                    ),
+                                  );
+                                },
+                              ),
+                            ),
                             const SizedBox(height: 6),
                             ListTile(
                               tileColor: const Color(0xFF1E293B),
@@ -9438,7 +9679,6 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
           ),
         ),
       ),
-
       appBar: AppBar(
         backgroundColor: _manager.appBarColor,
         elevation: 0,
@@ -9698,6 +9938,171 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
                               );
                             },
                           ),
+                          const SizedBox(height: 10),
+                          // 🌟 زر تسجيل الخروج / تسجيل الدخول بقلب الترس مباشرة
+                          Builder(
+                            builder: (context) {
+                              final authUser =
+                                  Supabase.instance.client.auth.currentUser;
+                              final bool isUserLoggedIn = authUser != null;
+
+                              if (isUserLoggedIn) {
+                                return ListTile(
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    side: BorderSide(
+                                        color:
+                                            Colors.redAccent.withOpacity(0.4),
+                                        width: 1),
+                                  ),
+                                  tileColor: Colors.redAccent.withOpacity(0.12),
+                                  leading: const Icon(Icons.logout_rounded,
+                                      color: Colors.redAccent),
+                                  title: const Text(
+                                    'تسجيل الخروج من الحساب 🚪',
+                                    style: TextStyle(
+                                      fontSize: 13.5,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.redAccent,
+                                    ),
+                                  ),
+                                  subtitle: Text(
+                                    authUser.email ??
+                                        'الخروج والتبديل لحساب آخر',
+                                    style: const TextStyle(
+                                        fontSize: 10.5, color: Colors.white60),
+                                  ),
+                                  trailing: const Icon(
+                                      Icons.power_settings_new_rounded,
+                                      size: 18,
+                                      color: Colors.redAccent),
+                                  onTap: () async {
+                                    Navigator.pop(
+                                        sheetCtx); // إغلاق نافذة الترس
+
+                                    final confirm = await showDialog<bool>(
+                                      context: context,
+                                      builder: (dialogCtx) => Directionality(
+                                        textDirection: TextDirection.rtl,
+                                        child: AlertDialog(
+                                          backgroundColor:
+                                              const Color(0xFF1E293B),
+                                          shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(14)),
+                                          title: const Row(
+                                            children: [
+                                              Icon(Icons.logout,
+                                                  color: Colors.redAccent),
+                                              SizedBox(width: 8),
+                                              Text('تسجيل الخروج',
+                                                  style: TextStyle(
+                                                      color: Colors.white,
+                                                      fontSize: 16)),
+                                            ],
+                                          ),
+                                          content: const Text(
+                                            'هل أنت متأكد من رغبتك في تسجيل الخروج من هذا الحساب؟',
+                                            style: TextStyle(
+                                                color: Colors.white70,
+                                                fontSize: 13),
+                                          ),
+                                          actions: [
+                                            TextButton(
+                                              onPressed: () => Navigator.pop(
+                                                  dialogCtx, false),
+                                              child: const Text('إلغاء',
+                                                  style: TextStyle(
+                                                      color: Colors.white60)),
+                                            ),
+                                            ElevatedButton(
+                                              style: ElevatedButton.styleFrom(
+                                                  backgroundColor:
+                                                      Colors.redAccent),
+                                              onPressed: () => Navigator.pop(
+                                                  dialogCtx, true),
+                                              child: const Text('نعم، خروج',
+                                                  style: TextStyle(
+                                                      color: Colors.white,
+                                                      fontWeight:
+                                                          FontWeight.bold)),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    );
+
+                                    if (confirm == true) {
+                                      await Supabase.instance.client.auth
+                                          .signOut();
+                                      try {
+                                        await AppStateManager().setSessionUser(
+                                            userId: '',
+                                            email: '',
+                                            name: '',
+                                            phone: '');
+                                      } catch (_) {}
+
+                                      if (context.mounted) {
+                                        ScaffoldMessenger.of(context)
+                                            .showSnackBar(
+                                          const SnackBar(
+                                            content:
+                                                Text('✓ تم تسجيل الخروج بنجاح'),
+                                            backgroundColor: Colors.orange,
+                                          ),
+                                        );
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                              builder: (ctx) =>
+                                                  const SupabaseAuthScreen()),
+                                        );
+                                      }
+                                    }
+                                  },
+                                );
+                              } else {
+                                return ListTile(
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    side: const BorderSide(
+                                        color: Color(0xFFD4AF37), width: 1),
+                                  ),
+                                  tileColor:
+                                      const Color(0xFFD4AF37).withOpacity(0.12),
+                                  leading: const Icon(Icons.login_rounded,
+                                      color: Color(0xFFD4AF37)),
+                                  title: const Text(
+                                    'تسجيل الدخول / إنشاء حساب ✨',
+                                    style: TextStyle(
+                                      fontSize: 13.5,
+                                      fontWeight: FontWeight.bold,
+                                      color: Color(0xFFD4AF37),
+                                    ),
+                                  ),
+                                  subtitle: const Text(
+                                    'سجل الآن للاستفادة من كافة مزايا المنصة',
+                                    style: TextStyle(
+                                        fontSize: 10.5, color: Colors.white60),
+                                  ),
+                                  trailing: const Icon(
+                                      Icons.arrow_forward_ios_rounded,
+                                      size: 14,
+                                      color: Color(0xFFD4AF37)),
+                                  onTap: () {
+                                    Navigator.pop(sheetCtx);
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                          builder: (ctx) =>
+                                              const SupabaseAuthScreen()),
+                                    );
+                                  },
+                                );
+                              }
+                            },
+                          ),
                           const SizedBox(height: 14),
                         ],
                       ),
@@ -9759,14 +10164,20 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
         ],
       ),
       body: SafeArea(
-        child: IndexedStack(
-          index: _currentNavIndex,
-          children: [
-            _buildHomeFeedTab(),
-            _buildDepartmentsTab(),
-            _buildFavoritesTab(),
-            _buildCompaniesDirectoryTab(),
-          ],
+        child: RefreshIndicator(
+          color: const Color(0xFFD4AF37),
+          backgroundColor: const Color(0xFF0F172A),
+          strokeWidth: 2.5,
+          onRefresh: _handleRefresh,
+          child: IndexedStack(
+            index: _currentNavIndex,
+            children: [
+              _buildHomeFeedTab(),
+              _buildDepartmentsTab(),
+              _buildFavoritesTab(),
+              _buildCompaniesDirectoryTab(),
+            ],
+          ),
         ),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
@@ -10608,7 +11019,6 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
   bool _isUploadingBanner = false;
 
   final TextEditingController _searchController = TextEditingController();
-
   @override
   void initState() {
     super.initState();
@@ -10626,6 +11036,9 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
     _startBannerCarouselTimer();
 
     _gridScrollController.addListener(_onScrollListener);
+
+    // 📡 تفعيل البث اللحظي لتحديث الإعلانات والأقسام عند كل الناس فوراً
+    _setupRealtimeSync();
   }
 
   @override
@@ -11051,8 +11464,8 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
                   const SizedBox(height: 16),
                   if (b.imageUrls.length > 1) ...[
                     const Text('صور إضافية للبانوراما 📸:',
-                        style:
-                            TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                        style: TextStyle(
+                            fontWeight: FontWeight.bold, fontSize: 13)),
                     const SizedBox(height: 8),
                     SizedBox(
                       height: 80,
@@ -11126,7 +11539,8 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
                             onPressed: () async {
                               final uri = Uri.parse('tel:${b.phone}');
                               try {
-                                if (await canLaunchUrl(uri)) await launchUrl(uri);
+                                if (await canLaunchUrl(uri))
+                                  await launchUrl(uri);
                               } catch (_) {}
                             },
                           ),
@@ -11143,7 +11557,8 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
                         shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(10)),
                       ),
-                      icon: Icon(Icons.campaign, color: _manager.secondaryColor),
+                      icon:
+                          Icon(Icons.campaign, color: _manager.secondaryColor),
                       label: Text(
                         'تريد الإعلان في هذه المساحة البانورامية؟ احجز باقتك الآن 👑',
                         style: TextStyle(
@@ -11310,7 +11725,8 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('تعذر رفع البنر، يرجى المحاولة لاحقاً.')),
+          const SnackBar(
+              content: Text('تعذر رفع البنر، يرجى المحاولة لاحقاً.')),
         );
       }
     } finally {
@@ -11404,16 +11820,20 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12)),
                   tileColor: _manager.secondaryColor.withOpacity(0.15),
-                  leading: Icon(Icons.lightbulb, color: _manager.secondaryColor),
+                  leading:
+                      Icon(Icons.lightbulb, color: _manager.secondaryColor),
                   title: const Text('صوتك مسموع 💡 (صندوق الاقتراحات)',
                       style:
                           TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-                  subtitle: const Text('إرسال فكرة أو ملاحظة مع إرفاق لقطة شاشة'),
+                  subtitle:
+                      const Text('إرسال فكرة أو ملاحظة مع إرفاق لقطة شاشة'),
                   trailing: const Icon(Icons.arrow_forward_ios, size: 14),
                   onTap: () {
                     Navigator.pop(ctx);
-                    Navigator.push(context,
-                        MaterialPageRoute(builder: (c) => const AppFeedbackScreen()));
+                    Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (c) => const AppFeedbackScreen()));
                   },
                 ),
               ],
@@ -11457,7 +11877,8 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
                               const SizedBox(width: 8),
                               const Text('تصفية وفلترة متقدمة',
                                   style: TextStyle(
-                                      fontSize: 16, fontWeight: FontWeight.bold)),
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold)),
                             ],
                           ),
                           TextButton(
@@ -11493,7 +11914,8 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
                             label: Text(cond,
                                 style: TextStyle(
                                     fontSize: 11,
-                                    color: sel ? Colors.white : Colors.black87)),
+                                    color:
+                                        sel ? Colors.white : Colors.black87)),
                             selected: sel,
                             selectedColor: _manager.primaryColor,
                             onSelected: (val) {
@@ -11522,7 +11944,8 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
                             label: Text(s['label']!,
                                 style: TextStyle(
                                     fontSize: 11,
-                                    color: sel ? Colors.white : Colors.black87)),
+                                    color:
+                                        sel ? Colors.white : Colors.black87)),
                             selected: sel,
                             selectedColor: _manager.primaryColor,
                             onSelected: (val) {
@@ -11738,7 +12161,8 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
                     const SizedBox(height: 14),
                     const Row(
                       children: [
-                        Icon(Icons.category, color: Color(0xFFD4AF37), size: 22),
+                        Icon(Icons.category,
+                            color: Color(0xFFD4AF37), size: 22),
                         SizedBox(width: 8),
                         Text(
                           'دليل كافة أقسام وتصنيفات السوق 📂',
@@ -13043,7 +13467,7 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
                   ),
                 ],
               ),
-       // ==============================================================================
+              // ==============================================================================
 // 🌟 سوق سوريا الشامل - المنظومة السحابية المتكاملة
 // [الجزء السابع من 12: تفاصيل الحساب، إضافة وتعديل الإعلانات، المحادثات، والإشراف]
 // ==============================================================================
@@ -13196,8 +13620,7 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
             title: const Text('تسجيل الدخول / إنشاء حساب جديد',
                 style: TextStyle(
                     fontWeight: FontWeight.bold, color: Colors.white)),
-            subtitle: const Text(
-                'تسجيل سريع ومحمي مع استرجاع كلمة المرور',
+            subtitle: const Text('تسجيل سريع ومحمي مع استرجاع كلمة المرور',
                 style: TextStyle(color: Colors.white60, fontSize: 11)),
             trailing: const Icon(Icons.arrow_forward_ios_rounded,
                 size: 14, color: Color(0xFFD4AF37)),
@@ -13512,7 +13935,8 @@ class _FullAddAdScreenState extends State<FullAddAdScreen> {
         textDirection: TextDirection.rtl,
         child: AlertDialog(
           backgroundColor: const Color(0xFF0F172A),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           title: Row(
             children: [
               const Icon(Icons.lock, color: Color(0xFFD4AF37), size: 22),
@@ -13526,8 +13950,8 @@ class _FullAddAdScreenState extends State<FullAddAdScreen> {
           ),
           content: Text(
             'عذراً! إضافة روابط التواصل الاجتماعي وتضمين الفيديو متاحة للمشتركين في ($requiredPlan).\n\nتساعدك الروابط في توجيه الزبائن مباشرة لقناتك وصفحتك التجارية وزيادة مبيعاتك!',
-            style:
-                const TextStyle(color: Colors.white70, fontSize: 13, height: 1.5),
+            style: const TextStyle(
+                color: Colors.white70, fontSize: 13, height: 1.5),
           ),
           actions: [
             TextButton(
@@ -13986,7 +14410,10 @@ class _FullAddAdScreenState extends State<FullAddAdScreen> {
             padding: const EdgeInsets.all(16),
             children: [
               const Text('صور السلعة والمعاينة *',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.white)),
+                  style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 13,
+                      color: Colors.white)),
               const SizedBox(height: 8),
               SizedBox(
                 height: 90,
@@ -14012,7 +14439,9 @@ class _FullAddAdScreenState extends State<FullAddAdScreen> {
                             const SizedBox(height: 4),
                             const Text('إضافة صورة',
                                 style: TextStyle(
-                                    fontSize: 10, fontWeight: FontWeight.bold, color: Colors.white70)),
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.white70)),
                           ],
                         ),
                       ),
@@ -14281,8 +14710,10 @@ class _FullAddAdScreenState extends State<FullAddAdScreen> {
               const SizedBox(height: 12),
               SwitchListTile(
                 title: const Text('طرح السلعة في المزاد العلني ⚖️',
-                    style:
-                        TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.white)),
+                    style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 13,
+                        color: Colors.white)),
                 subtitle: const Text(
                     'يتيح للمشترين المزايدة المباشرة مع نظام مكافحة القنص الذكي',
                     style: TextStyle(color: Colors.white60, fontSize: 11)),
@@ -14297,7 +14728,8 @@ class _FullAddAdScreenState extends State<FullAddAdScreen> {
                       child: TextFormField(
                         controller: _startingBidController,
                         keyboardType: TextInputType.number,
-                        style: const TextStyle(color: Colors.white, fontSize: 13),
+                        style:
+                            const TextStyle(color: Colors.white, fontSize: 13),
                         decoration: InputDecoration(
                           labelText: 'سعر بدء المزاد (\$)',
                           labelStyle: const TextStyle(color: Colors.white54),
@@ -14313,7 +14745,8 @@ class _FullAddAdScreenState extends State<FullAddAdScreen> {
                       child: DropdownButtonFormField<int>(
                         value: _auctionDaysDuration,
                         dropdownColor: const Color(0xFF1E293B),
-                        style: const TextStyle(color: Colors.white, fontSize: 13),
+                        style:
+                            const TextStyle(color: Colors.white, fontSize: 13),
                         decoration: InputDecoration(
                           labelText: 'مدة المزاد',
                           labelStyle: const TextStyle(color: Colors.white54),
@@ -14577,12 +15010,17 @@ class _FullChatNegotiationScreenState extends State<FullChatNegotiationScreen> {
         textDirection: TextDirection.rtl,
         child: AlertDialog(
           backgroundColor: const Color(0xFF0F172A),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           title: const Row(
             children: [
               Icon(Icons.local_offer, color: Colors.green),
               SizedBox(width: 8),
-              Text('تقديم عرض سعر رسمي 🤝', style: TextStyle(fontSize: 15, color: Colors.white, fontWeight: FontWeight.bold)),
+              Text('تقديم عرض سعر رسمي 🤝',
+                  style: TextStyle(
+                      fontSize: 15,
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold)),
             ],
           ),
           content: TextField(
@@ -14602,7 +15040,8 @@ class _FullChatNegotiationScreenState extends State<FullChatNegotiationScreen> {
           actions: [
             TextButton(
                 onPressed: () => Navigator.pop(ctx),
-                child: const Text('إلغاء', style: TextStyle(color: Colors.grey))),
+                child:
+                    const Text('إلغاء', style: TextStyle(color: Colors.grey))),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
                   backgroundColor: _manager.primaryColor),
@@ -14616,7 +15055,8 @@ class _FullChatNegotiationScreenState extends State<FullChatNegotiationScreen> {
                 }
               },
               child: const Text('إرسال العرض',
-                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                  style: TextStyle(
+                      color: Colors.white, fontWeight: FontWeight.bold)),
             ),
           ],
         ),
@@ -14667,8 +15107,8 @@ class _FullChatNegotiationScreenState extends State<FullChatNegotiationScreen> {
                       ? Center(
                           child: Text(
                             'ابدأ المحادثة الآن مع ${widget.partnerName} للتفاوض حول السلعة.',
-                            style:
-                                const TextStyle(color: Colors.grey, fontSize: 12),
+                            style: const TextStyle(
+                                color: Colors.grey, fontSize: 12),
                           ),
                         )
                       : ListView.builder(
@@ -14688,8 +15128,9 @@ class _FullChatNegotiationScreenState extends State<FullChatNegotiationScreen> {
                                 padding: const EdgeInsets.symmetric(
                                     horizontal: 12, vertical: 8),
                                 decoration: BoxDecoration(
-                                  color:
-                                      isMe ? _manager.primaryColor : const Color(0xFF1E293B),
+                                  color: isMe
+                                      ? _manager.primaryColor
+                                      : const Color(0xFF1E293B),
                                   borderRadius: BorderRadius.circular(12),
                                   boxShadow: const [
                                     BoxShadow(
@@ -14714,7 +15155,9 @@ class _FullChatNegotiationScreenState extends State<FullChatNegotiationScreen> {
                 color: Color(0xFF0F172A),
                 boxShadow: [
                   BoxShadow(
-                      color: Colors.black26, blurRadius: 4, offset: Offset(0, -2))
+                      color: Colors.black26,
+                      blurRadius: 4,
+                      offset: Offset(0, -2))
                 ],
               ),
               child: Row(
@@ -14740,7 +15183,8 @@ class _FullChatNegotiationScreenState extends State<FullChatNegotiationScreen> {
                   CircleAvatar(
                     backgroundColor: _manager.buttonColor,
                     child: IconButton(
-                      icon: const Icon(Icons.send, color: Colors.white, size: 18),
+                      icon:
+                          const Icon(Icons.send, color: Colors.white, size: 18),
                       onPressed: () => _sendMessage(),
                     ),
                   ),
@@ -14826,12 +15270,12 @@ class _FullAdminPanelScreenState extends State<FullAdminPanelScreen>
             unselectedLabelColor: Colors.white70,
             tabs: [
               const Tab(text: 'لوحة التحكم 📊'),
+              const Tab(text: 'الأقسام والأفرع 🏷️'),
               const Tab(text: 'إدارة البانوراما 🖼️'),
               Tab(text: 'مراجعة الإعلانات (${pendingAds.length}) ⏳'),
               Tab(text: 'تدقيق المدفوعات (${pendingPayments.length}) 💳'),
               const Tab(text: 'صلاحيات المشرفين 🔑'),
               const Tab(text: 'أسعار الصرف والذهب 🪙'),
-              const Tab(text: 'شجرة الأقسام 🌳'),
               const Tab(text: 'صوتك مسموع 💡'),
             ],
           ),
@@ -14840,6 +15284,7 @@ class _FullAdminPanelScreenState extends State<FullAdminPanelScreen>
           controller: _tabController,
           children: [
             _buildOverviewTab(),
+            const AdminCategoriesManagerScreen(),
             _buildBannersManagementTab(),
             _buildAdReviewTab(pendingAds),
             _buildPaymentAuditTab(pendingPayments),
@@ -14847,7 +15292,6 @@ class _FullAdminPanelScreenState extends State<FullAdminPanelScreen>
               physics: BouncingScrollPhysics(),
               child: AdminModeratorsControlSection(),
             ),
-            const SizedBox(),
             _buildDepartmentTreeTab(),
             _buildFeedbacksTab(),
           ],
@@ -15041,7 +15485,6 @@ class _FullAdminPanelScreenState extends State<FullAdminPanelScreen>
                   ),
                 ),
                 const SizedBox(height: 16),
-
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -15089,9 +15532,7 @@ class _FullAdminPanelScreenState extends State<FullAdminPanelScreen>
                     } catch (_) {}
                   },
                 ),
-
                 const SizedBox(height: 8),
-
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -15377,7 +15818,7 @@ class _FullAdminPanelScreenState extends State<FullAdminPanelScreen>
       ),
     );
   }
-         // ==============================================================================
+  // ==============================================================================
 // 🌟 سوق سوريا الشامل - المنظومة السحابية المتكاملة
 // [الجزء الثامن من 12: إضافة البانوراما، المراجعة الإدارية، وتفاصيل المكاتب العقارية]
 // ==============================================================================
@@ -15424,15 +15865,19 @@ class _FullAdminPanelScreenState extends State<FullAdminPanelScreen>
                     children: [
                       const Text('إضافة بانوراما إعلانية بمواصفات خاصة 🌟',
                           style: TextStyle(
-                              fontWeight: FontWeight.bold, fontSize: 16, color: Colors.white)),
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                              color: Colors.white)),
                       const SizedBox(height: 12),
                       TextField(
                         controller: titleController,
-                        style: const TextStyle(color: Colors.white, fontSize: 13),
+                        style:
+                            const TextStyle(color: Colors.white, fontSize: 13),
                         decoration: const InputDecoration(
                             labelText: 'عنوان البانوراما الرئيسي *',
                             labelStyle: TextStyle(color: Colors.white70),
-                            prefixIcon: Icon(Icons.title, color: Color(0xFFD4AF37)),
+                            prefixIcon:
+                                Icon(Icons.title, color: Color(0xFFD4AF37)),
                             filled: true,
                             fillColor: Color(0xFF1E293B),
                             border: OutlineInputBorder()),
@@ -15440,11 +15885,13 @@ class _FullAdminPanelScreenState extends State<FullAdminPanelScreen>
                       const SizedBox(height: 8),
                       TextField(
                         controller: subtitleController,
-                        style: const TextStyle(color: Colors.white, fontSize: 13),
+                        style:
+                            const TextStyle(color: Colors.white, fontSize: 13),
                         decoration: const InputDecoration(
                             labelText: 'النص الفرعي أو التخفيض',
                             labelStyle: TextStyle(color: Colors.white70),
-                            prefixIcon: Icon(Icons.subtitles, color: Color(0xFFD4AF37)),
+                            prefixIcon:
+                                Icon(Icons.subtitles, color: Color(0xFFD4AF37)),
                             filled: true,
                             fillColor: Color(0xFF1E293B),
                             border: OutlineInputBorder()),
@@ -15453,11 +15900,13 @@ class _FullAdminPanelScreenState extends State<FullAdminPanelScreen>
                       TextField(
                         controller: descriptionController,
                         maxLines: 3,
-                        style: const TextStyle(color: Colors.white, fontSize: 13),
+                        style:
+                            const TextStyle(color: Colors.white, fontSize: 13),
                         decoration: const InputDecoration(
                             labelText: 'وصف وتفاصيل الإعلان بالكامل 📝',
                             labelStyle: TextStyle(color: Colors.white70),
-                            prefixIcon: Icon(Icons.description, color: Color(0xFFD4AF37)),
+                            prefixIcon: Icon(Icons.description,
+                                color: Color(0xFFD4AF37)),
                             filled: true,
                             fillColor: Color(0xFF1E293B),
                             border: OutlineInputBorder()),
@@ -15465,11 +15914,13 @@ class _FullAdminPanelScreenState extends State<FullAdminPanelScreen>
                       const SizedBox(height: 8),
                       TextField(
                         controller: locationController,
-                        style: const TextStyle(color: Colors.white, fontSize: 13),
+                        style:
+                            const TextStyle(color: Colors.white, fontSize: 13),
                         decoration: const InputDecoration(
                             labelText: 'المحافظة أو العنوان (دمشق، حلب...) 📍',
                             labelStyle: TextStyle(color: Colors.white70),
-                            prefixIcon: Icon(Icons.location_on, color: Colors.redAccent),
+                            prefixIcon: Icon(Icons.location_on,
+                                color: Colors.redAccent),
                             filled: true,
                             fillColor: Color(0xFF1E293B),
                             border: OutlineInputBorder()),
@@ -15478,11 +15929,13 @@ class _FullAdminPanelScreenState extends State<FullAdminPanelScreen>
                       TextField(
                         controller: phoneController,
                         keyboardType: TextInputType.phone,
-                        style: const TextStyle(color: Colors.white, fontSize: 13),
+                        style:
+                            const TextStyle(color: Colors.white, fontSize: 13),
                         decoration: const InputDecoration(
                             labelText: 'رقم هاتف الاتصال المباشر 📞',
                             labelStyle: TextStyle(color: Colors.white70),
-                            prefixIcon: Icon(Icons.phone, color: Color(0xFF0284C7)),
+                            prefixIcon:
+                                Icon(Icons.phone, color: Color(0xFF0284C7)),
                             filled: true,
                             fillColor: Color(0xFF1E293B),
                             border: OutlineInputBorder()),
@@ -15491,11 +15944,13 @@ class _FullAdminPanelScreenState extends State<FullAdminPanelScreen>
                       TextField(
                         controller: whatsappController,
                         keyboardType: TextInputType.phone,
-                        style: const TextStyle(color: Colors.white, fontSize: 13),
+                        style:
+                            const TextStyle(color: Colors.white, fontSize: 13),
                         decoration: const InputDecoration(
                             labelText: 'رقم أو رابط واتساب 💬',
                             labelStyle: TextStyle(color: Colors.white70),
-                            prefixIcon: Icon(Icons.chat, color: Color(0xFF25D366)),
+                            prefixIcon:
+                                Icon(Icons.chat, color: Color(0xFF25D366)),
                             filled: true,
                             fillColor: Color(0xFF1E293B),
                             border: OutlineInputBorder()),
@@ -15503,11 +15958,13 @@ class _FullAdminPanelScreenState extends State<FullAdminPanelScreen>
                       const SizedBox(height: 8),
                       TextField(
                         controller: facebookController,
-                        style: const TextStyle(color: Colors.white, fontSize: 13),
+                        style:
+                            const TextStyle(color: Colors.white, fontSize: 13),
                         decoration: const InputDecoration(
                             labelText: 'رابط صفحة فيسبوك 🌐',
                             labelStyle: TextStyle(color: Colors.white70),
-                            prefixIcon: Icon(Icons.facebook, color: Color(0xFF1877F2)),
+                            prefixIcon:
+                                Icon(Icons.facebook, color: Color(0xFF1877F2)),
                             filled: true,
                             fillColor: Color(0xFF1E293B),
                             border: OutlineInputBorder()),
@@ -15515,11 +15972,13 @@ class _FullAdminPanelScreenState extends State<FullAdminPanelScreen>
                       const SizedBox(height: 8),
                       TextField(
                         controller: instagramController,
-                        style: const TextStyle(color: Colors.white, fontSize: 13),
+                        style:
+                            const TextStyle(color: Colors.white, fontSize: 13),
                         decoration: const InputDecoration(
                             labelText: 'رابط حساب إنستغرام 📸',
                             labelStyle: TextStyle(color: Colors.white70),
-                            prefixIcon: Icon(Icons.camera_alt, color: Color(0xFFE1306C)),
+                            prefixIcon: Icon(Icons.camera_alt,
+                                color: Color(0xFFE1306C)),
                             filled: true,
                             fillColor: Color(0xFF1E293B),
                             border: OutlineInputBorder()),
@@ -15527,11 +15986,13 @@ class _FullAdminPanelScreenState extends State<FullAdminPanelScreen>
                       const SizedBox(height: 8),
                       TextField(
                         controller: tiktokController,
-                        style: const TextStyle(color: Colors.white, fontSize: 13),
+                        style:
+                            const TextStyle(color: Colors.white, fontSize: 13),
                         decoration: const InputDecoration(
                             labelText: 'رابط حساب تيك توك 🎵',
                             labelStyle: TextStyle(color: Colors.white70),
-                            prefixIcon: Icon(Icons.music_note, color: Colors.cyanAccent),
+                            prefixIcon: Icon(Icons.music_note,
+                                color: Colors.cyanAccent),
                             filled: true,
                             fillColor: Color(0xFF1E293B),
                             border: OutlineInputBorder()),
@@ -15539,11 +16000,13 @@ class _FullAdminPanelScreenState extends State<FullAdminPanelScreen>
                       const SizedBox(height: 8),
                       TextField(
                         controller: telegramController,
-                        style: const TextStyle(color: Colors.white, fontSize: 13),
+                        style:
+                            const TextStyle(color: Colors.white, fontSize: 13),
                         decoration: const InputDecoration(
                             labelText: 'رابط قناة أو حساب تيليجرام ✈️',
                             labelStyle: TextStyle(color: Colors.white70),
-                            prefixIcon: Icon(Icons.send, color: Color(0xFF229ED9)),
+                            prefixIcon:
+                                Icon(Icons.send, color: Color(0xFF229ED9)),
                             filled: true,
                             fillColor: Color(0xFF1E293B),
                             border: OutlineInputBorder()),
@@ -15551,11 +16014,13 @@ class _FullAdminPanelScreenState extends State<FullAdminPanelScreen>
                       const SizedBox(height: 8),
                       TextField(
                         controller: youtubeController,
-                        style: const TextStyle(color: Colors.white, fontSize: 13),
+                        style:
+                            const TextStyle(color: Colors.white, fontSize: 13),
                         decoration: const InputDecoration(
                             labelText: 'رابط قناة أو فيديو يوتيوب ▶️',
                             labelStyle: TextStyle(color: Colors.white70),
-                            prefixIcon: Icon(Icons.play_circle_fill, color: Colors.redAccent),
+                            prefixIcon: Icon(Icons.play_circle_fill,
+                                color: Colors.redAccent),
                             filled: true,
                             fillColor: Color(0xFF1E293B),
                             border: OutlineInputBorder()),
@@ -15563,7 +16028,9 @@ class _FullAdminPanelScreenState extends State<FullAdminPanelScreen>
                       const SizedBox(height: 12),
                       const Text('مدة صلاحية الاشتراك (عداد تنازلي):',
                           style: TextStyle(
-                              fontWeight: FontWeight.bold, fontSize: 12, color: Colors.white)),
+                              fontWeight: FontWeight.bold,
+                              fontSize: 12,
+                              color: Colors.white)),
                       const SizedBox(height: 6),
                       Wrap(
                         spacing: 8,
@@ -15613,7 +16080,8 @@ class _FullAdminPanelScreenState extends State<FullAdminPanelScreen>
                         child: ElevatedButton.icon(
                           style: ElevatedButton.styleFrom(
                               backgroundColor: const Color(0xFF1E293B),
-                              padding: const EdgeInsets.symmetric(vertical: 12)),
+                              padding:
+                                  const EdgeInsets.symmetric(vertical: 12)),
                           icon: const Icon(Icons.photo_library,
                               color: Color(0xFFD4AF37)),
                           label: Text(
@@ -15666,7 +16134,8 @@ class _FullAdminPanelScreenState extends State<FullAdminPanelScreen>
                                       prefix: 'pan',
                                     );
                                   } catch (storageErr) {
-                                    debugPrint('Storage error notice: $storageErr');
+                                    debugPrint(
+                                        'Storage error notice: $storageErr');
                                   }
 
                                   if (serverImageUrls.isEmpty) {
@@ -15683,7 +16152,9 @@ class _FullAdminPanelScreenState extends State<FullAdminPanelScreen>
                                   }
 
                                   String mainLink = '';
-                                  if (facebookController.text.trim().isNotEmpty) {
+                                  if (facebookController.text
+                                      .trim()
+                                      .isNotEmpty) {
                                     mainLink = facebookController.text.trim();
                                   } else if (instagramController.text
                                       .trim()
@@ -15712,22 +16183,25 @@ class _FullAdminPanelScreenState extends State<FullAdminPanelScreen>
                                   final newBanner = BannerItem(
                                     id: bannerId,
                                     imageUrls: serverImageUrls,
-                                    title: titleController.text.trim().isNotEmpty
-                                        ? titleController.text.trim()
-                                        : 'عرض VIP خاص',
+                                    title:
+                                        titleController.text.trim().isNotEmpty
+                                            ? titleController.text.trim()
+                                            : 'عرض VIP خاص',
                                     subtitle: subtitleController.text.trim(),
                                     description:
                                         descriptionController.text.trim(),
-                                    location:
-                                        locationController.text.trim().isNotEmpty
-                                            ? locationController.text.trim()
-                                            : 'كل المحافظات',
+                                    location: locationController.text
+                                            .trim()
+                                            .isNotEmpty
+                                        ? locationController.text.trim()
+                                        : 'كل المحافظات',
                                     phone: phoneController.text.trim(),
                                     whatsapp: whatsappController.text.trim(),
                                     linkUrl: mainLink,
                                     facebookUrl: facebookController.text.trim(),
                                     telegramUrl: telegramController.text.trim(),
-                                    instagramUrl: instagramController.text.trim(),
+                                    instagramUrl:
+                                        instagramController.text.trim(),
                                     youtubeUrl: youtubeController.text.trim(),
                                     tiktokUrl: tiktokController.text.trim(),
                                     slot: targetSlot,
@@ -15779,17 +16253,19 @@ class _FullAdminPanelScreenState extends State<FullAdminPanelScreen>
                                       SnackBar(
                                         content: Text(
                                             'تم نشر البانوراما في القسم ($targetSlot) بنجاح!'),
-                                        backgroundColor: const Color(0xFF16A34A),
+                                        backgroundColor:
+                                            const Color(0xFF16A34A),
                                         duration: const Duration(seconds: 3),
                                       ),
                                     );
                                   } catch (dbError) {
                                     setModalState(() => isUploading = false);
-                                    debugPrint('Banner insert notice: $dbError');
+                                    debugPrint(
+                                        'Banner insert notice: $dbError');
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       const SnackBar(
-                                        content:
-                                            Text('تعذر إكمال النشر، يرجى إعادة المحاولة.'),
+                                        content: Text(
+                                            'تعذر إكمال النشر، يرجى إعادة المحاولة.'),
                                         backgroundColor: Color(0xFFDC2626),
                                         duration: Duration(seconds: 4),
                                       ),
@@ -15860,7 +16336,6 @@ class _FullAdminPanelScreenState extends State<FullAdminPanelScreen>
           ),
         ),
         const SizedBox(height: 12),
-
         Container(
           decoration: BoxDecoration(
             gradient: const LinearGradient(
@@ -15917,7 +16392,6 @@ class _FullAdminPanelScreenState extends State<FullAdminPanelScreen>
           ),
         ),
         const SizedBox(height: 12),
-
         Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
@@ -16065,7 +16539,8 @@ class _FullAdminPanelScreenState extends State<FullAdminPanelScreen>
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('إلغاء', style: TextStyle(color: Colors.white60)),
+              child:
+                  const Text('إلغاء', style: TextStyle(color: Colors.white60)),
             ),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
@@ -16190,7 +16665,8 @@ class _FullAdminPanelScreenState extends State<FullAdminPanelScreen>
                             setState(() {});
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(
-                                content: Text('تمت الموافقة على نشر الإعلان بنجاح!'),
+                                content:
+                                    Text('تمت الموافقة على نشر الإعلان بنجاح!'),
                                 backgroundColor: Color(0xFF16A34A),
                                 duration: Duration(seconds: 2),
                               ),
@@ -16430,8 +16906,8 @@ class _FullAdminPanelScreenState extends State<FullAdminPanelScreen>
                                 fontWeight: FontWeight.bold,
                                 fontSize: 12)),
                         onPressed: () {
-                          _manager.rejectPaymentTransaction(
-                              p.id, 'الإشعار غير مطابق أو لم يتم استلام التحويل');
+                          _manager.rejectPaymentTransaction(p.id,
+                              'الإشعار غير مطابق أو لم يتم استلام التحويل');
                           if (mounted) setState(() {});
                         },
                       ),
@@ -16735,7 +17211,8 @@ class _BannerDetailsScreenState extends State<BannerDetailsScreen> {
                             child: ElevatedButton.icon(
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: const Color(0xFF0284C7),
-                                padding: const EdgeInsets.symmetric(vertical: 12),
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 12),
                                 shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(8)),
                               ),
@@ -16755,7 +17232,8 @@ class _BannerDetailsScreenState extends State<BannerDetailsScreen> {
                             child: ElevatedButton.icon(
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: const Color(0xFF25D366),
-                                padding: const EdgeInsets.symmetric(vertical: 12),
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 12),
                                 shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(8)),
                               ),
@@ -17197,7 +17675,8 @@ class _RealEstateDirectoryScreenState extends State<RealEstateDirectoryScreen> {
                       const SizedBox(height: 14),
                       TextField(
                         controller: nameCtrl,
-                        style: const TextStyle(color: Colors.white, fontSize: 13),
+                        style:
+                            const TextStyle(color: Colors.white, fontSize: 13),
                         decoration: const InputDecoration(
                           labelText: 'اسم المكتب العقاري *',
                           labelStyle: TextStyle(color: Colors.white70),
@@ -17209,7 +17688,8 @@ class _RealEstateDirectoryScreenState extends State<RealEstateDirectoryScreen> {
                       const SizedBox(height: 10),
                       TextField(
                         controller: ownerCtrl,
-                        style: const TextStyle(color: Colors.white, fontSize: 13),
+                        style:
+                            const TextStyle(color: Colors.white, fontSize: 13),
                         decoration: const InputDecoration(
                           labelText: 'اسم المدير أو المالك *',
                           labelStyle: TextStyle(color: Colors.white70),
@@ -17235,8 +17715,8 @@ class _RealEstateDirectoryScreenState extends State<RealEstateDirectoryScreen> {
                                 border: OutlineInputBorder(),
                               ),
                               items: _govAreas.keys
-                                  .map((g) =>
-                                      DropdownMenuItem(value: g, child: Text(g)))
+                                  .map((g) => DropdownMenuItem(
+                                      value: g, child: Text(g)))
                                   .toList(),
                               onChanged: (v) {
                                 if (v != null) {
@@ -17262,8 +17742,8 @@ class _RealEstateDirectoryScreenState extends State<RealEstateDirectoryScreen> {
                                 border: OutlineInputBorder(),
                               ),
                               items: filteredAreas
-                                  .map((a) =>
-                                      DropdownMenuItem(value: a, child: Text(a)))
+                                  .map((a) => DropdownMenuItem(
+                                      value: a, child: Text(a)))
                                   .toList(),
                               onChanged: (v) {
                                 if (v != null)
@@ -17312,7 +17792,8 @@ class _RealEstateDirectoryScreenState extends State<RealEstateDirectoryScreen> {
                       const SizedBox(height: 10),
                       TextField(
                         controller: addressCtrl,
-                        style: const TextStyle(color: Colors.white, fontSize: 13),
+                        style:
+                            const TextStyle(color: Colors.white, fontSize: 13),
                         decoration: const InputDecoration(
                           labelText:
                               'العنوان التفصيلي (مثال: الشارع العام - جانب البريد)',
@@ -17343,7 +17824,9 @@ class _RealEstateDirectoryScreenState extends State<RealEstateDirectoryScreen> {
                             final phone = phoneCtrl.text.trim();
                             final whatsapp = whatsappCtrl.text.trim();
 
-                            if (name.isEmpty || owner.isEmpty || phone.isEmpty) {
+                            if (name.isEmpty ||
+                                owner.isEmpty ||
+                                phone.isEmpty) {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 const SnackBar(
                                     content: Text(
@@ -17376,7 +17859,8 @@ class _RealEstateDirectoryScreenState extends State<RealEstateDirectoryScreen> {
                               if (mounted) {
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   const SnackBar(
-                                    content: Text('تم تسجيل وتوثيق المكتب العقاري بنجاح!'),
+                                    content: Text(
+                                        'تم تسجيل وتوثيق المكتب العقاري بنجاح!'),
                                     backgroundColor: Colors.green,
                                   ),
                                 );
@@ -17385,7 +17869,9 @@ class _RealEstateDirectoryScreenState extends State<RealEstateDirectoryScreen> {
                               if (mounted) {
                                 setState(() => _isLoading = false);
                                 ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('حدث خطأ أثناء الحفظ، يرجى المحاولة لاحقاً.')),
+                                  const SnackBar(
+                                      content: Text(
+                                          'حدث خطأ أثناء الحفظ، يرجى المحاولة لاحقاً.')),
                                 );
                               }
                             }
@@ -17402,7 +17888,8 @@ class _RealEstateDirectoryScreenState extends State<RealEstateDirectoryScreen> {
       },
     );
   }
-List<RealEstateOfficeItem> get _filteredOffices {
+
+  List<RealEstateOfficeItem> get _filteredOffices {
     final q = _searchController.text.trim().toLowerCase();
     return _offices.where((o) {
       final matchGov =
@@ -17487,8 +17974,8 @@ List<RealEstateOfficeItem> get _filteredOffices {
                   ),
                   TextButton(
                     style: TextButton.styleFrom(
-                      padding:
-                          const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 4),
                       backgroundColor: const Color(0xFF25D366),
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(6)),
@@ -17526,8 +18013,8 @@ List<RealEstateOfficeItem> get _filteredOffices {
                           color: Color(0xFFD4AF37), size: 20),
                       filled: true,
                       fillColor: const Color(0xFF1E293B),
-                      contentPadding:
-                          const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                      contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 8),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(10),
                         borderSide: BorderSide.none,
@@ -17558,7 +18045,8 @@ List<RealEstateOfficeItem> get _filteredOffices {
                                         child: Text(
                                           g == 'الكل' ? 'كل المحافظات' : g,
                                           style: const TextStyle(
-                                              color: Colors.white, fontSize: 12),
+                                              color: Colors.white,
+                                              fontSize: 12),
                                         ),
                                       ))
                                   .toList(),
@@ -17598,12 +18086,14 @@ List<RealEstateOfficeItem> get _filteredOffices {
                                         child: Text(
                                           a == 'الكل' ? 'كل المناطق' : a,
                                           style: const TextStyle(
-                                              color: Colors.white, fontSize: 12),
+                                              color: Colors.white,
+                                              fontSize: 12),
                                         ),
                                       ))
                                   .toList(),
                               onChanged: (v) {
-                                if (v != null) setState(() => _selectedArea = v);
+                                if (v != null)
+                                  setState(() => _selectedArea = v);
                               },
                             ),
                           ),
@@ -18017,8 +18507,8 @@ class _AdminModeratorsControlSectionState
                       style: TextStyle(color: Colors.white60)),
                 ),
                 ElevatedButton(
-                  style:
-                      ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
+                  style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.redAccent),
                   onPressed: () => Navigator.pop(ctx, true),
                   child: const Text('تأكيد الحذف',
                       style: TextStyle(
@@ -18395,8 +18885,7 @@ class _AdminModeratorsControlSectionState
                       SwitchListTile(
                         dense: true,
                         activeColor: const Color(0xFFFACC15),
-                        title: const Text(
-                            'تدقيق باقات VIP والمدفوعات 💳',
+                        title: const Text('تدقيق باقات VIP والمدفوعات 💳',
                             style:
                                 TextStyle(color: Colors.white, fontSize: 12.5)),
                         subtitle: const Text('فحص الإيصالات وترقية الاشتراكات',
@@ -18481,8 +18970,8 @@ class _AdminModeratorsControlSectionState
                               if (mounted) {
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   const SnackBar(
-                                    content: Text(
-                                        'تم تعيين المشرف الجديد بنجاح!'),
+                                    content:
+                                        Text('تم تعيين المشرف الجديد بنجاح!'),
                                     backgroundColor: Color(0xFF16A34A),
                                   ),
                                 );
@@ -18770,6 +19259,7 @@ class _AdminModeratorsControlSectionState
     );
   }
 }
+
 // ==============================================================================
 // 🏢 شاشة طلب اعتماد وتوثيق وكالة / معرض ممول مع رفع إشعار الدفع المالي 🧾
 // ==============================================================================
@@ -19236,8 +19726,7 @@ class _ApplyAgencyScreenState extends State<ApplyAgencyScreen> {
                             const Text('حوالة الهرم / الفؤاد باسم:',
                                 style: TextStyle(
                                     color: Colors.white70, fontSize: 11)),
-                            const Text(
-                                'إدارة سوق سوريا - هاتف: 0944000111',
+                            const Text('إدارة سوق سوريا - هاتف: 0944000111',
                                 style: TextStyle(
                                     color: Colors.white,
                                     fontWeight: FontWeight.bold,
@@ -19797,7 +20286,8 @@ class _AgencyRequestsAdminScreenState extends State<AgencyRequestsAdminScreen>
       debugPrint('Bonus days notice: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('تعذر إضافة الأيام، يرجى المحاولة لاحقاً.')),
+          const SnackBar(
+              content: Text('تعذر إضافة الأيام، يرجى المحاولة لاحقاً.')),
         );
       }
     }
@@ -19835,7 +20325,8 @@ class _AgencyRequestsAdminScreenState extends State<AgencyRequestsAdminScreen>
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('إلغاء', style: TextStyle(color: Colors.white60)),
+              child:
+                  const Text('إلغاء', style: TextStyle(color: Colors.white60)),
             ),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
@@ -20134,7 +20625,8 @@ class _AgencyRequestsAdminScreenState extends State<AgencyRequestsAdminScreen>
                                     .approvePaymentTransaction(txId);
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(
-                                    content: Text('تم تفعيل باقة ($userName) بنجاح!'),
+                                    content: Text(
+                                        'تم تفعيل باقة ($userName) بنجاح!'),
                                     backgroundColor: const Color(0xFF16A34A),
                                   ),
                                 );
@@ -20354,7 +20846,6 @@ class _AgencyRequestsAdminScreenState extends State<AgencyRequestsAdminScreen>
                     style:
                         const TextStyle(color: Colors.white70, fontSize: 12)),
                 const SizedBox(height: 12),
-
                 if (receiptUrl != null && receiptUrl.toString().isNotEmpty) ...[
                   OutlinedButton.icon(
                     style: OutlinedButton.styleFrom(
@@ -20383,7 +20874,6 @@ class _AgencyRequestsAdminScreenState extends State<AgencyRequestsAdminScreen>
                   ),
                   const SizedBox(height: 12),
                 ],
-
                 Row(
                   children: [
                     if (!isApproved)
@@ -20526,7 +21016,6 @@ class _LuxurySplashScreenState extends State<LuxurySplashScreen>
               ),
             ),
           ),
-
           Center(
             child: FadeTransition(
               opacity: _fadeAnimation,
@@ -20561,7 +21050,6 @@ class _LuxurySplashScreenState extends State<LuxurySplashScreen>
                     ),
                   ),
                   const SizedBox(height: 24),
-
                   ScaleTransition(
                     scale: _scaleAnimation,
                     child: Column(
@@ -20602,7 +21090,6 @@ class _LuxurySplashScreenState extends State<LuxurySplashScreen>
                     ),
                   ),
                   const SizedBox(height: 48),
-
                   const SizedBox(
                     width: 24,
                     height: 24,
@@ -20616,7 +21103,6 @@ class _LuxurySplashScreenState extends State<LuxurySplashScreen>
               ),
             ),
           ),
-
           const Positioned(
             bottom: 24,
             left: 0,
@@ -20636,7 +21122,7 @@ class _LuxurySplashScreenState extends State<LuxurySplashScreen>
 }
 
 // ==============================================================================
-// 🔐 شاشة المصادقة الملكية المتحركة عبر Supabase (دخول + حساب جديد + استرجاع)
+// 🔐 شاشة المصادقة الملكية المتحركة عبر Supabase (دخول + حساب جديد + خروج + تبديل)
 // ==============================================================================
 class SupabaseAuthScreen extends StatefulWidget {
   final VoidCallback? onAuthSuccess;
@@ -20689,6 +21175,89 @@ class _SupabaseAuthScreenState extends State<SupabaseAuthScreen>
     _fullNameController.dispose();
     _phoneController.dispose();
     super.dispose();
+  }
+
+  // 🌟 دالة تسجيل الخروج الرسمية مع نافذة التأكيد
+  Future<void> _handleSignOut() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => Directionality(
+        textDirection: TextDirection.rtl,
+        child: AlertDialog(
+          backgroundColor: const Color(0xFF1E293B),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+            side: const BorderSide(color: Colors.white12),
+          ),
+          title: const Row(
+            children: [
+              Icon(Icons.logout, color: Colors.redAccent, size: 22),
+              SizedBox(width: 8),
+              Text(
+                'تسجيل الخروج',
+                style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold),
+              ),
+            ],
+          ),
+          content: const Text(
+            'هل أنت متأكد من رغبتك في تسجيل الخروج من حسابك الحالي؟',
+            style: TextStyle(color: Colors.white70, fontSize: 13),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child:
+                  const Text('إلغاء', style: TextStyle(color: Colors.white60)),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.redAccent,
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8)),
+              ),
+              onPressed: () => Navigator.pop(ctx, true),
+              child: const Text('نعم، خروج',
+                  style: TextStyle(
+                      color: Colors.white, fontWeight: FontWeight.bold)),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    if (confirmed == true) {
+      setState(() => _isLoading = true);
+      try {
+        await Supabase.instance.client.auth.signOut();
+
+        await AppStateManager()
+            .setSessionUser(userId: '', email: '', name: '', phone: '');
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content:
+                  Text('✓ تم تسجيل الخروج بنجاح. يمكنك الآن الدخول بحساب آخر.'),
+              backgroundColor: Colors.orange,
+            ),
+          );
+          Navigator.pop(context);
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+                content: Text('تعذر تسجيل الخروج: $e'),
+                backgroundColor: Colors.redAccent),
+          );
+        }
+      } finally {
+        if (mounted) setState(() => _isLoading = false);
+      }
+    }
   }
 
   Future<void> _handleAuth() async {
@@ -20870,6 +21439,8 @@ class _SupabaseAuthScreenState extends State<SupabaseAuthScreen>
 
   @override
   Widget build(BuildContext context) {
+    final currentUser = Supabase.instance.client.auth.currentUser;
+
     return Directionality(
       textDirection: TextDirection.rtl,
       child: Scaffold(
@@ -20881,6 +21452,22 @@ class _SupabaseAuthScreenState extends State<SupabaseAuthScreen>
             icon: const Icon(Icons.close_rounded, color: Colors.white70),
             onPressed: () => Navigator.pop(context),
           ),
+          actions: [
+            // 🌟 زر تسجيل الخروج السريع في شريط العنوان إذا كان المستخدم مسجلاً
+            if (currentUser != null)
+              TextButton.icon(
+                onPressed: _isLoading ? null : _handleSignOut,
+                icon:
+                    const Icon(Icons.logout, color: Colors.redAccent, size: 18),
+                label: const Text(
+                  'تسجيل الخروج',
+                  style: TextStyle(
+                      color: Colors.redAccent,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 12),
+                ),
+              ),
+          ],
         ),
         body: SafeArea(
           child: SingleChildScrollView(
@@ -20890,6 +21477,68 @@ class _SupabaseAuthScreenState extends State<SupabaseAuthScreen>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
+                  // 🌟 بطاقة الحساب الحالي وتنبيه تسجيل الخروج إن وجد
+                  if (currentUser != null) ...[
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      margin: const EdgeInsets.only(bottom: 16),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF1E293B),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                            color: const Color(0xFFD4AF37).withOpacity(0.4)),
+                      ),
+                      child: Row(
+                        children: [
+                          const CircleAvatar(
+                            backgroundColor: Color(0xFFD4AF37),
+                            radius: 18,
+                            child: Icon(Icons.person,
+                                color: Colors.black, size: 20),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  'أنت مسجل دخول حالياً بهذا الحساب:',
+                                  style: TextStyle(
+                                      color: Colors.white54, fontSize: 11),
+                                ),
+                                Text(
+                                  currentUser.email ?? '',
+                                  style: const TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 12.5),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ],
+                            ),
+                          ),
+                          ElevatedButton.icon(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor:
+                                  Colors.redAccent.withOpacity(0.2),
+                              foregroundColor: Colors.redAccent,
+                              elevation: 0,
+                              side: const BorderSide(
+                                  color: Colors.redAccent, width: 0.8),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 10, vertical: 6),
+                            ),
+                            icon: const Icon(Icons.logout, size: 14),
+                            label: const Text('خروج',
+                                style: TextStyle(
+                                    fontSize: 11, fontWeight: FontWeight.bold)),
+                            onPressed: _handleSignOut,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+
                   Center(
                     child: Container(
                       width: 70,
@@ -20912,11 +21561,12 @@ class _SupabaseAuthScreenState extends State<SupabaseAuthScreen>
                     ),
                   ),
                   const SizedBox(height: 14),
-
                   Text(
                     _isSignUp
                         ? 'إنشاء حساب جديد في سوق سوريا'
-                        : 'تسجيل الدخول إلى حسابك',
+                        : (currentUser != null
+                            ? 'تبديل الحساب الحالي'
+                            : 'تسجيل الدخول إلى حسابك'),
                     textAlign: TextAlign.center,
                     style: const TextStyle(
                       color: Colors.white,
@@ -20931,7 +21581,6 @@ class _SupabaseAuthScreenState extends State<SupabaseAuthScreen>
                     style: TextStyle(color: Colors.white54, fontSize: 11),
                   ),
                   const SizedBox(height: 18),
-
                   Container(
                     padding: const EdgeInsets.all(4),
                     decoration: BoxDecoration(
@@ -20953,7 +21602,9 @@ class _SupabaseAuthScreenState extends State<SupabaseAuthScreen>
                                 borderRadius: BorderRadius.circular(9),
                               ),
                               child: Text(
-                                'تسجيل الدخول',
+                                currentUser != null
+                                    ? 'تبديل الحساب'
+                                    : 'تسجيل الدخول',
                                 textAlign: TextAlign.center,
                                 style: TextStyle(
                                   color: !_isSignUp
@@ -20995,7 +21646,6 @@ class _SupabaseAuthScreenState extends State<SupabaseAuthScreen>
                     ),
                   ),
                   const SizedBox(height: 16),
-
                   AnimatedCrossFade(
                     duration: const Duration(milliseconds: 300),
                     crossFadeState: _isSignUp
@@ -21049,7 +21699,6 @@ class _SupabaseAuthScreenState extends State<SupabaseAuthScreen>
                           ),
                         ),
                         const SizedBox(height: 10),
-
                         TextFormField(
                           controller: _fullNameController,
                           style: const TextStyle(
@@ -21064,7 +21713,6 @@ class _SupabaseAuthScreenState extends State<SupabaseAuthScreen>
                                   : null,
                         ),
                         const SizedBox(height: 10),
-
                         TextFormField(
                           controller: _phoneController,
                           keyboardType: TextInputType.phone,
@@ -21103,7 +21751,6 @@ class _SupabaseAuthScreenState extends State<SupabaseAuthScreen>
                                   : null,
                         ),
                         const SizedBox(height: 10),
-
                         Container(
                           padding: const EdgeInsets.symmetric(
                               horizontal: 12, vertical: 2),
@@ -21145,7 +21792,6 @@ class _SupabaseAuthScreenState extends State<SupabaseAuthScreen>
                       ],
                     ),
                   ),
-
                   TextFormField(
                     controller: _emailController,
                     keyboardType: TextInputType.emailAddress,
@@ -21159,7 +21805,6 @@ class _SupabaseAuthScreenState extends State<SupabaseAuthScreen>
                         : null,
                   ),
                   const SizedBox(height: 10),
-
                   TextFormField(
                     controller: _passwordController,
                     obscureText: _obscurePassword,
@@ -21183,7 +21828,6 @@ class _SupabaseAuthScreenState extends State<SupabaseAuthScreen>
                         ? 'كلمة المرور 6 خانات على الأقل'
                         : null,
                   ),
-
                   if (_isSignUp) ...[
                     const SizedBox(height: 10),
                     TextFormField(
@@ -21218,7 +21862,6 @@ class _SupabaseAuthScreenState extends State<SupabaseAuthScreen>
                       },
                     ),
                   ],
-
                   if (!_isSignUp) ...[
                     Align(
                       alignment: Alignment.centerLeft,
@@ -21234,7 +21877,6 @@ class _SupabaseAuthScreenState extends State<SupabaseAuthScreen>
                   ] else ...[
                     const SizedBox(height: 14),
                   ],
-
                   ElevatedButton(
                     onPressed: _isLoading ? null : _handleAuth,
                     style: ElevatedButton.styleFrom(
@@ -21254,7 +21896,9 @@ class _SupabaseAuthScreenState extends State<SupabaseAuthScreen>
                         : Text(
                             _isSignUp
                                 ? 'إنشاء الحساب الآن ✨'
-                                : 'تسجيل الدخول 🚀',
+                                : (currentUser != null
+                                    ? 'تسجيل الدخول بحساب جديد 🔁'
+                                    : 'تسجيل الدخول 🚀'),
                             style: const TextStyle(
                               color: Colors.black,
                               fontSize: 13.5,
@@ -21262,6 +21906,31 @@ class _SupabaseAuthScreenState extends State<SupabaseAuthScreen>
                             ),
                           ),
                   ),
+
+                  // 🌟 زر تسجيل الخروج السفلي الإضافي والواضح جداً
+                  if (currentUser != null) ...[
+                    const SizedBox(height: 14),
+                    OutlinedButton.icon(
+                      onPressed: _isLoading ? null : _handleSignOut,
+                      style: OutlinedButton.styleFrom(
+                        side:
+                            const BorderSide(color: Colors.redAccent, width: 1),
+                        padding: const EdgeInsets.symmetric(vertical: 11),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10)),
+                      ),
+                      icon: const Icon(Icons.logout_rounded,
+                          color: Colors.redAccent, size: 18),
+                      label: const Text(
+                        'تسجيل الخروج من الحساب الحالي',
+                        style: TextStyle(
+                          color: Colors.redAccent,
+                          fontSize: 13,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ),
@@ -21781,7 +22450,6 @@ class _SubscriptionCheckoutScreenState
                 ],
               ),
               const SizedBox(height: 16),
-
               Container(
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
@@ -21846,7 +22514,6 @@ class _SubscriptionCheckoutScreenState
                 ),
               ),
               const SizedBox(height: 16),
-
               TextFormField(
                 controller: _nameController,
                 style: const TextStyle(color: Colors.white, fontSize: 13),
@@ -21878,7 +22545,6 @@ class _SubscriptionCheckoutScreenState
                 ),
               ),
               const SizedBox(height: 16),
-
               InkWell(
                 onTap: _isUploading ? null : _pickAndUploadReceipt,
                 child: Container(
@@ -21915,8 +22581,7 @@ class _SubscriptionCheckoutScreenState
                                   Icon(Icons.cloud_upload_rounded,
                                       color: Color(0xFFD4AF37), size: 32),
                                   SizedBox(height: 6),
-                                  Text(
-                                      'اضغط هنا لرفع صورة إشعار التحويل 📷',
+                                  Text('اضغط هنا لرفع صورة إشعار التحويل 📷',
                                       style: TextStyle(
                                           color: Colors.white70, fontSize: 11)),
                                 ],
@@ -21925,7 +22590,6 @@ class _SubscriptionCheckoutScreenState
                 ),
               ),
               const SizedBox(height: 20),
-
               ElevatedButton(
                 onPressed: _isSubmitting ? null : _submitRequest,
                 style: ElevatedButton.styleFrom(
@@ -22232,7 +22896,6 @@ class _AdminSubscriptionRequestsListState
                 setState(() => _searchQuery = val.trim().toLowerCase()),
           ),
         ),
-
         Expanded(
           child: FutureBuilder(
             future: Supabase.instance.client
@@ -22347,7 +23010,6 @@ class _AdminSubscriptionRequestsListState
                             ),
                           ],
                           const SizedBox(height: 10),
-
                           if (r['receipt_image_url'] != null)
                             GestureDetector(
                               onTap: () {
@@ -22410,7 +23072,6 @@ class _AdminSubscriptionRequestsListState
                               ),
                             ),
                           const SizedBox(height: 10),
-
                           Row(
                             children: [
                               if (isPending)
@@ -23545,8 +24206,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                       if (mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
-                            content: Text(
-                                'تم حفظ بياناتك بنجاح!'),
+                            content: Text('تم حفظ بياناتك بنجاح!'),
                             backgroundColor: Color(0xFF22C55E),
                           ),
                         );
@@ -24631,8 +25291,7 @@ class _CinemaUltraLuxuryPanoramaWidgetState
                             color: Colors.white,
                             fontWeight: FontWeight.bold,
                             fontSize: 12.5)),
-                    subtitle: const Text(
-                        'احجز باقتك بسهولة وسرعة فائقة',
+                    subtitle: const Text('احجز باقتك بسهولة وسرعة فائقة',
                         style: TextStyle(color: Colors.white70, fontSize: 10)),
                     trailing: const Icon(Icons.arrow_forward_ios_rounded,
                         color: Colors.white70, size: 14),
@@ -25526,8 +26185,8 @@ class ExclusivePaymentGatewayCard extends StatelessWidget {
                         const ClipboardData(text: kBinanceWalletAddress));
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
-                        content: Text(
-                            '✓ تم نسخ عنوان محفظة بينانس USDT بنجاح!'),
+                        content:
+                            Text('✓ تم نسخ عنوان محفظة بينانس USDT بنجاح!'),
                         backgroundColor: Color(0xFF16A34A),
                         duration: Duration(seconds: 2),
                       ),
@@ -25712,7 +26371,6 @@ class _ComprehensiveCurrencyExchangeScreenState
                     ],
                   ),
                   const Divider(color: Colors.white12, height: 24),
-
                   if (isSuper)
                     Container(
                       margin: const EdgeInsets.only(bottom: 14),
@@ -25763,7 +26421,6 @@ class _ComprehensiveCurrencyExchangeScreenState
                         ],
                       ),
                     ),
-
                   Row(
                     children: [
                       const Text('1. بيانات الصراف وقنوات التواصل المعتمدة:',
@@ -25821,9 +26478,7 @@ class _ComprehensiveCurrencyExchangeScreenState
                   const SizedBox(height: 8),
                   _buildLockedOrEditableInput(mapCtrl,
                       'رابط خرائط جوجل (Google Maps)', Icons.map, isSuper),
-
                   const SizedBox(height: 18),
-
                   const Text('2. أسعار صرف العملات اللحظية (شراء / مبيع):',
                       style: TextStyle(
                           color: Color(0xFF22C55E),
@@ -25838,9 +26493,7 @@ class _ComprehensiveCurrencyExchangeScreenState
                       'التركي / ل.س', tryBuyCtrl, trySellCtrl, 'شراء', 'مبيع'),
                   _buildDualInputRow('دولار / تركي', usdTryBuyCtrl,
                       usdTrySellCtrl, 'شراء', 'مبيع'),
-
                   const SizedBox(height: 18),
-
                   const Text('3. أسعار الذهب في السوق المحلية والأونصة:',
                       style: TextStyle(
                           color: Color(0xFFF59E0B),
@@ -25853,7 +26506,6 @@ class _ComprehensiveCurrencyExchangeScreenState
                       gold18UsdCtrl, 'ل.س', 'USD \$'),
                   _buildModernInput(goldOunceCtrl,
                       'أونصة الذهب العالمية (\$ USD)', Icons.public),
-
                   const SizedBox(height: 22),
                   ElevatedButton.icon(
                     style: ElevatedButton.styleFrom(
@@ -26284,7 +26936,6 @@ class _ComprehensiveCurrencyExchangeScreenState
                         ),
                       ),
                       const SizedBox(height: 12),
-
                       Wrap(
                         spacing: 8,
                         runSpacing: 8,
@@ -26396,7 +27047,6 @@ class _ComprehensiveCurrencyExchangeScreenState
                   ),
                 ),
               ),
-
             const Padding(
               padding: EdgeInsets.only(bottom: 10, top: 4),
               child: Row(
@@ -26414,7 +27064,6 @@ class _ComprehensiveCurrencyExchangeScreenState
                 ],
               ),
             ),
-
             _buildUltraLuxuryRateCard(
               title: 'الدولار الأمريكي (USD / SYP)',
               code: 'USD',
@@ -26448,9 +27097,7 @@ class _ComprehensiveCurrencyExchangeScreenState
               unit: 'TL',
               isDecimal: true,
             ),
-
             const SizedBox(height: 14),
-
             const Padding(
               padding: EdgeInsets.only(bottom: 10),
               child: Row(
@@ -26468,11 +27115,9 @@ class _ComprehensiveCurrencyExchangeScreenState
                 ],
               ),
             ),
-
             _buildUltraLuxuryGoldCard(
               title: 'غرام الذهب عيار 21 قيراط',
-              subtitle:
-                  'العيار الأكثر طلباً وتداولاً في كافة المحافظات',
+              subtitle: 'العيار الأكثر طلباً وتداولاً في كافة المحافظات',
               sypPrice: _gold21kSyp,
               usdPrice: _gold21kUsd,
             ),
@@ -26482,7 +27127,6 @@ class _ComprehensiveCurrencyExchangeScreenState
               sypPrice: _gold18kSyp,
               usdPrice: _gold18kUsd,
             ),
-
             Container(
               margin: const EdgeInsets.only(bottom: 14),
               padding: const EdgeInsets.all(16),
@@ -26532,9 +27176,7 @@ class _ComprehensiveCurrencyExchangeScreenState
                 ],
               ),
             ),
-
             const SizedBox(height: 10),
-
             if (canManage)
               ElevatedButton.icon(
                 style: ElevatedButton.styleFrom(
@@ -26552,7 +27194,6 @@ class _ComprehensiveCurrencyExchangeScreenState
                 ),
                 onPressed: _openExchangeControlPanel,
               ),
-
             const SizedBox(height: 35),
           ],
         ),
@@ -26871,7 +27512,6 @@ class MaintenanceLockScreen extends StatelessWidget {
                       color: Color(0xFFD4AF37), size: 48),
                 ),
                 const SizedBox(height: 24),
-
                 const Text(
                   'أعمال صيانة وترقية مجدولة ⚙️',
                   style: TextStyle(
@@ -26882,7 +27522,6 @@ class MaintenanceLockScreen extends StatelessWidget {
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 8),
-
                 Text(
                   manager.maintenanceMessage.isNotEmpty
                       ? manager.maintenanceMessage
@@ -26895,7 +27534,6 @@ class MaintenanceLockScreen extends StatelessWidget {
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 16),
-
                 Container(
                   padding:
                       const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
@@ -26922,7 +27560,6 @@ class MaintenanceLockScreen extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 24),
-
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
@@ -26958,7 +27595,6 @@ class MaintenanceLockScreen extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 28),
-
                 SizedBox(
                   width: double.infinity,
                   height: 44,
@@ -26985,75 +27621,530 @@ class MaintenanceLockScreen extends StatelessWidget {
   }
 }
 
-// 🚪 دالة تسجيل الخروج السحابي والآمن
-Future<void> _handleLogout(BuildContext context) async {
-  final confirm = await showDialog<bool>(
-    context: context,
-    builder: (ctx) => Directionality(
-      textDirection: TextDirection.rtl,
-      child: AlertDialog(
-        backgroundColor: const Color(0xFF0F172A),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-        title: const Text('تسجيل الخروج 🚪',
-            style: TextStyle(
-                color: Colors.white,
-                fontSize: 16,
-                fontWeight: FontWeight.bold)),
-        content: const Text(
-            'هل أنت متأكد من رغبتك في تسجيل الخروج من هذا الحساب؟',
-            style: TextStyle(color: Colors.white70, fontSize: 13)),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('إلغاء', style: TextStyle(color: Colors.white54)),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFDC2626),
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8)),
-            ),
-            onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('نعم، خروج',
-                style: TextStyle(fontWeight: FontWeight.bold)),
-          ),
-        ],
-      ),
-    ),
-  );
+// ==============================================================================
+// 🏷️ شاشة إدارة الأقسام والأفرع والأيقونات المتكاملة مع السيرفر والحفظ المباشر
+// ==============================================================================
+class AdminCategoriesManagerScreen extends StatefulWidget {
+  const AdminCategoriesManagerScreen({super.key});
 
-  if (confirm != true) return;
+  @override
+  State<AdminCategoriesManagerScreen> createState() =>
+      _AdminCategoriesManagerScreenState();
+}
 
-  try {
-    await Supabase.instance.client.auth.signOut();
-  } catch (e) {
-    debugPrint('Logout notice: $e');
+class _AdminCategoriesManagerScreenState
+    extends State<AdminCategoriesManagerScreen> {
+  bool _isLoading = false;
+  List<Map<String, dynamic>> _categories = [];
+
+  final Map<String, IconData> _availableIcons = {
+    'apartment': Icons.apartment_rounded,
+    'directions_car': Icons.directions_car_rounded,
+    'phone_android': Icons.phone_android_rounded,
+    'chair': Icons.chair_rounded,
+    'work': Icons.work_rounded,
+    'checkroom': Icons.checkroom_rounded,
+    'pets': Icons.pets_rounded,
+    'build': Icons.build_rounded,
+    'home': Icons.home_rounded,
+    'devices': Icons.devices_rounded,
+    'shopping_bag': Icons.shopping_bag_rounded,
+    'storefront': Icons.storefront_rounded,
+    'local_shipping': Icons.local_shipping_rounded,
+    'sports_esports': Icons.sports_esports_rounded,
+    'watch': Icons.watch_rounded,
+    'restaurant': Icons.restaurant_rounded,
+    'health_and_safety': Icons.health_and_safety_rounded,
+    'agriculture': Icons.agriculture_rounded,
+    'local_mall': Icons.local_mall_rounded,
+    'star': Icons.star_rounded,
+  };
+
+  @override
+  void initState() {
+    super.initState();
+    _loadCategoriesFromServer();
   }
 
-  try {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove('ss_user_id');
-    await prefs.remove('ss_user_name');
-    await prefs.remove('ss_user_phone');
-    await prefs.remove('ss_user_avatar');
-  } catch (_) {}
+  Future<void> _loadCategoriesFromServer() async {
+    setState(() => _isLoading = true);
+    try {
+      final res = await Supabase.instance.client
+          .from('categories')
+          .select()
+          .order('sort_order', ascending: true);
 
-  final manager = AppStateManager();
-  manager.currentUserId = '';
-  manager.currentUserName = 'زائر المنصة';
-  manager.currentUserEmail = '';
-  manager.currentUserPhone = '';
-  manager.currentUserRole = 'user';
-  manager.notifyListeners();
+      if (res is List) {
+        setState(() {
+          _categories = List<Map<String, dynamic>>.from(res);
+        });
+      }
+    } catch (e) {
+      debugPrint('Error loading categories: $e');
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
 
-  if (context.mounted) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('👋 تم تسجيل الخروج بنجاح'),
-        backgroundColor: Color(0xFFDC2626),
+  IconData _getIconData(String? iconKey) {
+    if (iconKey == null) return Icons.category_rounded;
+    return _availableIcons[iconKey] ?? Icons.category_rounded;
+  }
+
+  void _openCategoryDialog({Map<String, dynamic>? category}) {
+    final isEditing = category != null;
+    final nameCtrl =
+        TextEditingController(text: isEditing ? category['name'] : '');
+    String selectedIconKey =
+        isEditing ? (category['icon_key'] ?? 'storefront') : 'storefront';
+
+    List<String> subcategories = [];
+    if (isEditing && category['subcategories'] != null) {
+      if (category['subcategories'] is List) {
+        subcategories = List<String>.from(category['subcategories']);
+      }
+    }
+
+    final subCtrl = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (dialogCtx, setDialogState) => Directionality(
+          textDirection: TextDirection.rtl,
+          child: AlertDialog(
+            backgroundColor: const Color(0xFF0F172A),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+              side: const BorderSide(color: Color(0xFFD4AF37), width: 0.8),
+            ),
+            title: Row(
+              children: [
+                Icon(
+                  isEditing
+                      ? Icons.edit_note_rounded
+                      : Icons.add_circle_outline_rounded,
+                  color: const Color(0xFFD4AF37),
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  isEditing
+                      ? 'تعديل بيانات القسم والأيقونة'
+                      : 'إضافة قسم رئيسي جديد 🏷️',
+                  style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 15,
+                      fontWeight: FontWeight.bold),
+                ),
+              ],
+            ),
+            content: SizedBox(
+              width: double.maxFinite,
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('اسم القسم:',
+                        style: TextStyle(color: Colors.white70, fontSize: 12)),
+                    const SizedBox(height: 6),
+                    TextField(
+                      controller: nameCtrl,
+                      style:
+                          const TextStyle(color: Colors.white, fontSize: 13.5),
+                      decoration: InputDecoration(
+                        filled: true,
+                        fillColor: const Color(0xFF1E293B),
+                        hintText: 'مثال: أراضي ومزارع',
+                        hintStyle: const TextStyle(
+                            color: Colors.white30, fontSize: 12),
+                        border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10),
+                            borderSide: BorderSide.none),
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    const Text('اختر أيقونة القسم الرسمية:',
+                        style: TextStyle(color: Colors.white70, fontSize: 12)),
+                    const SizedBox(height: 8),
+                    Container(
+                      height: 120,
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF1E293B),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: GridView.builder(
+                        gridDelegate:
+                            const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 5,
+                          mainAxisSpacing: 8,
+                          crossAxisSpacing: 8,
+                        ),
+                        itemCount: _availableIcons.length,
+                        itemBuilder: (c, i) {
+                          final key = _availableIcons.keys.elementAt(i);
+                          final icon = _availableIcons.values.elementAt(i);
+                          final isSelected = selectedIconKey == key;
+                          return InkWell(
+                            onTap: () =>
+                                setDialogState(() => selectedIconKey = key),
+                            borderRadius: BorderRadius.circular(8),
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: isSelected
+                                    ? const Color(0xFFD4AF37)
+                                    : Colors.white10,
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Icon(
+                                icon,
+                                color:
+                                    isSelected ? Colors.black : Colors.white70,
+                                size: 22,
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    const Text('إضافة الأفرع التابعة لهذا القسم:',
+                        style: TextStyle(color: Colors.white70, fontSize: 12)),
+                    const SizedBox(height: 6),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: subCtrl,
+                            style: const TextStyle(
+                                color: Colors.white, fontSize: 13),
+                            decoration: InputDecoration(
+                              filled: true,
+                              fillColor: const Color(0xFF1E293B),
+                              hintText: 'فرع جديد (مثال: قطع غيار كورية)',
+                              hintStyle: const TextStyle(
+                                  color: Colors.white30, fontSize: 11),
+                              contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 10, vertical: 8),
+                              border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                  borderSide: BorderSide.none),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFFD4AF37),
+                            foregroundColor: Colors.black,
+                            padding: const EdgeInsets.symmetric(horizontal: 12),
+                          ),
+                          onPressed: () {
+                            final val = subCtrl.text.trim();
+                            if (val.isNotEmpty) {
+                              setDialogState(() {
+                                subcategories.add(val);
+                                subCtrl.clear();
+                              });
+                            }
+                          },
+                          child: const Text('إضافة'),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 6,
+                      runSpacing: 6,
+                      children: subcategories.map((sub) {
+                        return Chip(
+                          backgroundColor: const Color(0xFF1E293B),
+                          label: Text(sub,
+                              style: const TextStyle(
+                                  color: Colors.white70, fontSize: 11)),
+                          deleteIcon: const Icon(Icons.close,
+                              size: 14, color: Colors.redAccent),
+                          onDeleted: () {
+                            setDialogState(() => subcategories.remove(sub));
+                          },
+                        );
+                      }).toList(),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text('إلغاء',
+                    style: TextStyle(color: Colors.white60)),
+              ),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFD4AF37),
+                  foregroundColor: Colors.black,
+                ),
+                onPressed: () async {
+                  final name = nameCtrl.text.trim();
+                  if (name.isEmpty) return;
+
+                  // 🌟 توليد ID فريد دائماً لمنع خطأ الـ null في السيرفر
+                  final generatedId =
+                      'cat_${DateTime.now().millisecondsSinceEpoch}';
+
+                  final payload = {
+                    'name': name,
+                    'icon_key': selectedIconKey,
+                    'subcategories': subcategories,
+                  };
+
+                  try {
+                    if (isEditing) {
+                      await Supabase.instance.client
+                          .from('categories')
+                          .update(payload)
+                          .eq('id', category['id']);
+                    } else {
+                      await Supabase.instance.client.from('categories').insert({
+                        'id': generatedId,
+                        ...payload,
+                        'sort_order': _categories.length + 1,
+                      });
+                    }
+
+                    if (context.mounted) {
+                      Navigator.pop(ctx);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(isEditing
+                              ? '✓ تم حفظ تعديل القسم في السيرفر بنجاح'
+                              : '✓ تم إضافة القسم الجديد وحفظه في السيرفر بنجاح 🚀'),
+                          backgroundColor: Colors.green,
+                        ),
+                      );
+                      _loadCategoriesFromServer();
+                    }
+                  } catch (e) {
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                            content: Text('خطأ أثناء الحفظ بالسيرفر: $e'),
+                            backgroundColor: Colors.redAccent),
+                      );
+                    }
+                  }
+                },
+                child: Text(isEditing ? 'حفظ بالسيرفر' : 'بث وإضافة القسم',
+                    style: const TextStyle(fontWeight: FontWeight.bold)),
+              ),
+            ],
+          ),
+        ),
       ),
     );
-    Navigator.pop(context);
+  }
+
+  Future<void> _deleteCategory(Map<String, dynamic> category) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => Directionality(
+        textDirection: TextDirection.rtl,
+        child: AlertDialog(
+          backgroundColor: const Color(0xFF1E293B),
+          title: const Text('تأكيد الحذف من السيرفر',
+              style: TextStyle(color: Colors.redAccent)),
+          content: Text(
+              'هل أنت متأكد من حذف قسم "${category['name']}" من السيرفر بشكل نهائي؟',
+              style: const TextStyle(color: Colors.white70)),
+          actions: [
+            TextButton(
+                onPressed: () => Navigator.pop(ctx, false),
+                child: const Text('إلغاء')),
+            ElevatedButton(
+              style:
+                  ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
+              onPressed: () => Navigator.pop(ctx, true),
+              child: const Text('نعم، حذف نهائي',
+                  style: TextStyle(color: Colors.white)),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    if (confirm == true) {
+      try {
+        await Supabase.instance.client
+            .from('categories')
+            .delete()
+            .eq('id', category['id']);
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+                content: Text('✓ تم حذف القسم من السيرفر بنجاح'),
+                backgroundColor: Colors.orange),
+          );
+          _loadCategoriesFromServer();
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+                content: Text('تعذر الحذف من السيرفر: $e'),
+                backgroundColor: Colors.redAccent),
+          );
+        }
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Directionality(
+      textDirection: TextDirection.rtl,
+      child: Scaffold(
+        backgroundColor: const Color(0xFF080D1A),
+        appBar: AppBar(
+          backgroundColor: const Color(0xFF0F172A),
+          title: const Text(
+            'الأقسام والأفرع (مربوطة بالسيرفر 🌐)',
+            style: TextStyle(
+                color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold),
+          ),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.refresh, color: Color(0xFFD4AF37)),
+              tooltip: 'تحديث من السيرفر',
+              onPressed: _loadCategoriesFromServer,
+            ),
+          ],
+        ),
+        floatingActionButton: FloatingActionButton.extended(
+          backgroundColor: const Color(0xFFD4AF37),
+          foregroundColor: Colors.black,
+          icon: const Icon(Icons.add_circle),
+          label: const Text('إضافة قسم جديد',
+              style: TextStyle(fontWeight: FontWeight.bold)),
+          onPressed: () => _openCategoryDialog(),
+        ),
+        body: _isLoading
+            ? const Center(
+                child: CircularProgressIndicator(color: Color(0xFFD4AF37)))
+            : _categories.isEmpty
+                ? const Center(
+                    child: Text(
+                      'لا توجد أقسام في السيرفر حالياً.\nاضغط بالأسفل لإضافة أول قسم!',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(color: Colors.white54, fontSize: 13),
+                    ),
+                  )
+                : ListView.builder(
+                    padding: const EdgeInsets.only(
+                        left: 12, right: 12, top: 12, bottom: 80),
+                    itemCount: _categories.length,
+                    itemBuilder: (ctx, i) {
+                      final cat = _categories[i];
+                      final List subs = (cat['subcategories'] is List)
+                          ? cat['subcategories']
+                          : [];
+                      return Card(
+                        color: const Color(0xFF1E293B),
+                        margin: const EdgeInsets.only(bottom: 10),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          side: const BorderSide(color: Colors.white10),
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.all(12),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.all(8),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFFD4AF37)
+                                          .withOpacity(0.15),
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: Icon(
+                                      _getIconData(cat['icon_key']),
+                                      color: const Color(0xFFD4AF37),
+                                      size: 24,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          cat['name'] ?? '',
+                                          style: const TextStyle(
+                                              color: Colors.white,
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 14.5),
+                                        ),
+                                        Text(
+                                          'عدد الفروع: ${subs.length}',
+                                          style: const TextStyle(
+                                              color: Colors.white54,
+                                              fontSize: 11),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  IconButton(
+                                    icon: const Icon(Icons.edit_note,
+                                        color: Colors.blueAccent),
+                                    tooltip: 'تعديل القسم والأيقونة',
+                                    onPressed: () =>
+                                        _openCategoryDialog(category: cat),
+                                  ),
+                                  IconButton(
+                                    icon: const Icon(Icons.delete_outline,
+                                        color: Colors.redAccent),
+                                    tooltip: 'حذف القسم من السيرفر',
+                                    onPressed: () => _deleteCategory(cat),
+                                  ),
+                                ],
+                              ),
+                              if (subs.isNotEmpty) ...[
+                                const SizedBox(height: 8),
+                                const Divider(color: Colors.white10),
+                                Wrap(
+                                  spacing: 6,
+                                  runSpacing: 4,
+                                  children: subs.map((sub) {
+                                    return Container(
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 8, vertical: 3),
+                                      decoration: BoxDecoration(
+                                        color: Colors.white.withOpacity(0.06),
+                                        borderRadius: BorderRadius.circular(6),
+                                      ),
+                                      child: Text(
+                                        sub.toString(),
+                                        style: const TextStyle(
+                                            color: Colors.white70,
+                                            fontSize: 10.5),
+                                      ),
+                                    );
+                                  }).toList(),
+                                ),
+                              ],
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+      ),
+    );
   }
 }
