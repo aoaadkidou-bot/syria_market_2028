@@ -1385,6 +1385,27 @@ class AppStateManager extends ChangeNotifier {
   static final AppStateManager _instance = AppStateManager._internal();
   factory AppStateManager() => _instance;
   AppStateManager._internal();
+// استماع لحظي لأي إعلان جديد، تعديل، حذف، أو لايكات
+  void listenToRealtimeAds() {
+    Supabase.instance.client
+        .from('ads')
+        .stream(primaryKey: ['id'])
+        .order('created_at', ascending: false)
+        .listen((List<Map<String, dynamic>> data) {
+          final updatedAds = data
+              .where((item) =>
+                  item['status'] == 'approved' || item['status'] == null)
+              .map((e) => AdItem.fromMap(e))
+              .toList();
+
+          if (updatedAds.isNotEmpty) {
+            ads = updatedAds; // إذا كان اسم المتغير عندك _ads اتركه _ads
+            notifyListeners();
+          }
+        }, onError: (err) {
+          debugPrint('Realtime Ads Stream Notice: $err');
+        });
+  }
 
   SubscriptionPlanItem getCurrentUserPlan() {
     if (subscriptionPlans.isNotEmpty) {
@@ -7908,11 +7929,31 @@ class _SubscriptionPlansScreenState extends State<SubscriptionPlansScreen> {
                   ));
                 }
 
-                final plans = snapshot.data!;
+                final allPlans = snapshot.data!;
+
+                // ================================================================
+                // عزل ذكي وحاسم: إظهار باقات الإعلانات فقط ومنع ظهور المكاتب والبانوراما
+                // ================================================================
+                final plans = allPlans.where((p) {
+                  final cat = p['plan_category'] ?? 'ads';
+                  final name = (p['name'] ?? '').toString().toLowerCase();
+                  final isOffice = cat == 'office' ||
+                      name.contains('مكتب') ||
+                      name.contains('معرض') ||
+                      name.contains('توثيق');
+                  final isPanorama = cat == 'panorama' ||
+                      name.contains('بانوراما') ||
+                      name.contains('360');
+                  return !isOffice && !isPanorama;
+                }).toList();
+
                 if (plans.isEmpty) {
                   return const Center(
-                    child: Text('لا توجد باقات متاحة حالياً',
-                        style: TextStyle(color: Colors.white54)),
+                    child: Padding(
+                      padding: EdgeInsets.all(16.0),
+                      child: Text('لا توجد باقات ترقية إعلانات متاحة حالياً',
+                          style: TextStyle(color: Colors.white54)),
+                    ),
                   );
                 }
 
@@ -8283,7 +8324,6 @@ class _SubscriptionPlansScreenState extends State<SubscriptionPlansScreen> {
     );
   }
 }
-
 class PanoramaBookingScreen extends StatefulWidget {
   const PanoramaBookingScreen({Key? key}) : super(key: key);
 
@@ -8303,18 +8343,9 @@ class _PanoramaBookingScreenState extends State<PanoramaBookingScreen> {
   String _selectedGateway = 'SHAM_CASH';
   String _selectedGovernorate = 'دمشق';
 
-  final List<Map<String, dynamic>> _durationOptions = [
-    {'label': '3 ساعات ⏱️', 'hours': 3, 'priceUsd': 3.0},
-    {'label': '6 ساعات ⏱️', 'hours': 6, 'priceUsd': 5.0},
-    {'label': '12 ساعة ⏱️', 'hours': 12, 'priceUsd': 8.0},
-    {'label': '24 ساعة (يوم كامل) 🌞', 'hours': 24, 'priceUsd': 12.0},
-    {'label': '48 ساعة (يومان) 📅', 'hours': 48, 'priceUsd': 20.0},
-    {'label': 'أسبوع (7 أيام) 🌟', 'hours': 168, 'priceUsd': 45.0},
-    {'label': '10 أيام 🔥', 'hours': 240, 'priceUsd': 60.0},
-    {'label': 'شهر كامل (30 يوم) 👑', 'hours': 720, 'priceUsd': 150.0},
-  ];
+  // الخطة المختارة ديناميكياً من السيرفر
+  Map<String, dynamic>? _selectedPlan;
 
-  late Map<String, dynamic> _selectedDuration;
   final List<Uint8List> _bannerImagesBytes = [];
   Uint8List? _receiptImageBytes;
   bool _isSubmitting = false;
@@ -8340,7 +8371,6 @@ class _PanoramaBookingScreenState extends State<PanoramaBookingScreen> {
   @override
   void initState() {
     super.initState();
-    _selectedDuration = _durationOptions[3];
     _phoneController.text = _manager.currentUserPhone;
   }
 
@@ -8379,6 +8409,13 @@ class _PanoramaBookingScreenState extends State<PanoramaBookingScreen> {
   }
 
   Future<void> _submitPanoramaBooking() async {
+    if (_selectedPlan == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('يرجى اختيار خطة البانوراما المناسبة')),
+      );
+      return;
+    }
+
     if (_titleController.text.trim().isEmpty ||
         _phoneController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -8413,11 +8450,13 @@ class _PanoramaBookingScreenState extends State<PanoramaBookingScreen> {
       prefix: 'book_pan',
     );
 
-    final double priceUsd = (_selectedDuration['priceUsd'] as num).toDouble();
+    final double priceUsd = ((_selectedPlan!['price_usdt'] ?? _selectedPlan!['price_usd'] ?? 0) as num).toDouble();
+    final int durationDays = _selectedPlan!['duration_days'] ?? 7;
+    final int durationHours = durationDays * 24;
 
     await _manager.submitPaymentAuditRequest(
-      planId: 'panorama_slot',
-      planName: 'حجز بانوراما (${_selectedDuration['label']})',
+      planId: _selectedPlan!['id'] ?? 'panorama_slot',
+      planName: _selectedPlan!['name'] ?? 'حجز بانوراما',
       priceUsd: priceUsd,
       gateway: _selectedGateway,
       refOrTxId: _refController.text.trim().isNotEmpty
@@ -8428,8 +8467,8 @@ class _PanoramaBookingScreenState extends State<PanoramaBookingScreen> {
       userEmail: _manager.currentUserEmail,
       userGovernorate: _selectedGovernorate,
       requestType: 'panorama_booking',
-      durationLabel: _selectedDuration['label'].toString(),
-      durationHours: _selectedDuration['hours'] as int,
+      durationLabel: '$durationDays يوم (${_selectedPlan!['name']})',
+      durationHours: durationHours,
       receiptBytes: _receiptImageBytes,
       bannerImages: uploadedBannerUrls,
       bannerTitle: _titleController.text.trim(),
@@ -8460,7 +8499,7 @@ class _PanoramaBookingScreenState extends State<PanoramaBookingScreen> {
               ],
             ),
             content: Text(
-              'تم إرسال صور البانوراما وإشعار الدفع بنجاح.\nسيتم تفعيل البانوراما فور تدقيق الإيصال لتبدأ مدة العرض (${_selectedDuration['label']}) مع العداد التنازلي التلقائي!',
+              'تم إرسال صور البانوراما وإشعار الدفع بنجاح.\nسيتم تفعيل البانوراما فور تدقيق الإيصال لتبدأ مدة العرض ($durationDays يوم) مع العداد التنازلي التلقائي!',
               style: const TextStyle(
                   fontSize: 13, height: 1.5, color: Colors.white70),
             ),
@@ -8485,9 +8524,6 @@ class _PanoramaBookingScreenState extends State<PanoramaBookingScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final double priceUsd = (_selectedDuration['priceUsd'] as num).toDouble();
-    final int priceSyp = (priceUsd * _manager.exchangeRateUsdToSyp).toInt();
-
     return Directionality(
       textDirection: TextDirection.rtl,
       child: Scaffold(
@@ -8509,55 +8545,113 @@ class _PanoramaBookingScreenState extends State<PanoramaBookingScreen> {
           physics: const BouncingScrollPhysics(),
           padding: const EdgeInsets.all(16),
           children: [
-            const Text('1. اختر مدة بقاء البانوراما في الرئيسية:',
+            // ================================================================
+            // 1. جلب خطط البانوراما ديناميكياً من السيرفر (قسم البانوراما في ضبط الباقات)
+            // ================================================================
+            const Text('1. اختر مدة وباقة البانوراما المطلوبة:',
                 style: TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 14,
                     color: Colors.white)),
             const SizedBox(height: 8),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: _durationOptions.map((opt) {
-                final isSel = _selectedDuration['hours'] == opt['hours'];
-                return ChoiceChip(
-                  label: Text(opt['label'].toString() +
-                      ' (' +
-                      opt['priceUsd'].toString() +
-                      ' USD)'),
-                  selected: isSel,
-                  selectedColor: const Color(0xFFD4AF37),
-                  backgroundColor: const Color(0xFF1E293B),
-                  labelStyle:
-                      TextStyle(color: isSel ? Colors.black : Colors.white70),
-                  onSelected: (val) {
-                    if (val) setState(() => _selectedDuration = opt);
-                  },
+            FutureBuilder<List<Map<String, dynamic>>>(
+              future: Supabase.instance.client
+                  .from('vip_packages')
+                  .select()
+                  .or('plan_category.eq.panorama,name.ilike.%بانوراما%,name.ilike.%360%')
+                  .order('price_syp', ascending: true),
+              builder: (context, snapshot) {
+                if (!snapshot.hasData) {
+                  return const Center(
+                    child: Padding(
+                      padding: EdgeInsets.all(12),
+                      child: CircularProgressIndicator(color: Color(0xFF00E5FF)),
+                    ),
+                  );
+                }
+
+                final plans = snapshot.data!;
+                if (plans.isEmpty) {
+                  return Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                        color: const Color(0xFF1E293B),
+                        borderRadius: BorderRadius.circular(10)),
+                    child: const Text('لا توجد خطط بانوراما مضافة في السيرفر حالياً',
+                        style: TextStyle(color: Colors.white54, fontSize: 12)),
+                  );
+                }
+
+                // اختيار أول خطة افتراضياً
+                if (_selectedPlan == null) {
+                  _selectedPlan = plans.first;
+                }
+
+                return Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: plans.map((plan) {
+                    final isSel = _selectedPlan?['id'] == plan['id'];
+                    final name = plan['name'] ?? 'خطة بانوراما';
+                    final priceUsd = plan['price_usdt'] ?? plan['price_usd'] ?? 0;
+                    final days = plan['duration_days'] ?? 7;
+
+                    return ChoiceChip(
+                      label: Text('$name ($days يوم - \$$priceUsd)'),
+                      selected: isSel,
+                      selectedColor: const Color(0xFF00E5FF),
+                      backgroundColor: const Color(0xFF1E293B),
+                      labelStyle: TextStyle(
+                        color: isSel ? Colors.black : Colors.white70,
+                        fontWeight: isSel ? FontWeight.bold : FontWeight.normal,
+                        fontSize: 12,
+                      ),
+                      onSelected: (val) {
+                        if (val) setState(() => _selectedPlan = plan);
+                      },
+                    );
+                  }).toList(),
                 );
-              }).toList(),
+              },
             ),
-            const SizedBox(height: 8),
-            Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: Colors.green.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.green),
+            const SizedBox(height: 10),
+
+            // كرت المبلغ المالي المحسوب للخطة المختارة
+            if (_selectedPlan != null) ...[
+              Builder(
+                builder: (context) {
+                  final double priceUsd = ((_selectedPlan!['price_usdt'] ?? _selectedPlan!['price_usd'] ?? 0) as num).toDouble();
+                  final int priceSyp = (_selectedPlan!['price_syp'] as num?)?.toInt() ?? (priceUsd * _manager.exchangeRateUsdToSyp).toInt();
+
+                  return Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF00E5FF).withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: const Color(0xFF00E5FF)),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text('المبلغ المطلوب: \$$priceUsd دولار',
+                            style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFF00E5FF),
+                                fontSize: 13)),
+                        Text('$priceSyp ليرة سورية',
+                            style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFFD4AF37),
+                                fontSize: 13)),
+                      ],
+                    ),
+                  );
+                },
               ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text('المبلغ المطلوب: \$$priceUsd دولار',
-                      style: const TextStyle(
-                          fontWeight: FontWeight.bold, color: Colors.green)),
-                  Text('$priceSyp ليرة سورية',
-                      style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFFD4AF37))),
-                ],
-              ),
-            ),
-            const SizedBox(height: 16),
+              const SizedBox(height: 16),
+            ],
+
+            // 2. صور البانوراما
             const Text('2. صور البانوراما (تتقلب تلقائياً):',
                 style: TextStyle(
                     fontWeight: FontWeight.bold,
@@ -8608,6 +8702,8 @@ class _PanoramaBookingScreenState extends State<PanoramaBookingScreen> {
               ),
             ),
             const SizedBox(height: 16),
+
+            // 3. تفاصيل ونص الإعلان
             const Text('3. تفاصيل ونص الإعلان:',
                 style: TextStyle(
                     fontWeight: FontWeight.bold,
@@ -8677,6 +8773,8 @@ class _PanoramaBookingScreenState extends State<PanoramaBookingScreen> {
               },
             ),
             const SizedBox(height: 16),
+
+            // 4. التحويل وإرفاق الإشعار
             const Text('4. التحويل وإرفاق صورة الإشعار:',
                 style: TextStyle(
                     fontWeight: FontWeight.bold,
@@ -8790,23 +8888,6 @@ class _PanoramaBookingScreenState extends State<PanoramaBookingScreen> {
       ),
     );
   }
-}
-
-// ==============================================================================
-// 19. الشاشة الرئيسية الكبرى المحصنة ضد Overflow (MainDashboardScreen)
-// ==============================================================================
-class MainDashboardScreen extends StatefulWidget {
-  final bool isDarkMode;
-  final VoidCallback onToggleTheme;
-
-  const MainDashboardScreen({
-    Key? key,
-    required this.isDarkMode,
-    required this.onToggleTheme,
-  }) : super(key: key);
-
-  @override
-  State<MainDashboardScreen> createState() => _MainDashboardScreenState();
 }
 // ==============================================================================
 // 🌟 سوق سوريا الشامل - المنظومة السحابية المتكاملة
@@ -19140,7 +19221,7 @@ class _ApplyAgencyScreenState extends State<ApplyAgencyScreen> {
         centerTitle: true,
         title: const Text(
           'طلب اعتماد وتوثيق وكالة ممولة 🏢',
-          style: TextStyle(
+          style: const TextStyle(
               color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold),
         ),
         leading: IconButton(
@@ -19156,6 +19237,141 @@ class _ApplyAgencyScreenState extends State<ApplyAgencyScreen> {
           child: ListView(
             padding: const EdgeInsets.all(16),
             children: [
+              // ================================================================
+              // 1. كرت السعر والمدة الرسمي المعتمد للتوثيق (ديناميكي من السيرفر)
+              // ================================================================
+              FutureBuilder<List<Map<String, dynamic>>>(
+                future: Supabase.instance.client
+                    .from('vip_packages')
+                    .select()
+                    .eq('plan_category', 'office')
+                    .limit(1),
+                builder: (context, snapshot) {
+                  String priceSyp = '500,000';
+                  String priceUsd = '50';
+                  String durationDays = '365';
+
+                  if (snapshot.hasData && snapshot.data!.isNotEmpty) {
+                    final pkg = snapshot.data!.first;
+                    priceSyp = (pkg['price_syp'] ?? 500000).toString();
+                    priceUsd = (pkg['price_usdt'] ?? pkg['price_usd'] ?? 50)
+                        .toString();
+                    durationDays = (pkg['duration_days'] ?? 365).toString();
+                  }
+
+                  return Container(
+                    margin: const EdgeInsets.only(bottom: 14),
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFF2A2004), Color(0xFF1E293B)],
+                        begin: Alignment.topRight,
+                        end: Alignment.bottomLeft,
+                      ),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(
+                          color: const Color(0xFFD4AF37), width: 1.2),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFFD4AF37).withOpacity(0.12),
+                          blurRadius: 10,
+                          offset: const Offset(0, 3),
+                        )
+                      ],
+                    ),
+                    child: Column(
+                      children: [
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFD4AF37).withOpacity(0.2),
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(Icons.verified_rounded,
+                                  color: Color(0xFFD4AF37), size: 24),
+                            ),
+                            const SizedBox(width: 10),
+                            const Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'رسم التوثيق والاعتماد التجاري الرسمي 🏷️',
+                                    style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.bold),
+                                  ),
+                                  Text(
+                                    'خطة موحدة وممولة لكافة المكاتب العقارية ومعارض السيارات',
+                                    style: TextStyle(
+                                        color: Colors.white60, fontSize: 10.5),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        const Divider(color: Colors.white12, height: 16),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceAround,
+                          children: [
+                            Column(
+                              children: [
+                                const Text('قيمة الاشتراك بالليرة',
+                                    style: TextStyle(
+                                        color: Colors.white54, fontSize: 10.5)),
+                                const SizedBox(height: 2),
+                                Text('$priceSyp ل.س',
+                                    style: const TextStyle(
+                                        color: Color(0xFFD4AF37),
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.bold)),
+                              ],
+                            ),
+                            Container(
+                                width: 1, height: 28, color: Colors.white12),
+                            Column(
+                              children: [
+                                const Text('أو بالدولار الرقمي',
+                                    style: TextStyle(
+                                        color: Colors.white54, fontSize: 10.5)),
+                                const SizedBox(height: 2),
+                                Text('\$$priceUsd USDT',
+                                    style: const TextStyle(
+                                        color: Color(0xFF38BDF8),
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.bold)),
+                              ],
+                            ),
+                            Container(
+                                width: 1, height: 28, color: Colors.white12),
+                            Column(
+                              children: [
+                                const Text('مدة التوثيق المعتمد',
+                                    style: TextStyle(
+                                        color: Colors.white54, fontSize: 10.5)),
+                                const SizedBox(height: 2),
+                                Text('$durationDays يوماً (سنة كاملة)',
+                                    style: const TextStyle(
+                                        color: Color(0xFF22C55E),
+                                        fontSize: 12.5,
+                                        fontWeight: FontWeight.bold)),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
+
+              // ================================================================
+              // 2. كرت مزايا الغرفة المستقلة
+              // ================================================================
               Container(
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
@@ -22291,7 +22507,7 @@ class _SubscriptionCheckoutScreenState
 }
 
 // ------------------------------------------------------------------------------
-// 3. جناح إدارة الباقات والطلبات في غرفة العمليات (خاص بالإدارة)
+// 3. جناح إدارة الباقات وغرفة العمليات المركزية والأجنحة الثلاثة المستقلة
 // ------------------------------------------------------------------------------
 class AdminSubscriptionsManagementScreen extends StatefulWidget {
   const AdminSubscriptionsManagementScreen({super.key});
@@ -22309,7 +22525,8 @@ class _AdminSubscriptionsManagementScreenState
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
+    // 5 تابات: غرفة العمليات + الأجنحة الـ 3 المستقلة + التحكم بالباقات
+    _tabController = TabController(length: 5, vsync: this);
   }
 
   @override
@@ -22326,7 +22543,7 @@ class _AdminSubscriptionsManagementScreenState
         backgroundColor: const Color(0xFF080D1A),
         appBar: AppBar(
           backgroundColor: const Color(0xFF0F172A),
-          title: const Text('إدارة المشتركين والإيصالات والباقات 🛡️',
+          title: const Text('إدارة المشتركين والإيصالات والأجنحة 🛡️',
               style: TextStyle(
                   fontSize: 14.5,
                   fontWeight: FontWeight.bold,
@@ -22337,19 +22554,31 @@ class _AdminSubscriptionsManagementScreenState
           ),
           bottom: TabBar(
             controller: _tabController,
+            isScrollable: true,
             indicatorColor: const Color(0xFFD4AF37),
             labelColor: const Color(0xFFD4AF37),
             unselectedLabelColor: Colors.white60,
             tabs: const [
-              Tab(text: 'سجل المشتركين والإيصالات 📩'),
-              Tab(text: 'التحكم الكامل بالباقات ⚙️'),
+              Tab(text: '📩 تدقيق المدفوعات'),
+              Tab(text: '💎 باقات وترقية الإعلانات'),
+              Tab(text: '🏢 دليل المكاتب والمعارض'),
+              Tab(text: '🌐 اشتراكات البانوراما 360'),
+              Tab(text: '⚙️ ضبط الباقات'),
             ],
           ),
         ),
         body: TabBarView(
           controller: _tabController,
           children: const [
-            _AdminSubscriptionRequestsList(),
+            // 1. غرفة العمليات لتدقيق كافة الإيصالات المعلقة الواردة
+            _AdminSubscriptionRequestsList(filterSection: 'pending_all'),
+            // 2. جناح باقات الإعلانات وترقية الحسابات المفعلة
+            _AdminSubscriptionRequestsList(filterSection: 'vip_ad_package'),
+            // 3. جناح اشتراكات وتوثيق دليل المكاتب والمعارض المفعلة
+            _AdminSubscriptionRequestsList(filterSection: 'office_exhibition'),
+            // 4. جناح اشتراكات جولات البانوراما 360 المفعلة
+            _AdminSubscriptionRequestsList(filterSection: 'panorama_360'),
+            // 5. محرر الباقات والأسعار
             _AdminPackagesEditorList(),
           ],
         ),
@@ -22407,7 +22636,10 @@ class FullScreenReceiptViewer extends StatelessWidget {
 }
 
 class _AdminSubscriptionRequestsList extends StatefulWidget {
-  const _AdminSubscriptionRequestsList();
+  final String
+      filterSection; // 'pending_all', 'vip_ad_package', 'office_exhibition', 'panorama_360'
+
+  const _AdminSubscriptionRequestsList({this.filterSection = 'pending_all'});
 
   @override
   State<_AdminSubscriptionRequestsList> createState() =>
@@ -22419,15 +22651,33 @@ class _AdminSubscriptionRequestsListState
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
 
+  // تفعيل الاشتراك مع تحديد وتوجيه الجناح المناسب
   Future<void> _approveRequest(Map<String, dynamic> req,
-      [int? customDays]) async {
+      [int? customDays, String? chosenSection]) async {
     final days = customDays ?? (req['duration_days'] as int? ?? 30);
     final now = DateTime.now();
     final expiresAt = now.add(Duration(days: days));
 
+    // تحديد نوع القسم بدقة
+    String section =
+        chosenSection ?? req['subscription_type'] ?? 'vip_ad_package';
+    final pkgLower = (req['package_name'] ?? '').toString().toLowerCase();
+    if (chosenSection == null) {
+      if (pkgLower.contains('بانوراما') ||
+          pkgLower.contains('360') ||
+          pkgLower.contains('panorama')) {
+        section = 'panorama_360';
+      } else if (pkgLower.contains('مكتب') ||
+          pkgLower.contains('معرض') ||
+          pkgLower.contains('دليل')) {
+        section = 'office_exhibition';
+      }
+    }
+
     try {
       await Supabase.instance.client.from('subscription_requests').update({
         'status': 'approved',
+        'subscription_type': section,
         'duration_days': days,
         'starts_at': now.toIso8601String(),
         'expires_at': expiresAt.toIso8601String(),
@@ -22436,13 +22686,22 @@ class _AdminSubscriptionRequestsListState
       final userId = req['user_id'];
       if (userId != null && userId != 'guest') {
         try {
-          await Supabase.instance.client.from('profiles').update({
+          final updateData = <String, dynamic>{
             'vip_package': req['package_name'],
             'vip_expires_at': expiresAt.toIso8601String(),
             'plan_name': req['package_name'],
             'plan_expires_at': expiresAt.toIso8601String(),
             'is_verified': true,
-          }).eq('id', userId);
+          };
+          if (section == 'office_exhibition') {
+            updateData['is_office_verified'] = true;
+          } else if (section == 'panorama_360') {
+            updateData['has_panorama_access'] = true;
+          }
+          await Supabase.instance.client
+              .from('profiles')
+              .update(updateData)
+              .eq('id', userId);
         } catch (_) {}
       }
 
@@ -22450,7 +22709,7 @@ class _AdminSubscriptionRequestsListState
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-                'تم تفعيل باقة (${req['package_name']}) لـ ${req['user_name']} لمدة $days يوماً بنجاح!'),
+                '✓ تم اعتماد الاشتراك ونقله إلى جناحه المخصص بنجاح لمدة $days يوماً!'),
             backgroundColor: const Color(0xFF22C55E),
           ),
         );
@@ -22462,6 +22721,195 @@ class _AdminSubscriptionRequestsListState
           const SnackBar(
               content: Text('حدث خطأ أثناء التفعيل، يرجى المحاولة لاحقاً.'),
               backgroundColor: Colors.redAccent),
+        );
+      }
+    }
+  }
+
+  // نافذة اختيار الجناح عند التفعيل السريع
+  void _showApprovalDialog(Map<String, dynamic> req) {
+    String selectedSection = req['subscription_type'] ?? 'vip_ad_package';
+    final pkg = (req['package_name'] ?? '').toString();
+    if (pkg.contains('بانوراما') || pkg.contains('360')) {
+      selectedSection = 'panorama_360';
+    } else if (pkg.contains('مكتب') ||
+        pkg.contains('معرض') ||
+        pkg.contains('دليل')) {
+      selectedSection = 'office_exhibition';
+    }
+
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => Directionality(
+          textDirection: TextDirection.rtl,
+          child: AlertDialog(
+            backgroundColor: const Color(0xFF1E293B),
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            title: const Row(
+              children: [
+                Icon(Icons.verified_user_rounded,
+                    color: Color(0xFF22C55E), size: 22),
+                SizedBox(width: 8),
+                Text('اعتماد الإيصال وتوجيه الاشتراك 🚀',
+                    style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 13.5,
+                        fontWeight: FontWeight.bold)),
+              ],
+            ),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('المشترك: ${req['user_name']} (${req['package_name']})',
+                    style: const TextStyle(
+                        color: Color(0xFFD4AF37),
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold)),
+                const SizedBox(height: 12),
+                const Text('اختر الجناح الذي سينتقل إليه هذا الاشتراك:',
+                    style: TextStyle(color: Colors.white70, fontSize: 11.5)),
+                const SizedBox(height: 8),
+                RadioListTile<String>(
+                  contentPadding: EdgeInsets.zero,
+                  activeColor: const Color(0xFFD4AF37),
+                  title: const Text('💎 جناح باقات وترقية الإعلانات',
+                      style: TextStyle(color: Colors.white, fontSize: 12)),
+                  value: 'vip_ad_package',
+                  groupValue: selectedSection,
+                  onChanged: (val) =>
+                      setDialogState(() => selectedSection = val!),
+                ),
+                RadioListTile<String>(
+                  contentPadding: EdgeInsets.zero,
+                  activeColor: const Color(0xFFD4AF37),
+                  title: const Text('🏢 جناح دليل المكاتب والمعارض',
+                      style: TextStyle(color: Colors.white, fontSize: 12)),
+                  value: 'office_exhibition',
+                  groupValue: selectedSection,
+                  onChanged: (val) =>
+                      setDialogState(() => selectedSection = val!),
+                ),
+                RadioListTile<String>(
+                  contentPadding: EdgeInsets.zero,
+                  activeColor: const Color(0xFFD4AF37),
+                  title: const Text('🌐 جناح اشتراكات البانوراما 360',
+                      style: TextStyle(color: Colors.white, fontSize: 12)),
+                  value: 'panorama_360',
+                  groupValue: selectedSection,
+                  onChanged: (val) =>
+                      setDialogState(() => selectedSection = val!),
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child:
+                    const Text('إلغاء', style: TextStyle(color: Colors.grey)),
+              ),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF22C55E)),
+                onPressed: () {
+                  Navigator.pop(ctx);
+                  _approveRequest(req, null, selectedSection);
+                },
+                child: const Text('تأكيد واعتماد 🚀',
+                    style: TextStyle(
+                        color: Colors.white, fontWeight: FontWeight.bold)),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _deleteSubscriptionRequest(Map<String, dynamic> req) async {
+    final bool? confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => Directionality(
+        textDirection: TextDirection.rtl,
+        child: AlertDialog(
+          backgroundColor: const Color(0xFF0F172A),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: const Row(
+            children: [
+              Icon(Icons.delete_forever_rounded,
+                  color: Colors.redAccent, size: 22),
+              SizedBox(width: 8),
+              Text('حذف الاشتراك نهائياً ⚠️',
+                  style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold)),
+            ],
+          ),
+          content: Text(
+            'هل أنت متأكد من رغبتك في حذف اشتراك "${req['user_name'] ?? 'المشترك'}" نهائياً من السيرفر؟',
+            style: const TextStyle(color: Colors.white70, fontSize: 13),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('إلغاء', style: TextStyle(color: Colors.grey)),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+              onPressed: () => Navigator.pop(ctx, true),
+              child: const Text('نعم، احذف',
+                  style: TextStyle(color: Colors.white)),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    if (confirm != true) return;
+
+    try {
+      final reqId = req['id'];
+      final userId = req['user_id'];
+
+      if (reqId != null) {
+        await Supabase.instance.client
+            .from('subscription_requests')
+            .delete()
+            .eq('id', reqId);
+      }
+
+      if (userId != null && userId != 'guest') {
+        try {
+          await Supabase.instance.client.from('profiles').update({
+            'vip_package': 'free',
+            'vip_expires_at': null,
+            'plan_name': 'الباقة المجانية',
+            'plan_expires_at': null,
+            'is_verified': false,
+            'is_office_verified': false,
+            'has_panorama_access': false,
+          }).eq('id', userId);
+        } catch (_) {}
+      }
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('✓ تم حذف الاشتراك بنجاح من السيرفر!'),
+            backgroundColor: Color(0xFF16A34A),
+          ),
+        );
+        setState(() {});
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+              content: Text('تعذر الحذف: $e'), backgroundColor: Colors.red),
         );
       }
     }
@@ -22582,7 +23030,43 @@ class _AdminSubscriptionRequestsListState
               final allRequests =
                   List<Map<String, dynamic>>.from(snapshot.data as List);
 
-              final filtered = allRequests.where((r) {
+              // الفرز الذكي حسب الجناح المختار
+              final sectionFiltered = allRequests.where((r) {
+                final status = r['status'] ?? 'pending';
+                final subType = r['subscription_type'] ?? 'vip_ad_package';
+                final pkg = (r['package_name'] ?? '').toString().toLowerCase();
+
+                if (widget.filterSection == 'pending_all') {
+                  // غرفة تدقيق المدفوعات: تعرض فقط الطلبات المعلقة الواردة لجميع الأقسام
+                  return status == 'pending';
+                } else if (widget.filterSection == 'office_exhibition') {
+                  // جناح دليل المكاتب والمعارض المفعلة
+                  final isOffice = subType == 'office_exhibition' ||
+                      pkg.contains('مكتب') ||
+                      pkg.contains('معرض') ||
+                      pkg.contains('دليل');
+                  return status == 'approved' && isOffice;
+                } else if (widget.filterSection == 'panorama_360') {
+                  // جناح اشتراكات البانوراما 360 المفعلة
+                  final isPano = subType == 'panorama_360' ||
+                      pkg.contains('بانوراما') ||
+                      pkg.contains('360');
+                  return status == 'approved' && isPano;
+                } else {
+                  // جناح باقات وترقية الإعلانات المفعلة
+                  final isOffice = subType == 'office_exhibition' ||
+                      pkg.contains('مكتب') ||
+                      pkg.contains('معرض') ||
+                      pkg.contains('دليل');
+                  final isPano = subType == 'panorama_360' ||
+                      pkg.contains('بانوراما') ||
+                      pkg.contains('360');
+                  return status == 'approved' && !isOffice && !isPano;
+                }
+              }).toList();
+
+              // تصفية البحث النصي
+              final filtered = sectionFiltered.where((r) {
                 if (_searchQuery.isEmpty) return true;
                 final name = (r['user_name'] ?? '').toString().toLowerCase();
                 final phone = (r['user_phone'] ?? '').toString().toLowerCase();
@@ -22593,9 +23077,21 @@ class _AdminSubscriptionRequestsListState
               }).toList();
 
               if (filtered.isEmpty) {
-                return const Center(
-                    child: Text('لا توجد طلبات اشتراك مطابقة للبحث',
-                        style: TextStyle(color: Colors.white60)));
+                String emptyMsg =
+                    'لا توجد طلبات معلقة حالياً في غرفة التدقيق ✅';
+                if (widget.filterSection == 'office_exhibition') {
+                  emptyMsg =
+                      'لا توجد اشتراكات مفعلة في دليل المكاتب والمعارض حالياً';
+                } else if (widget.filterSection == 'panorama_360') {
+                  emptyMsg =
+                      'لا توجد اشتراكات مفعلة في عروض البانوراما 360 حالياً';
+                } else if (widget.filterSection == 'vip_ad_package') {
+                  emptyMsg = 'لا توجد باقات إعلانات مفعلة حالياً';
+                }
+                return Center(
+                    child: Text(emptyMsg,
+                        style: const TextStyle(
+                            color: Colors.white60, fontSize: 13)));
               }
 
               return ListView.builder(
@@ -22645,7 +23141,7 @@ class _AdminSubscriptionRequestsListState
                                   borderRadius: BorderRadius.circular(6),
                                 ),
                                 child: Text(
-                                  isApproved ? 'مفعل الآن ✅' : 'قيد المراجعة ⏳',
+                                  isApproved ? 'مفعل نشط ✅' : 'تدقيق الدفع ⏳',
                                   style: TextStyle(
                                       color: isApproved
                                           ? const Color(0xFF22C55E)
@@ -22757,12 +23253,13 @@ class _AdminSubscriptionRequestsListState
                                         shape: RoundedRectangleBorder(
                                             borderRadius:
                                                 BorderRadius.circular(8))),
-                                    onPressed: () => _approveRequest(r),
-                                    child: const Text('قبول وتفعيل الباقة 🚀',
+                                    onPressed: () => _showApprovalDialog(r),
+                                    child: const Text(
+                                        'تدقيق وقبول وتوجيه للجناح 🚀',
                                         style: TextStyle(
                                             color: Colors.white,
                                             fontWeight: FontWeight.bold,
-                                            fontSize: 12.5)),
+                                            fontSize: 12)),
                                   ),
                                 )
                               else
@@ -22787,6 +23284,22 @@ class _AdminSubscriptionRequestsListState
                                             fontSize: 12)),
                                   ),
                                 ),
+                              const SizedBox(width: 8),
+                              Container(
+                                decoration: BoxDecoration(
+                                  color: Colors.red.withOpacity(0.15),
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(
+                                      color: Colors.redAccent.withOpacity(0.5)),
+                                ),
+                                child: IconButton(
+                                  icon: const Icon(Icons.delete_forever_rounded,
+                                      color: Colors.redAccent, size: 22),
+                                  tooltip: 'حذف الاشتراك نهائياً من السيرفر',
+                                  onPressed: () =>
+                                      _deleteSubscriptionRequest(r),
+                                ),
+                              ),
                             ],
                           ),
                         ],
@@ -22802,12 +23315,10 @@ class _AdminSubscriptionRequestsListState
     );
   }
 }
-// ==============================================================================
-// 🌟 سوق سوريا الشامل - المنظومة السحابية المتكاملة
-// [الجزء الحادي عشر من 12: إدارة الباقات، الملف الشخصي، منشوراتي، والبانوراما السينمائية]
-// ==============================================================================
 
-// قائمة التحكم الكامل بالباقات (تعديل الأسماء، الأيقونات والشعارات، الميزات، والأسعار بحرية تامة)
+// ==============================================================================
+// 🌟 ضبط الباقات المفصول هندسياً (إعلانات - توثيق مكاتب - عروض بانوراما)
+// ==============================================================================
 class _AdminPackagesEditorList extends StatefulWidget {
   const _AdminPackagesEditorList();
 
@@ -22817,96 +23328,66 @@ class _AdminPackagesEditorList extends StatefulWidget {
 }
 
 class _AdminPackagesEditorListState extends State<_AdminPackagesEditorList> {
-  // قائمة الأيقونات والشعارات الملكية المتاحة للاختيار
-  final List<Map<String, dynamic>> _availableIcons = [
-    {
-      'name': 'تاج الملكي 👑',
-      'icon': Icons.workspace_premium_rounded,
-      'key': 'workspace_premium'
-    },
-    {
-      'name': 'الماسة الفخمة 💎',
-      'icon': Icons.diamond_rounded,
-      'key': 'diamond'
-    },
-    {'name': 'النجمة الذهبية ⭐', 'icon': Icons.star_rounded, 'key': 'star'},
-    {
-      'name': 'حقيبة الأعمال 💼',
-      'icon': Icons.business_center_rounded,
-      'key': 'business_center'
-    },
-    {
-      'name': 'الدرع المحصن 🛡️',
-      'icon': Icons.security_rounded,
-      'key': 'security'
-    },
-    {
-      'name': 'كأس التميز 🏆',
-      'icon': Icons.emoji_events_rounded,
-      'key': 'emoji_events'
-    },
-    {
-      'name': 'الشعلة الحماسية 🔥',
-      'icon': Icons.local_fire_department_rounded,
-      'key': 'fire'
-    },
-  ];
+  String _currentCategory = 'ads'; // 'ads' | 'office' | 'panorama'
 
-  IconData _getIconFromKey(String key) {
-    switch (key) {
-      case 'diamond':
-        return Icons.diamond_rounded;
-      case 'star':
-        return Icons.star_rounded;
-      case 'business_center':
-        return Icons.business_center_rounded;
-      case 'security':
-        return Icons.security_rounded;
-      case 'emoji_events':
-        return Icons.emoji_events_rounded;
-      case 'fire':
-        return Icons.local_fire_department_rounded;
-      case 'workspace_premium':
-      default:
-        return Icons.workspace_premium_rounded;
-    }
-  }
-
-  void _openPackageEditor([Map<String, dynamic>? pkg]) {
+  // فتح النموذج المناسب تماماً لكل قسم دون خلط البيانات
+  void _openCustomPackageEditor([Map<String, dynamic>? pkg]) {
     final isNew = pkg == null;
-    final idCtrl = TextEditingController(
-        text: isNew
-            ? 'pkg_${DateTime.now().millisecondsSinceEpoch}'
-            : pkg['id']?.toString() ?? '');
-    final nameCtrl = TextEditingController(
-        text: isNew ? 'باقة VIP مميزة 💎' : pkg['name'] ?? '');
-    final sypCtrl = TextEditingController(
-        text: isNew ? '150000' : (pkg['price_syp'] ?? '150000').toString());
-    final usdtCtrl = TextEditingController(
-        text: isNew
-            ? '15'
-            : (pkg['price_usdt'] ?? pkg['price_usd'] ?? '15').toString());
-    final daysCtrl = TextEditingController(
-        text: isNew ? '30' : (pkg['duration_days'] ?? '30').toString());
-    final maxAdsCtrl = TextEditingController(
-        text: isNew ? '50' : (pkg['max_ads'] ?? '50').toString());
-    final maxImagesCtrl = TextEditingController(
-        text: isNew ? '10' : (pkg['max_images_per_ad'] ?? '10').toString());
-    final colorCtrl = TextEditingController(
-        text: isNew ? '#D4AF37' : pkg['badge_color'] ?? '#D4AF37');
+    final cat = pkg?['plan_category'] ?? _currentCategory;
 
-    String selectedIconKey =
-        pkg?['icon_key'] ?? pkg?['icon_name'] ?? 'workspace_premium';
-    bool hasVerifiedBadge = pkg?['has_verified_badge'] ?? true;
+    final id = isNew
+        ? '${cat}_${DateTime.now().millisecondsSinceEpoch}'
+        : pkg['id'].toString();
+    final nameCtrl = TextEditingController(text: pkg?['name'] ?? '');
+    final sypCtrl =
+        TextEditingController(text: (pkg?['price_syp'] ?? '100000').toString());
+    final usdtCtrl = TextEditingController(
+        text: (pkg?['price_usdt'] ?? pkg?['price_usd'] ?? '10').toString());
+    final daysCtrl = TextEditingController(
+        text: (pkg?['duration_days'] ?? (cat == 'office' ? '365' : '30'))
+            .toString());
+
+    // حقول خاصة بالإعلانات فقط
+    final maxAdsCtrl =
+        TextEditingController(text: (pkg?['max_ads'] ?? '50').toString());
+    final maxImagesCtrl = TextEditingController(
+        text: (pkg?['max_images_per_ad'] ?? '10').toString());
     bool canPostAuctions = pkg?['can_post_auctions'] ?? true;
+    bool hasVerifiedBadge = pkg?['has_verified_badge'] ?? true;
+
+    // أسماء افتراضية ذكية لكل قسم
+    if (isNew) {
+      if (cat == 'office') {
+        nameCtrl.text = 'باقة التوثيق والاعتماد السنوي للمكاتب والمعارض 🏢';
+      } else if (cat == 'panorama') {
+        nameCtrl.text = 'خطة عرض بانوراما (7 أيام) 🌐';
+        daysCtrl.text = '7';
+      } else {
+        nameCtrl.text = 'باقة ترقية VIP للإعلانات 💎';
+      }
+    }
 
     List<dynamic> features = isNew
-        ? [
-            'ظهور الإعلانات بأعلى نتائج البحث',
-            'شارة توثيق الحساب الذهبية',
-            'دعم فني مخصص مباشر'
-          ]
+        ? (cat == 'office'
+            ? [
+                'شارة التوثيق والوكالة الرسمية 🛡️',
+                'أولوية الظهور في دليل المكاتب',
+                'رابط مباشر للتواصل والواتساب',
+                'صفحة تعريفية متكاملة للمكتب'
+              ]
+            : (cat == 'panorama'
+                ? [
+                    'عرض جولة تفاعلية 360 درجة 🌐',
+                    'تثبيت الإعلان في واجهة البانوراما',
+                    'شارة العقار المصور سينمائياً'
+                  ]
+                : [
+                    'ظهور الإعلانات بأعلى النتائج ⭐',
+                    'شارة حساب موثق VIP',
+                    'دعم فني مباشر'
+                  ]))
         : List.from(pkg['features'] ?? []);
+
     final newFeatureCtrl = TextEditingController();
 
     showModalBottomSheet(
@@ -22934,13 +23415,22 @@ class _AdminPackagesEditorListState extends State<_AdminPackagesEditorList> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                          isNew
-                              ? 'إضافة باقة جديدة للمنصة 💎'
-                              : 'تعديل باقة: ${pkg['name']}',
-                          style: const TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 14.5)),
+                        cat == 'office'
+                            ? (isNew
+                                ? 'إعداد باقة توثيق المكاتب والمعارض 🏢'
+                                : 'تعديل باقة توثيق المكاتب 🏢')
+                            : (cat == 'panorama'
+                                ? (isNew
+                                    ? 'إضافة مدة/خطة بانوراما جديدة 🌐'
+                                    : 'تعديل خطة البانوراما 🌐')
+                                : (isNew
+                                    ? 'إضافة باقة إعلانات VIP 💎'
+                                    : 'تعديل باقة الإعلانات 💎')),
+                        style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 13.5),
+                      ),
                       IconButton(
                           icon: const Icon(Icons.close, color: Colors.white70),
                           onPressed: () => Navigator.pop(ctx)),
@@ -22948,68 +23438,28 @@ class _AdminPackagesEditorListState extends State<_AdminPackagesEditorList> {
                   ),
                   const SizedBox(height: 12),
 
-                  // 1. اسم الباقة المفتوح
+                  // 1. اسم الخطة
                   TextField(
                     controller: nameCtrl,
                     style: const TextStyle(color: Colors.white, fontSize: 13),
-                    decoration: const InputDecoration(
-                      labelText:
-                          'اسم الباقة والإيموجي (مثال: باقة النخبة VIP 👑)',
+                    decoration: InputDecoration(
+                      labelText: cat == 'office'
+                          ? 'اسم الباقة الرسمية'
+                          : (cat == 'panorama'
+                              ? 'اسم خطة البانوراما (مثال: خطة 5 أيام)'
+                              : 'اسم الباقة والإيموجي'),
                       labelStyle:
-                          TextStyle(color: Colors.white54, fontSize: 12),
+                          const TextStyle(color: Colors.white54, fontSize: 12),
                       filled: true,
-                      fillColor: Color(0xFF1E293B),
+                      fillColor: const Color(0xFF1E293B),
+                      border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10),
+                          borderSide: BorderSide.none),
                     ),
                   ),
                   const SizedBox(height: 10),
 
-                  // 2. اختيار أيقونة وشعار الباقة
-                  const Text('اختر أيقونة وشعار الباقة المعروض للمستخدمين:',
-                      style: TextStyle(
-                          color: Color(0xFFD4AF37),
-                          fontSize: 11.5,
-                          fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 6),
-                  SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: Row(
-                      children: _availableIcons.map((ic) {
-                        final bool isSel = selectedIconKey == ic['key'];
-                        return Padding(
-                          padding: const EdgeInsets.only(left: 6),
-                          child: ChoiceChip(
-                            label: Row(
-                              children: [
-                                Icon(ic['icon'],
-                                    size: 16,
-                                    color: isSel
-                                        ? Colors.black
-                                        : const Color(0xFFD4AF37)),
-                                const SizedBox(width: 4),
-                                Text(ic['name'],
-                                    style: TextStyle(
-                                        fontSize: 11,
-                                        color: isSel
-                                            ? Colors.black
-                                            : Colors.white)),
-                              ],
-                            ),
-                            selected: isSel,
-                            selectedColor: const Color(0xFFD4AF37),
-                            backgroundColor: const Color(0xFF1E293B),
-                            onSelected: (v) {
-                              if (v)
-                                setModalState(
-                                    () => selectedIconKey = ic['key']);
-                            },
-                          ),
-                        );
-                      }).toList(),
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-
-                  // 3. الأسعار والمدة
+                  // 2. الأسعار والمدة لجميع الأقسام
                   Row(
                     children: [
                       Expanded(
@@ -23050,109 +23500,103 @@ class _AdminPackagesEditorListState extends State<_AdminPackagesEditorList> {
                           keyboardType: TextInputType.number,
                           style: const TextStyle(
                               color: Colors.white, fontSize: 13),
-                          decoration: const InputDecoration(
-                            labelText: 'المدة (أيام)',
-                            labelStyle:
-                                TextStyle(color: Colors.white54, fontSize: 11),
+                          decoration: InputDecoration(
+                            labelText: cat == 'office'
+                                ? 'مدة التوثيق (أيام)'
+                                : 'مدة العرض (أيام)',
+                            labelStyle: const TextStyle(
+                                color: Colors.white54, fontSize: 11),
                             filled: true,
-                            fillColor: Color(0xFF1E293B),
+                            fillColor: const Color(0xFF1E293B),
                           ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-
-                  // 4. حدود الإعلانات والصور
-                  Row(
-                    children: [
-                      Expanded(
-                        child: TextField(
-                          controller: maxAdsCtrl,
-                          keyboardType: TextInputType.number,
-                          style: const TextStyle(
-                              color: Colors.white, fontSize: 13),
-                          decoration: const InputDecoration(
-                            labelText: 'سقف الإعلانات',
-                            labelStyle:
-                                TextStyle(color: Colors.white54, fontSize: 11),
-                            filled: true,
-                            fillColor: Color(0xFF1E293B),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: TextField(
-                          controller: maxImagesCtrl,
-                          keyboardType: TextInputType.number,
-                          style: const TextStyle(
-                              color: Colors.white, fontSize: 13),
-                          decoration: const InputDecoration(
-                            labelText: 'الصور لكل إعلان',
-                            labelStyle:
-                                TextStyle(color: Colors.white54, fontSize: 11),
-                            filled: true,
-                            fillColor: Color(0xFF1E293B),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: TextField(
-                          controller: colorCtrl,
-                          style: const TextStyle(
-                              color: Colors.white, fontSize: 13),
-                          decoration: const InputDecoration(
-                            labelText: 'كود اللون (#D4AF37)',
-                            labelStyle:
-                                TextStyle(color: Colors.white54, fontSize: 11),
-                            filled: true,
-                            fillColor: Color(0xFF1E293B),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-
-                  // 5. خيارات إضافية (شارة التوثيق والمزادات)
-                  Row(
-                    children: [
-                      Expanded(
-                        child: CheckboxListTile(
-                          contentPadding: EdgeInsets.zero,
-                          activeColor: const Color(0xFFD4AF37),
-                          title: const Text('شارة التوثيق الملكية 👑',
-                              style: TextStyle(
-                                  color: Colors.white, fontSize: 11.5)),
-                          value: hasVerifiedBadge,
-                          onChanged: (v) =>
-                              setModalState(() => hasVerifiedBadge = v ?? true),
-                        ),
-                      ),
-                      Expanded(
-                        child: CheckboxListTile(
-                          contentPadding: EdgeInsets.zero,
-                          activeColor: const Color(0xFFD4AF37),
-                          title: const Text('نشر المزادات العلنية 📢',
-                              style: TextStyle(
-                                  color: Colors.white, fontSize: 11.5)),
-                          value: canPostAuctions,
-                          onChanged: (v) =>
-                              setModalState(() => canPostAuctions = v ?? true),
                         ),
                       ),
                     ],
                   ),
                   const SizedBox(height: 10),
 
-                  // 6. ميزات وخصائص الباقة
-                  const Text('ميزات وخصائص الباقة (تظهر للمستخدم):',
-                      style: TextStyle(
-                          color: Color(0xFFD4AF37),
-                          fontWeight: FontWeight.bold,
-                          fontSize: 12)),
+                  // 3. قسم مخصص للإعلانات فقط (لا يظهر في المكاتب ولا البانوراما)
+                  if (cat == 'ads') ...[
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: maxAdsCtrl,
+                            keyboardType: TextInputType.number,
+                            style: const TextStyle(
+                                color: Colors.white, fontSize: 13),
+                            decoration: const InputDecoration(
+                              labelText: 'سقف الإعلانات المسموحة',
+                              labelStyle: TextStyle(
+                                  color: Colors.white54, fontSize: 11),
+                              filled: true,
+                              fillColor: Color(0xFF1E293B),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: TextField(
+                            controller: maxImagesCtrl,
+                            keyboardType: TextInputType.number,
+                            style: const TextStyle(
+                                color: Colors.white, fontSize: 13),
+                            decoration: const InputDecoration(
+                              labelText: 'الصور لكل إعلان',
+                              labelStyle: TextStyle(
+                                  color: Colors.white54, fontSize: 11),
+                              filled: true,
+                              fillColor: Color(0xFF1E293B),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: CheckboxListTile(
+                            contentPadding: EdgeInsets.zero,
+                            activeColor: const Color(0xFFD4AF37),
+                            title: const Text('شارة التوثيق الملكية 👑',
+                                style: TextStyle(
+                                    color: Colors.white, fontSize: 11.5)),
+                            value: hasVerifiedBadge,
+                            onChanged: (v) => setModalState(
+                                () => hasVerifiedBadge = v ?? true),
+                          ),
+                        ),
+                        Expanded(
+                          child: CheckboxListTile(
+                            contentPadding: EdgeInsets.zero,
+                            activeColor: const Color(0xFFD4AF37),
+                            title: const Text('نشر المزادات العلنية 📢',
+                                style: TextStyle(
+                                    color: Colors.white, fontSize: 11.5)),
+                            value: canPostAuctions,
+                            onChanged: (v) => setModalState(
+                                () => canPostAuctions = v ?? true),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+
+                  const SizedBox(height: 10),
+
+                  // 4. ميزات الخطة التي تظهر للزبون عند الاشتراك
+                  Text(
+                    cat == 'office'
+                        ? 'المزايا التي سيحصل عليها المكتب الموثق:'
+                        : (cat == 'panorama'
+                            ? 'مزايا خطة البانوراما هذه:'
+                            : 'مزايا الباقة الإعلانية:'),
+                    style: const TextStyle(
+                        color: Color(0xFFD4AF37),
+                        fontWeight: FontWeight.bold,
+                        fontSize: 11.5),
+                  ),
                   const SizedBox(height: 6),
                   ...features.asMap().entries.map((entry) {
                     final index = entry.key;
@@ -23220,7 +23664,7 @@ class _AdminPackagesEditorListState extends State<_AdminPackagesEditorList> {
                   ),
                   const SizedBox(height: 16),
 
-                  // زر الحفظ النهائي
+                  // زر الحفظ والإدراج في السيرفر
                   ElevatedButton(
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFFD4AF37),
@@ -23230,22 +23674,28 @@ class _AdminPackagesEditorListState extends State<_AdminPackagesEditorList> {
                     ),
                     onPressed: () async {
                       final packageData = {
-                        'id': idCtrl.text.trim(),
+                        'id': id,
                         'name': nameCtrl.text.trim(),
-                        'price_syp':
-                            int.tryParse(sypCtrl.text.trim()) ?? 100000,
+                        'plan_category': cat,
+                        'price_syp': int.tryParse(sypCtrl.text.trim()) ?? 0,
                         'price_usdt':
-                            double.tryParse(usdtCtrl.text.trim()) ?? 15.0,
-                        'price_usd':
-                            double.tryParse(usdtCtrl.text.trim()) ?? 15.0,
+                            double.tryParse(usdtCtrl.text.trim()) ?? 0.0,
                         'duration_days':
                             int.tryParse(daysCtrl.text.trim()) ?? 30,
-                        'max_ads': int.tryParse(maxAdsCtrl.text.trim()) ?? 50,
-                        'max_images_per_ad':
-                            int.tryParse(maxImagesCtrl.text.trim()) ?? 10,
-                        'badge_color': colorCtrl.text.trim(),
-                        'icon_key': selectedIconKey,
-                        'icon_name': selectedIconKey,
+                        'max_ads': cat == 'ads'
+                            ? (int.tryParse(maxAdsCtrl.text.trim()) ?? 50)
+                            : 9999,
+                        'max_images_per_ad': cat == 'ads'
+                            ? (int.tryParse(maxImagesCtrl.text.trim()) ?? 10)
+                            : 50,
+                        'badge_color': cat == 'office'
+                            ? '#D4AF37'
+                            : (cat == 'panorama' ? '#00E5FF' : '#D4AF37'),
+                        'icon_key': cat == 'office'
+                            ? 'business'
+                            : (cat == 'panorama'
+                                ? 'panorama'
+                                : 'workspace_premium'),
                         'has_verified_badge': hasVerifiedBadge,
                         'can_post_auctions': canPostAuctions,
                         'features': features,
@@ -23256,30 +23706,36 @@ class _AdminPackagesEditorListState extends State<_AdminPackagesEditorList> {
                         await Supabase.instance.client
                             .from('vip_packages')
                             .upsert(packageData);
-                      } catch (e) {
-                        debugPrint('Error saving package: $e');
-                      }
 
-                      if (mounted) {
-                        Navigator.pop(ctx);
-                        setState(() {});
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                              content: Text(isNew
-                                  ? 'تم إدراج الباقة بنجاح!'
-                                  : 'تم حفظ وتحديث الباقة بنجاح.'),
-                              backgroundColor: const Color(0xFF22C55E)),
-                        );
+                        if (mounted) {
+                          Navigator.pop(ctx);
+                          setState(() {});
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                  '✓ تم إدراج وحفظ (${nameCtrl.text}) في السيرفر بنجاح وستظهر فوراً لجميع المستخدمين!'),
+                              backgroundColor: const Color(0xFF16A34A),
+                            ),
+                          );
+                        }
+                      } catch (e) {
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                                content: Text('فشل الإدراج في السيرفر: $e'),
+                                backgroundColor: Colors.redAccent),
+                          );
+                        }
                       }
                     },
                     child: Text(
                       isNew
-                          ? 'إدراج الباقة الجديدة في المنصة 🚀'
-                          : 'حفظ التعديلات الكاملة للباقة ✨',
+                          ? 'إدراج ونشر الخطة في السيرفر 🚀'
+                          : 'حفظ التعديلات في السيرفر ✨',
                       style: const TextStyle(
                           color: Colors.black,
                           fontWeight: FontWeight.bold,
-                          fontSize: 13.5),
+                          fontSize: 13),
                     ),
                   ),
                 ],
@@ -23291,18 +23747,15 @@ class _AdminPackagesEditorListState extends State<_AdminPackagesEditorList> {
     );
   }
 
-  // حذف الباقة نهائياً
   Future<void> _deletePackage(String id, String name) async {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: const Color(0xFF0F172A),
-        shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14),
-            side: const BorderSide(color: Colors.redAccent)),
-        title: const Text('حذف الباقة؟',
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        title: const Text('حذف الخطة؟',
             style: TextStyle(color: Colors.white, fontSize: 14)),
-        content: Text('هل أنت متأكد من رغبتك في حذف ($name) نهائياً من المنصة؟',
+        content: Text('هل أنت متأكد من حذف ($name) نهائياً من السيرفر؟',
             style: const TextStyle(color: Colors.white70, fontSize: 12)),
         actions: [
           TextButton(
@@ -23328,12 +23781,12 @@ class _AdminPackagesEditorListState extends State<_AdminPackagesEditorList> {
           setState(() {});
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-                content: Text('تم حذف الباقة بنجاح'),
+                content: Text('تم حذف الخطة من السيرفر بنجاح'),
                 backgroundColor: Colors.red),
           );
         }
       } catch (e) {
-        debugPrint('Delete package err: $e');
+        debugPrint('Delete error: $e');
       }
     }
   }
@@ -23342,105 +23795,294 @@ class _AdminPackagesEditorListState extends State<_AdminPackagesEditorList> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.transparent,
-      floatingActionButton: FloatingActionButton.extended(
-        backgroundColor: const Color(0xFFD4AF37),
-        icon: const Icon(Icons.add, color: Colors.black),
-        label: const Text('إضافة باقة جديدة ➕',
-            style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
-        onPressed: () => _openPackageEditor(),
-      ),
-      body: FutureBuilder(
-        future: Supabase.instance.client
-            .from('vip_packages')
-            .select()
-            .order('price_syp', ascending: true),
-        builder: (context, snapshot) {
-          if (!snapshot.hasData) {
-            return const Center(
-                child: CircularProgressIndicator(color: Color(0xFFD4AF37)));
-          }
-          final packages =
-              List<Map<String, dynamic>>.from(snapshot.data as List);
-
-          if (packages.isEmpty) {
-            return const Center(
-              child: Text('لا توجد باقات مخصصة بعد. اضغط زر الإضافة بالأسفل ➕',
-                  style: TextStyle(color: Colors.white60)),
-            );
-          }
-
-          return ListView.builder(
-            padding: const EdgeInsets.all(12),
-            itemCount: packages.length,
-            itemBuilder: (ctx, idx) {
-              final p = packages[idx];
-              final colorHex = p['badge_color'] as String? ?? '#D4AF37';
-              Color badgeColor = const Color(0xFFD4AF37);
-              try {
-                badgeColor =
-                    Color(int.parse(colorHex.replaceFirst('#', '0xFF')));
-              } catch (_) {}
-
-              final iconKey =
-                  p['icon_key'] ?? p['icon_name'] ?? 'workspace_premium';
-              final iconData = _getIconFromKey(iconKey);
-
-              return Card(
-                color: const Color(0xFF1E293B),
-                margin: const EdgeInsets.only(bottom: 12),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  side: BorderSide(color: badgeColor.withOpacity(0.5)),
-                ),
-                child: ListTile(
-                  contentPadding: const EdgeInsets.all(12),
-                  leading: CircleAvatar(
-                    backgroundColor: badgeColor.withOpacity(0.2),
-                    child: Icon(iconData, color: badgeColor),
-                  ),
-                  title: Text(p['name'] ?? '',
-                      style: TextStyle(
-                          color: badgeColor,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 14)),
-                  subtitle: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const SizedBox(height: 4),
-                      Text(
-                          '${p['price_syp']} ل.س | ${p['price_usdt'] ?? p['price_usd']} USD | ${p['duration_days']} يوم',
-                          style: const TextStyle(
-                              color: Colors.white, fontSize: 12)),
-                      const SizedBox(height: 2),
-                      Text(
-                          'سقف الإعلانات: ${p['max_ads'] ?? 50} • الميزات المضافة: ${(p['features'] as List?)?.length ?? 0}',
-                          style: const TextStyle(
-                              color: Colors.white54, fontSize: 11)),
-                    ],
-                  ),
-                  trailing: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      IconButton(
-                        icon: const Icon(Icons.edit_rounded,
-                            color: Color(0xFFD4AF37), size: 20),
-                        tooltip: 'تعديل',
-                        onPressed: () => _openPackageEditor(p),
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.delete_outline_rounded,
-                            color: Colors.redAccent, size: 20),
-                        tooltip: 'حذف',
-                        onPressed: () =>
-                            _deletePackage(p['id'], p['name'] ?? ''),
-                      ),
-                    ],
+      floatingActionButton: _currentCategory == 'office'
+          ? null // المكاتب لها باقة توثيق رسمية واحدة يتم تعديلها، ولا داعي لتكرار باقات عشوائية
+          : FloatingActionButton.extended(
+              backgroundColor: const Color(0xFFD4AF37),
+              icon: const Icon(Icons.add, color: Colors.black),
+              label: Text(
+                _currentCategory == 'panorama'
+                    ? 'إضافة مدة/خطة بانوراما ➕'
+                    : 'إضافة باقة إعلانات ➕',
+                style: const TextStyle(
+                    color: Colors.black,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 12),
+              ),
+              onPressed: () => _openCustomPackageEditor(),
+            ),
+      body: Column(
+        children: [
+          // شريط الأقسام الثلاثة الواضح في الأعلى
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+            color: const Color(0xFF0F172A),
+            child: Row(
+              children: [
+                Expanded(
+                  child: ChoiceChip(
+                    padding: const EdgeInsets.symmetric(vertical: 4),
+                    label: const Center(
+                        child: Text('💎 باقات الإعلانات',
+                            style: TextStyle(
+                                fontSize: 11, fontWeight: FontWeight.bold))),
+                    selected: _currentCategory == 'ads',
+                    selectedColor: const Color(0xFFD4AF37),
+                    backgroundColor: const Color(0xFF1E293B),
+                    labelStyle: TextStyle(
+                        color: _currentCategory == 'ads'
+                            ? Colors.black
+                            : Colors.white70),
+                    onSelected: (v) {
+                      if (v) setState(() => _currentCategory = 'ads');
+                    },
                   ),
                 ),
-              );
-            },
-          );
-        },
+                const SizedBox(width: 5),
+                Expanded(
+                  child: ChoiceChip(
+                    padding: const EdgeInsets.symmetric(vertical: 4),
+                    label: const Center(
+                        child: Text('🏢 توثيق المكاتب',
+                            style: TextStyle(
+                                fontSize: 11, fontWeight: FontWeight.bold))),
+                    selected: _currentCategory == 'office',
+                    selectedColor: const Color(0xFFD4AF37),
+                    backgroundColor: const Color(0xFF1E293B),
+                    labelStyle: TextStyle(
+                        color: _currentCategory == 'office'
+                            ? Colors.black
+                            : Colors.white70),
+                    onSelected: (v) {
+                      if (v) setState(() => _currentCategory = 'office');
+                    },
+                  ),
+                ),
+                const SizedBox(width: 5),
+                Expanded(
+                  child: ChoiceChip(
+                    padding: const EdgeInsets.symmetric(vertical: 4),
+                    label: const Center(
+                        child: Text('🌐 خطط البانوراما',
+                            style: TextStyle(
+                                fontSize: 11, fontWeight: FontWeight.bold))),
+                    selected: _currentCategory == 'panorama',
+                    selectedColor: const Color(0xFFD4AF37),
+                    backgroundColor: const Color(0xFF1E293B),
+                    labelStyle: TextStyle(
+                        color: _currentCategory == 'panorama'
+                            ? Colors.black
+                            : Colors.white70),
+                    onSelected: (v) {
+                      if (v) setState(() => _currentCategory = 'panorama');
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          Expanded(
+            child: FutureBuilder(
+              future: Supabase.instance.client
+                  .from('vip_packages')
+                  .select()
+                  .order('price_syp', ascending: true),
+              builder: (context, snapshot) {
+                if (!snapshot.hasData) {
+                  return const Center(
+                      child:
+                          CircularProgressIndicator(color: Color(0xFFD4AF37)));
+                }
+                final all =
+                    List<Map<String, dynamic>>.from(snapshot.data as List);
+
+                final packages = all.where((p) {
+                  final cat = p['plan_category'] ?? 'ads';
+                  final name = (p['name'] ?? '').toString().toLowerCase();
+                  if (_currentCategory == 'office') {
+                    return cat == 'office' ||
+                        name.contains('مكتب') ||
+                        name.contains('معرض') ||
+                        name.contains('توثيق');
+                  } else if (_currentCategory == 'panorama') {
+                    return cat == 'panorama' ||
+                        name.contains('بانوراما') ||
+                        name.contains('360');
+                  } else {
+                    final isOff = cat == 'office' ||
+                        name.contains('مكتب') ||
+                        name.contains('معرض') ||
+                        name.contains('توثيق');
+                    final isPano = cat == 'panorama' ||
+                        name.contains('بانوراما') ||
+                        name.contains('360');
+                    return !isOff && !isPano;
+                  }
+                }).toList();
+
+                if (packages.isEmpty) {
+                  return Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(20),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            _currentCategory == 'office'
+                                ? Icons.business_rounded
+                                : (_currentCategory == 'panorama'
+                                    ? Icons.threed_rotation_rounded
+                                    : Icons.diamond_rounded),
+                            color: Colors.white24,
+                            size: 48,
+                          ),
+                          const SizedBox(height: 10),
+                          Text(
+                            _currentCategory == 'office'
+                                ? 'لم يتم إعداد باقة توثيق المكاتب بعد.\nاضغط أدناه لضبط السعر والمزايا الرسمية للمكاتب والمعارض.'
+                                : 'لا توجد خطط مضافة في هذا القسم حالياً في السيرفر.',
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                                color: Colors.white60, fontSize: 12),
+                          ),
+                          const SizedBox(height: 12),
+                          ElevatedButton.icon(
+                            style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFFD4AF37)),
+                            icon: const Icon(Icons.add,
+                                color: Colors.black, size: 18),
+                            label: Text(
+                              _currentCategory == 'office'
+                                  ? 'ضبط وتفعيل باقة توثيق المكاتب 🏢'
+                                  : 'إضافة خطة جديدة ➕',
+                              style: const TextStyle(
+                                  color: Colors.black,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 12),
+                            ),
+                            onPressed: () => _openCustomPackageEditor(),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                }
+
+                return ListView.builder(
+                  padding: const EdgeInsets.all(12),
+                  itemCount: packages.length,
+                  itemBuilder: (ctx, idx) {
+                    final p = packages[idx];
+                    final cat = p['plan_category'] ?? _currentCategory;
+
+                    IconData catIcon = Icons.workspace_premium_rounded;
+                    Color catColor = const Color(0xFFD4AF37);
+                    if (cat == 'office') {
+                      catIcon = Icons.business_rounded;
+                    } else if (cat == 'panorama') {
+                      catIcon = Icons.threed_rotation_rounded;
+                      catColor = const Color(0xFF00E5FF);
+                    }
+
+                    return Card(
+                      color: const Color(0xFF1E293B),
+                      margin: const EdgeInsets.only(bottom: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        side: BorderSide(color: catColor.withOpacity(0.4)),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.all(12),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                CircleAvatar(
+                                  backgroundColor: catColor.withOpacity(0.15),
+                                  child:
+                                      Icon(catIcon, color: catColor, size: 20),
+                                ),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(p['name'] ?? '',
+                                          style: TextStyle(
+                                              color: catColor,
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 13.5)),
+                                      Text(
+                                          '${p['price_syp']} ل.س  |  ${p['price_usdt']} USD  |  المدة: ${p['duration_days']} يوم',
+                                          style: const TextStyle(
+                                              color: Colors.white70,
+                                              fontSize: 11.5)),
+                                    ],
+                                  ),
+                                ),
+                                IconButton(
+                                  icon: const Icon(Icons.edit_rounded,
+                                      color: Color(0xFFD4AF37), size: 20),
+                                  tooltip: 'تعديل السعر والمزايا',
+                                  onPressed: () => _openCustomPackageEditor(p),
+                                ),
+                                if (cat !=
+                                    'office') // المكاتب باقة رسمية لا نحذفها بل نعدلها
+                                  IconButton(
+                                    icon: const Icon(
+                                        Icons.delete_outline_rounded,
+                                        color: Colors.redAccent,
+                                        size: 20),
+                                    tooltip: 'حذف الخطة',
+                                    onPressed: () => _deletePackage(
+                                        p['id'], p['name'] ?? ''),
+                                  ),
+                              ],
+                            ),
+                            if (p['features'] != null &&
+                                (p['features'] as List).isNotEmpty) ...[
+                              const Divider(color: Colors.white10, height: 16),
+                              Wrap(
+                                spacing: 6,
+                                runSpacing: 4,
+                                children: (p['features'] as List)
+                                    .map<Widget>((f) => Container(
+                                          padding: const EdgeInsets.symmetric(
+                                              horizontal: 8, vertical: 3),
+                                          decoration: BoxDecoration(
+                                              color: Colors.black26,
+                                              borderRadius:
+                                                  BorderRadius.circular(6)),
+                                          child: Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              const Icon(Icons.check,
+                                                  color: Color(0xFF22C55E),
+                                                  size: 12),
+                                              const SizedBox(width: 4),
+                                              Text(f.toString(),
+                                                  style: const TextStyle(
+                                                      color: Colors.white60,
+                                                      fontSize: 10.5)),
+                                            ],
+                                          ),
+                                        ))
+                                    .toList(),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                );
+              },
+            ),
+          ),
+        ],
       ),
     );
   }
