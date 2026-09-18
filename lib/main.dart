@@ -8324,6 +8324,7 @@ class _SubscriptionPlansScreenState extends State<SubscriptionPlansScreen> {
     );
   }
 }
+
 class PanoramaBookingScreen extends StatefulWidget {
   const PanoramaBookingScreen({Key? key}) : super(key: key);
 
@@ -8450,7 +8451,10 @@ class _PanoramaBookingScreenState extends State<PanoramaBookingScreen> {
       prefix: 'book_pan',
     );
 
-    final double priceUsd = ((_selectedPlan!['price_usdt'] ?? _selectedPlan!['price_usd'] ?? 0) as num).toDouble();
+    final double priceUsd = ((_selectedPlan!['price_usdt'] ??
+            _selectedPlan!['price_usd'] ??
+            0) as num)
+        .toDouble();
     final int durationDays = _selectedPlan!['duration_days'] ?? 7;
     final int durationHours = durationDays * 24;
 
@@ -8565,7 +8569,8 @@ class _PanoramaBookingScreenState extends State<PanoramaBookingScreen> {
                   return const Center(
                     child: Padding(
                       padding: EdgeInsets.all(12),
-                      child: CircularProgressIndicator(color: Color(0xFF00E5FF)),
+                      child:
+                          CircularProgressIndicator(color: Color(0xFF00E5FF)),
                     ),
                   );
                 }
@@ -8577,7 +8582,8 @@ class _PanoramaBookingScreenState extends State<PanoramaBookingScreen> {
                     decoration: BoxDecoration(
                         color: const Color(0xFF1E293B),
                         borderRadius: BorderRadius.circular(10)),
-                    child: const Text('لا توجد خطط بانوراما مضافة في السيرفر حالياً',
+                    child: const Text(
+                        'لا توجد خطط بانوراما مضافة في السيرفر حالياً',
                         style: TextStyle(color: Colors.white54, fontSize: 12)),
                   );
                 }
@@ -8593,7 +8599,8 @@ class _PanoramaBookingScreenState extends State<PanoramaBookingScreen> {
                   children: plans.map((plan) {
                     final isSel = _selectedPlan?['id'] == plan['id'];
                     final name = plan['name'] ?? 'خطة بانوراما';
-                    final priceUsd = plan['price_usdt'] ?? plan['price_usd'] ?? 0;
+                    final priceUsd =
+                        plan['price_usdt'] ?? plan['price_usd'] ?? 0;
                     final days = plan['duration_days'] ?? 7;
 
                     return ChoiceChip(
@@ -8620,8 +8627,13 @@ class _PanoramaBookingScreenState extends State<PanoramaBookingScreen> {
             if (_selectedPlan != null) ...[
               Builder(
                 builder: (context) {
-                  final double priceUsd = ((_selectedPlan!['price_usdt'] ?? _selectedPlan!['price_usd'] ?? 0) as num).toDouble();
-                  final int priceSyp = (_selectedPlan!['price_syp'] as num?)?.toInt() ?? (priceUsd * _manager.exchangeRateUsdToSyp).toInt();
+                  final double priceUsd = ((_selectedPlan!['price_usdt'] ??
+                          _selectedPlan!['price_usd'] ??
+                          0) as num)
+                      .toDouble();
+                  final int priceSyp =
+                      (_selectedPlan!['price_syp'] as num?)?.toInt() ??
+                          (priceUsd * _manager.exchangeRateUsdToSyp).toInt();
 
                   return Container(
                     padding: const EdgeInsets.all(12),
@@ -8888,6 +8900,23 @@ class _PanoramaBookingScreenState extends State<PanoramaBookingScreen> {
       ),
     );
   }
+}
+
+// ==============================================================================
+// 19. الشاشة الرئيسية الكبرى المحصنة ضد Overflow (MainDashboardScreen)
+// ==============================================================================
+class MainDashboardScreen extends StatefulWidget {
+  final bool isDarkMode;
+  final VoidCallback onToggleTheme;
+
+  const MainDashboardScreen({
+    Key? key,
+    required this.isDarkMode,
+    required this.onToggleTheme,
+  }) : super(key: key);
+
+  @override
+  State<MainDashboardScreen> createState() => _MainDashboardScreenState();
 }
 // ==============================================================================
 // 🌟 سوق سوريا الشامل - المنظومة السحابية المتكاملة
@@ -20808,7 +20837,7 @@ class _AgencyRequestsAdminScreenState extends State<AgencyRequestsAdminScreen>
 }
 
 // ==============================================================================
-// 🎬 شاشة البداية المتحركة الفخمة (عربة التسوق الذهبية والشعار فائق الدقة)
+// 🎬 شاشة البداية المتحركة الفخمة (الشعار الملكي فائق الدقة بملء الشاشة)
 // ==============================================================================
 class LuxurySplashScreen extends StatefulWidget {
   final bool isDarkMode;
@@ -20828,8 +20857,8 @@ class _LuxurySplashScreenState extends State<LuxurySplashScreen>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _scaleAnimation;
-  late Animation<Offset> _cartSlideAnimation;
   late Animation<double> _fadeAnimation;
+  late Animation<double> _glowAnimation;
 
   @override
   void initState() {
@@ -20837,35 +20866,34 @@ class _LuxurySplashScreenState extends State<LuxurySplashScreen>
 
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 2200),
+      duration: const Duration(milliseconds: 2400),
     );
 
-    _scaleAnimation = Tween<double>(begin: 0.7, end: 1.0).animate(
+    _scaleAnimation = Tween<double>(begin: 0.75, end: 1.05).animate(
       CurvedAnimation(
           parent: _controller,
-          curve: const Interval(0.0, 0.6, curve: Curves.easeOutBack)),
-    );
-
-    _cartSlideAnimation =
-        Tween<Offset>(begin: const Offset(-1.5, 0), end: Offset.zero).animate(
-      CurvedAnimation(
-          parent: _controller,
-          curve: const Interval(0.1, 0.7, curve: Curves.easeOutCubic)),
+          curve: const Interval(0.0, 0.75, curve: Curves.easeOutBack)),
     );
 
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(
           parent: _controller,
-          curve: const Interval(0.2, 0.8, curve: Curves.easeIn)),
+          curve: const Interval(0.1, 0.65, curve: Curves.easeIn)),
+    );
+
+    _glowAnimation = Tween<double>(begin: 10.0, end: 35.0).animate(
+      CurvedAnimation(
+          parent: _controller,
+          curve: const Interval(0.4, 1.0, curve: Curves.easeInOut)),
     );
 
     _controller.forward();
 
-    Future.delayed(const Duration(milliseconds: 2800), () {
+    Future.delayed(const Duration(milliseconds: 3200), () {
       if (mounted) {
         Navigator.of(context).pushReplacement(
           PageRouteBuilder(
-            transitionDuration: const Duration(milliseconds: 800),
+            transitionDuration: const Duration(milliseconds: 850),
             pageBuilder: (ctx, anim, secAnim) => FadeTransition(
               opacity: anim,
               child: MainDashboardScreen(
@@ -20887,19 +20915,24 @@ class _LuxurySplashScreenState extends State<LuxurySplashScreen>
 
   @override
   Widget build(BuildContext context) {
+    final size = MediaQuery.of(context).size;
+    final logoSize = (size.width * 0.68).clamp(240.0, 360.0);
+
     return Scaffold(
       backgroundColor: const Color(0xFF080D1A),
       body: Stack(
         fit: StackFit.expand,
         children: [
+          // خلفية ليلية فاخرة مع تدرج شعاعي مركز
           Container(
             decoration: const BoxDecoration(
               gradient: RadialGradient(
-                center: Alignment(0, -0.1),
-                radius: 0.85,
+                center: Alignment(0, -0.05),
+                radius: 0.95,
                 colors: [
                   Color(0xFF1E293B),
-                  Color(0xFF080D1A),
+                  Color(0xFF0B1120),
+                  Color(0xFF050811),
                 ],
               ),
             ),
@@ -20910,79 +20943,89 @@ class _LuxurySplashScreenState extends State<LuxurySplashScreen>
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  SlideTransition(
-                    position: _cartSlideAnimation,
-                    child: Container(
-                      width: 90,
-                      height: 90,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: const Color(0xFF0F172A),
-                        border: Border.all(
-                            color: const Color(0xFFD4AF37), width: 2),
-                        boxShadow: [
-                          BoxShadow(
-                            color: const Color(0xFFD4AF37).withOpacity(0.35),
-                            blurRadius: 24,
-                            spreadRadius: 2,
+                  // 👑 الشعار الملكي بملء الشاشة مع التكبير والتوهج الذهبي الفخم
+                  ScaleTransition(
+                    scale: _scaleAnimation,
+                    child: AnimatedBuilder(
+                      animation: _glowAnimation,
+                      builder: (context, child) {
+                        return Container(
+                          width: logoSize,
+                          height: logoSize,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            boxShadow: [
+                              BoxShadow(
+                                color:
+                                    const Color(0xFFD4AF37).withOpacity(0.35),
+                                blurRadius: _glowAnimation.value,
+                                spreadRadius: 4,
+                              ),
+                            ],
                           ),
-                        ],
-                      ),
-                      child: const Center(
-                        child: Icon(
-                          Icons.shopping_cart_checkout_rounded,
-                          color: Color(0xFFD4AF37),
-                          size: 44,
-                        ),
-                      ),
+                          child: Center(
+                            child: Image.asset(
+                              'assets/images/ic_launcher.png',
+                              width: logoSize,
+                              height: logoSize,
+                              fit: BoxFit.contain,
+                              errorBuilder: (_, __, ___) => Image.asset(
+                                'assets/ic_launcher.png',
+                                width: logoSize,
+                                height: logoSize,
+                                fit: BoxFit.contain,
+                                errorBuilder: (_, __, ___) => const Icon(
+                                  Icons.shopping_cart_rounded,
+                                  color: Color(0xFFD4AF37),
+                                  size: 80,
+                                ),
+                              ),
+                            ),
+                          ),
+                        );
+                      },
                     ),
                   ),
                   const SizedBox(height: 24),
-                  ScaleTransition(
-                    scale: _scaleAnimation,
-                    child: Column(
-                      children: [
-                        const Text(
-                          'سوق سوريا الشامل',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 24,
-                            fontWeight: FontWeight.w900,
-                            letterSpacing: 0.5,
-                            shadows: [
-                              Shadow(color: Color(0xFFD4AF37), blurRadius: 16),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(height: 6),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 14, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFD4AF37).withOpacity(0.12),
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(
-                                color: const Color(0xFFD4AF37).withOpacity(0.4),
-                                width: 0.8),
-                          ),
-                          child: const Text(
-                            'المنصة العقارية والتجارية الأولى في سوريا',
-                            style: TextStyle(
-                              color: Color(0xFFD4AF37),
-                              fontSize: 11,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
+                  // النصوص الرسمية أسفل الشعار
+                  const Text(
+                    'سوق سوريا الشامل',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 25,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: 0.6,
+                      shadows: [
+                        Shadow(color: Color(0xFFD4AF37), blurRadius: 18),
                       ],
                     ),
                   ),
-                  const SizedBox(height: 48),
+                  const SizedBox(height: 8),
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFD4AF37).withOpacity(0.12),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                          color: const Color(0xFFD4AF37).withOpacity(0.4),
+                          width: 0.9),
+                    ),
+                    child: const Text(
+                      'المنصة العقارية والتجارية الأولى في سوريا',
+                      style: TextStyle(
+                        color: Color(0xFFD4AF37),
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 42),
                   const SizedBox(
                     width: 24,
                     height: 24,
                     child: CircularProgressIndicator(
-                      strokeWidth: 2.2,
+                      strokeWidth: 2.4,
                       valueColor:
                           AlwaysStoppedAnimation<Color>(Color(0xFFD4AF37)),
                     ),
@@ -20997,9 +21040,9 @@ class _LuxurySplashScreenState extends State<LuxurySplashScreen>
             right: 0,
             child: Center(
               child: Text(
-                'الإصدار المعتمد • تجربة رقمية متكاملة',
+                'سوق سوريا الشامل • الإصدار الملكي المعتمد 2026',
                 style: TextStyle(
-                    color: Colors.white24, fontSize: 10, letterSpacing: 0.3),
+                    color: Colors.white24, fontSize: 10.5, letterSpacing: 0.4),
               ),
             ),
           ),
@@ -21427,26 +21470,9 @@ class _SupabaseAuthScreenState extends State<SupabaseAuthScreen>
                     ),
                   ],
 
-                  Center(
-                    child: Container(
-                      width: 70,
-                      height: 70,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: const Color(0xFF0F172A),
-                        border: Border.all(
-                            color: const Color(0xFFD4AF37), width: 1.8),
-                        boxShadow: [
-                          BoxShadow(
-                            color: const Color(0xFFD4AF37).withOpacity(0.25),
-                            blurRadius: 18,
-                          ),
-                        ],
-                      ),
-                      child: const Center(
-                        child: AppBrandLogo(width: 38, height: 38),
-                      ),
-                    ),
+                  // 👑 أيقونة الشعار الملكي الرسمية في شاشة الدخول
+                  const Center(
+                    child: AppBrandLogo(width: 80, height: 80),
                   ),
                   const SizedBox(height: 14),
                   Text(
