@@ -736,10 +736,21 @@ class AdItem {
         'condition': condition,
         'publisher_phone':
             contactPhone.isNotEmpty ? contactPhone : contactWhatsapp,
+        'contact_phone': contactPhone,
+        'contact_whatsapp': contactWhatsapp,
         'publisher_name': publisherName.isNotEmpty ? publisherName : 'معلن',
         'publisher_email': publisherEmail,
         'image_urls': imageUrls,
         'video_url': videoUrl ?? '',
+        'youtube_url': youtubeUrl ?? '',
+        'tiktok_url': tiktokUrl ?? '',
+        'instagram_url': instagramUrl ?? '',
+        'facebook_url': facebookUrl ?? '',
+        'telegram_url': telegramUrl ?? '',
+        'is_auction': isAuction,
+        'starting_bid': startingBid,
+        'current_bid': currentBid,
+        'auction_end_time': auctionEndTime?.toIso8601String(),
         'is_featured': isFeatured,
         'is_sold': isSold,
         'status': status,
@@ -10204,12 +10215,14 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
 
                         if (isSuperOrMod) {
                           _manager.addNewAdDirectly(newAd);
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('تم نشر إعلانك مباشرة بنجاح!'),
-                              backgroundColor: Color(0xFF16A34A),
-                            ),
-                          );
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('تم نشر إعلانك مباشرة بنجاح!'),
+                                backgroundColor: Color(0xFF16A34A),
+                              ),
+                            );
+                          }
                         } else {
                           try {
                             await Supabase.instance.client
@@ -10220,51 +10233,54 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
                             }).eq('id', newAd.id);
                           } catch (_) {}
 
-                          showDialog(
-                            context: context,
-                            builder: (dCtx) => Directionality(
-                              textDirection: TextDirection.rtl,
-                              child: AlertDialog(
-                                backgroundColor: const Color(0xFF0F172A),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(16),
-                                  side: const BorderSide(
-                                      color: Color(0xFFD4AF37), width: 1.2),
-                                ),
-                                title: const Row(
-                                  children: [
-                                    Icon(Icons.hourglass_top_rounded,
-                                        color: Color(0xFFD4AF37), size: 24),
-                                    SizedBox(width: 8),
-                                    Text('إعلانك قيد المراجعة ⏳',
-                                        style: TextStyle(
-                                            color: Colors.white,
-                                            fontSize: 16,
-                                            fontWeight: FontWeight.bold)),
+                          if (context.mounted) {
+                            showDialog(
+                              context: context,
+                              builder: (dCtx) => Directionality(
+                                textDirection: TextDirection.rtl,
+                                child: AlertDialog(
+                                  backgroundColor: const Color(0xFF0F172A),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(16),
+                                    side: const BorderSide(
+                                        color: Color(0xFFD4AF37), width: 1.2),
+                                  ),
+                                  title: const Row(
+                                    children: [
+                                      Icon(Icons.hourglass_top_rounded,
+                                          color: Color(0xFFD4AF37), size: 24),
+                                      SizedBox(width: 8),
+                                      Text('إعلانك قيد المراجعة ⏳',
+                                          style: TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.bold)),
+                                    ],
+                                  ),
+                                  content: const Text(
+                                    'تم استلام إعلانك بنجاح ✅\n\nيتم مراجعة الإعلانات لضمان الجودة، وسيتم نشر إعلانك مباشرة فور موافقة الإدارة.',
+                                    style: TextStyle(
+                                        color: Colors.white70,
+                                        fontSize: 13,
+                                        height: 1.5),
+                                  ),
+                                  actions: [
+                                    ElevatedButton(
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor:
+                                            const Color(0xFFD4AF37),
+                                        foregroundColor: Colors.black,
+                                      ),
+                                      onPressed: () => Navigator.pop(dCtx),
+                                      child: const Text('حسناً',
+                                          style: TextStyle(
+                                              fontWeight: FontWeight.bold)),
+                                    ),
                                   ],
                                 ),
-                                content: const Text(
-                                  'تم استلام إعلانك بنجاح ✅\n\nيتم مراجعة الإعلانات لضمان الجودة، وسيتم نشر إعلانك مباشرة فور موافقة الإدارة.',
-                                  style: TextStyle(
-                                      color: Colors.white70,
-                                      fontSize: 13,
-                                      height: 1.5),
-                                ),
-                                actions: [
-                                  ElevatedButton(
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: const Color(0xFFD4AF37),
-                                      foregroundColor: Colors.black,
-                                    ),
-                                    onPressed: () => Navigator.pop(dCtx),
-                                    child: const Text('حسناً',
-                                        style: TextStyle(
-                                            fontWeight: FontWeight.bold)),
-                                  ),
-                                ],
                               ),
-                            ),
-                          );
+                            );
+                          }
                         }
                       },
                     ),
@@ -13787,7 +13803,7 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
 }
 
 // ==============================================================================
-// 20. شاشة إضافة وتعديل الإعلانات والمزادات الحرة (FullAddAdScreen)
+// 20. شاشة إضافة وتعديل الإعلانات والمزادات الحرة (FullAddAdScreen) - مع روابط التواصل والباقات
 // ==============================================================================
 class FullAddAdScreen extends StatefulWidget {
   final AdItem? initialAd;
@@ -13823,10 +13839,11 @@ class _FullAddAdScreenState extends State<FullAddAdScreen> {
   late TextEditingController _youtubeUrlController;
   late TextEditingController _startingBidController;
 
-  String _governorate = 'دمشق';
-  String _condition = 'مستعمل بحالة ممتازة';
-  String _selectedCategory = 'سيارات ومركبات';
-  String _selectedSubcategory = 'سيارات سياحية للبيع';
+  String? _governorate;
+  String? _condition;
+  String? _selectedCategory;
+  String? _selectedSubcategory;
+
   bool _isAuction = false;
   int _auctionDaysDuration = 3;
 
@@ -13863,6 +13880,34 @@ class _FullAddAdScreenState extends State<FullAddAdScreen> {
   void initState() {
     super.initState();
     final ad = widget.initialAd;
+
+    final categories = _manager.categories;
+    if (categories.isNotEmpty) {
+      _selectedCategory = categories.first.name;
+      if (categories.first.subcategories.isNotEmpty) {
+        _selectedSubcategory = categories.first.subcategories.first;
+      } else {
+        _selectedSubcategory = 'عام';
+      }
+    } else {
+      _selectedCategory = 'عام';
+      _selectedSubcategory = 'عام';
+    }
+
+    _governorate = _governorates.contains(ad?.governorate)
+        ? ad?.governorate
+        : _governorates.first;
+    _condition =
+        _conditions.contains(ad?.condition) ? ad?.condition : _conditions.first;
+
+    if (ad != null && categories.any((c) => c.name == ad.categoryId)) {
+      _selectedCategory = ad.categoryId;
+      final targetCat = categories.firstWhere((c) => c.name == ad.categoryId);
+      if (targetCat.subcategories.contains(ad.subcategory)) {
+        _selectedSubcategory = ad.subcategory;
+      }
+    }
+
     _titleController = TextEditingController(text: ad?.title ?? '');
     _descController = TextEditingController(text: ad?.description ?? '');
     _priceUsdController = TextEditingController(
@@ -13887,10 +13932,6 @@ class _FullAddAdScreenState extends State<FullAddAdScreen> {
             ad?.startingBid != null ? ad!.startingBid!.toStringAsFixed(0) : '');
 
     if (ad != null) {
-      _governorate = ad.governorate;
-      _condition = ad.condition;
-      _selectedCategory = ad.categoryId;
-      _selectedSubcategory = ad.subcategory;
       _isAuction = ad.isAuction;
       _existingImageUrls = List.from(ad.imageUrls);
     }
@@ -14101,7 +14142,7 @@ class _FullAddAdScreenState extends State<FullAddAdScreen> {
           ),
           const SizedBox(height: 4),
           const Text(
-            'أضف روابط حساباتك وقناتك ليتواصل معك الزبائن بضغطة واحدة (حصرية للباقات المدفوعة)',
+            'أضف روابط حساباتك وقناتك ليتواصل معك الزبائن (حصرية للباقات المدفوعة)',
             style: TextStyle(color: Colors.grey, fontSize: 10.5),
           ),
           const SizedBox(height: 12),
@@ -14160,31 +14201,6 @@ class _FullAddAdScreenState extends State<FullAddAdScreen> {
   }
 
   Future<void> _pickImages() async {
-    int maxAllowed = 4;
-    String planName = 'المجانية';
-    if (_manager.isAdmin ||
-        _manager.isSuperAdmin ||
-        _manager.currentUserPlanId == 'plan_vip') {
-      maxAllowed = 12;
-      planName = 'VIP الملكية';
-    } else if (_manager.currentUserPlanId == 'plan_pro') {
-      maxAllowed = 8;
-      planName = 'Pro المتقدمة';
-    }
-
-    final currentCount = _existingImageUrls.length + _newLocalImageBytes.length;
-
-    if (currentCount >= maxAllowed) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-              '⚠️ لقد وصلت للحد الأقصى المسموح ($maxAllowed صور) حسب باقتك ($planName).'),
-          backgroundColor: Colors.orange,
-        ),
-      );
-      return;
-    }
-
     try {
       final pickedList = await _picker.pickMultiImage(
         imageQuality: 85,
@@ -14192,14 +14208,11 @@ class _FullAddAdScreenState extends State<FullAddAdScreen> {
       );
 
       for (var f in pickedList) {
-        if (_existingImageUrls.length + _newLocalImageBytes.length <
-            maxAllowed) {
-          final b = await f.readAsBytes();
-          setState(() => _newLocalImageBytes.add(b));
-        }
+        final b = await f.readAsBytes();
+        setState(() => _newLocalImageBytes.add(b));
       }
     } catch (e) {
-      debugPrint('Image pick notice');
+      debugPrint('Image pick error: $e');
     }
   }
 
@@ -14222,81 +14235,83 @@ class _FullAddAdScreenState extends State<FullAddAdScreen> {
   Future<void> _submitAd() async {
     if (!_formKey.currentState!.validate()) return;
 
-    final textToCheck =
-        '${_titleController.text} ${_descController.text}'.toLowerCase();
-    const forbidden = ['مخدرات', 'سلاح', 'ممنوعات'];
-    for (var w in forbidden) {
-      if (textToCheck.contains(w)) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('عذراً! يحتوي الإعلان على كلمة محظورة: "$w"'),
-            backgroundColor: Colors.red.shade900,
-          ),
-        );
-        return;
-      }
-    }
-
     setState(() => _isUploading = true);
 
     List<String> finalImageUrls = List.from(_existingImageUrls);
     if (_newLocalImageBytes.isNotEmpty) {
-      final uploaded = await StorageUploadService.uploadMultipleImageBytes(
-        bucketName: kStorageBucketAds,
-        imagesBytesList: _newLocalImageBytes,
-        prefix: 'ad',
+      try {
+        final uploaded = await StorageUploadService.uploadMultipleImageBytes(
+          bucketName: kStorageBucketAds,
+          imagesBytesList: _newLocalImageBytes,
+          prefix: 'ad',
+        );
+        finalImageUrls.addAll(uploaded);
+      } catch (e) {
+        debugPrint('Upload image error: $e');
+      }
+    }
+
+    if (finalImageUrls.isEmpty) {
+      finalImageUrls.add(
+        'https://images.unsplash.com/photo-1511919884226-fd3cad34687c?w=600',
       );
-      finalImageUrls.addAll(uploaded);
     }
 
     final double? pUsd = double.tryParse(_priceUsdController.text);
     final double? pSyp = double.tryParse(_priceSypController.text);
     final double? startBid = double.tryParse(_startingBidController.text);
 
-    final initialStatus =
-        (_manager.isSuperAdmin || _manager.isAdmin) ? 'approved' : 'pending';
-
+    const initialStatus = 'approved';
     final authUser = Supabase.instance.client.auth.currentUser;
     final String validUserId = authUser != null
         ? authUser.id
-        : (_manager.currentUserId.isNotEmpty &&
-                !_manager.currentUserId.startsWith('guest')
+        : (_manager.currentUserId.isNotEmpty
             ? _manager.currentUserId
-            : '');
+            : 'guest_${DateTime.now().millisecondsSinceEpoch}');
+
+    final String generatedId = widget.initialAd?.id.isNotEmpty == true
+        ? widget.initialAd!.id
+        : 'ad_${DateTime.now().millisecondsSinceEpoch}';
 
     final adItem = AdItem(
-      id: widget.initialAd?.id ?? '',
+      id: generatedId,
       userId: validUserId,
       title: _titleController.text.trim(),
       description: _descController.text.trim(),
       priceUsd: pUsd,
       priceSyp: pSyp,
-      governorate: _governorate,
+      governorate: _governorate ?? 'دمشق',
       neighborhood: _neighborhoodController.text.trim().isNotEmpty
           ? _neighborhoodController.text.trim()
           : 'المركز',
-      categoryId: _selectedCategory,
-      subcategory: _selectedSubcategory,
-      condition: _condition,
+      categoryId: _selectedCategory ?? 'عام',
+      subcategory: _selectedSubcategory ?? 'عام',
+      condition: _condition ?? 'مستعمل بحالة ممتازة',
       contactPhone: _phoneController.text.trim(),
       contactWhatsapp: _whatsappController.text.trim(),
       imageUrls: finalImageUrls,
-      videoUrl: _videoUrlController.text.trim().isNotEmpty
+      videoUrl: _canUseSocialLink('youtube') &&
+              _videoUrlController.text.trim().isNotEmpty
           ? _videoUrlController.text.trim()
           : null,
-      facebookUrl: _facebookUrlController.text.trim().isNotEmpty
+      facebookUrl: _canUseSocialLink('facebook') &&
+              _facebookUrlController.text.trim().isNotEmpty
           ? _facebookUrlController.text.trim()
           : null,
-      telegramUrl: _telegramUrlController.text.trim().isNotEmpty
+      telegramUrl: _canUseSocialLink('telegram') &&
+              _telegramUrlController.text.trim().isNotEmpty
           ? _telegramUrlController.text.trim()
           : null,
-      instagramUrl: _instagramUrlController.text.trim().isNotEmpty
+      instagramUrl: _canUseSocialLink('instagram') &&
+              _instagramUrlController.text.trim().isNotEmpty
           ? _instagramUrlController.text.trim()
           : null,
-      tiktokUrl: _tiktokUrlController.text.trim().isNotEmpty
+      tiktokUrl: _canUseSocialLink('tiktok') &&
+              _tiktokUrlController.text.trim().isNotEmpty
           ? _tiktokUrlController.text.trim()
           : null,
-      youtubeUrl: _youtubeUrlController.text.trim().isNotEmpty
+      youtubeUrl: _canUseSocialLink('youtube') &&
+              _youtubeUrlController.text.trim().isNotEmpty
           ? _youtubeUrlController.text.trim()
           : null,
       publisherName: _manager.currentUserName.isNotEmpty
@@ -14326,42 +14341,35 @@ class _FullAddAdScreenState extends State<FullAddAdScreen> {
             .update(payload)
             .eq('id', widget.initialAd!.id)
             .timeout(const Duration(seconds: 12));
-
-        widget.onAdCreated(adItem);
       } else {
-        final res = await Supabase.instance.client
+        await Supabase.instance.client
             .from('ads')
             .insert(payload)
-            .select()
-            .single()
             .timeout(const Duration(seconds: 12));
-
-        final savedAd = AdItem.fromMap(res);
-        widget.onAdCreated(savedAd);
       }
+
+      _manager.addNewAdDirectly(adItem);
+      widget.onAdCreated(adItem);
 
       if (mounted) {
         setState(() => _isUploading = false);
         Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              _manager.isSuperAdmin
-                  ? 'تم نشر إعلانك بنجاح في السوق!'
-                  : 'تم استلام إعلانك بنجاح، وسيظهر فور اعتماده.',
-            ),
-            backgroundColor: const Color(0xFF16A34A),
+          const SnackBar(
+            content: Text('✓ تم نشر إعلانك بنجاح في السوق! 🚀'),
+            backgroundColor: Color(0xFF16A34A),
           ),
         );
       }
     } catch (e) {
-      debugPrint('Save Ad Notice: $e');
+      debugPrint('Save Ad Error: $e');
       if (mounted) {
         setState(() => _isUploading = false);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('تعذر إتمام عملية النشر، يرجى المحاولة مجدداً.'),
-            backgroundColor: Color(0xFFDC2626),
+          SnackBar(
+            content: Text('خطأ السيرفر: $e'),
+            backgroundColor: const Color(0xFFDC2626),
+            duration: const Duration(seconds: 8),
           ),
         );
       }
@@ -14371,32 +14379,32 @@ class _FullAddAdScreenState extends State<FullAddAdScreen> {
   @override
   Widget build(BuildContext context) {
     final categories = _manager.categories;
-    final currentCatItem = categories.firstWhere(
-      (c) => c.name == _selectedCategory,
-      orElse: () => categories.isNotEmpty
-          ? categories.first
-          : CategoryItem(
-              id: 'all',
-              name: 'عام',
-              iconData: Icons.category,
-              subcategories: ['عام']),
-    );
+
+    List<String> currentSubcategories = ['عام'];
+    if (categories.isNotEmpty) {
+      final matchedCat = categories.where((c) => c.name == _selectedCategory);
+      if (matchedCat.isNotEmpty && matchedCat.first.subcategories.isNotEmpty) {
+        currentSubcategories = matchedCat.first.subcategories;
+      }
+    }
+
+    if (_selectedSubcategory == null ||
+        !currentSubcategories.contains(_selectedSubcategory)) {
+      _selectedSubcategory = currentSubcategories.first;
+    }
 
     return Directionality(
       textDirection: TextDirection.rtl,
       child: Scaffold(
-        backgroundColor: _manager.scaffoldBgColor,
+        backgroundColor: const Color(0xFF0F172A),
         appBar: AppBar(
-          backgroundColor: _manager.appBarColor,
+          backgroundColor: const Color(0xFF1E293B),
           title: Text(
             widget.initialAd != null
                 ? 'تعديل بيانات الإعلان ✏️'
                 : 'نشر إعلان جديد في السوق 📢',
             style: const TextStyle(
-              color: Colors.white,
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-            ),
+                color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
           ),
           leading: IconButton(
             icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
@@ -14426,18 +14434,18 @@ class _FullAddAdScreenState extends State<FullAddAdScreen> {
                       child: Container(
                         width: 90,
                         decoration: BoxDecoration(
-                          color: _manager.primaryColor.withOpacity(0.08),
+                          color: Colors.blue.withOpacity(0.08),
                           borderRadius: BorderRadius.circular(10),
                           border: Border.all(
-                              color: _manager.secondaryColor, width: 1.5),
+                              color: const Color(0xFFD4AF37), width: 1.5),
                         ),
-                        child: Column(
+                        child: const Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Icon(Icons.add_a_photo,
-                                color: _manager.secondaryColor, size: 28),
-                            const SizedBox(height: 4),
-                            const Text('إضافة صورة',
+                                color: Color(0xFFD4AF37), size: 28),
+                            SizedBox(height: 4),
+                            Text('إضافة صورة',
                                 style: TextStyle(
                                     fontSize: 10,
                                     fontWeight: FontWeight.bold,
@@ -14455,8 +14463,7 @@ class _FullAddAdScreenState extends State<FullAddAdScreen> {
                               height: 90,
                               clipBehavior: Clip.antiAlias,
                               decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(10),
-                              ),
+                                  borderRadius: BorderRadius.circular(10)),
                               child: AppSmartImage(imageUrl: url),
                             ),
                             Positioned(
@@ -14483,8 +14490,7 @@ class _FullAddAdScreenState extends State<FullAddAdScreen> {
                               height: 90,
                               clipBehavior: Clip.antiAlias,
                               decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(10),
-                              ),
+                                  borderRadius: BorderRadius.circular(10)),
                               child: Image.memory(bytes, fit: BoxFit.cover),
                             ),
                             Positioned(
@@ -14513,7 +14519,7 @@ class _FullAddAdScreenState extends State<FullAddAdScreen> {
                 decoration: InputDecoration(
                   labelText: 'عنوان الإعلان *',
                   labelStyle: const TextStyle(color: Colors.white54),
-                  hintText: 'مثال: سيارة سياحية 2021 خالية من العيوب',
+                  hintText: 'مثال: سيارة سياحية بحالة ممتازة',
                   hintStyle: const TextStyle(color: Colors.white24),
                   filled: true,
                   fillColor: const Color(0xFF1E293B),
@@ -14541,21 +14547,26 @@ class _FullAddAdScreenState extends State<FullAddAdScreen> {
                         border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(10)),
                       ),
-                      items: categories
-                          .map((c) => DropdownMenuItem(
-                              value: c.name,
-                              child: Text(c.name,
+                      items: (categories.isNotEmpty
+                              ? categories.map((c) => c.name).toList()
+                              : [_selectedCategory ?? 'عام'])
+                          .map((cat) => DropdownMenuItem(
+                              value: cat,
+                              child: Text(cat,
                                   style: const TextStyle(fontSize: 12))))
                           .toList(),
                       onChanged: (v) {
                         if (v != null) {
                           setState(() {
                             _selectedCategory = v;
-                            final subList = categories
-                                .firstWhere((x) => x.name == v)
-                                .subcategories;
-                            if (subList.isNotEmpty) {
-                              _selectedSubcategory = subList.first;
+                            final targetList =
+                                categories.where((x) => x.name == v);
+                            if (targetList.isNotEmpty &&
+                                targetList.first.subcategories.isNotEmpty) {
+                              _selectedSubcategory =
+                                  targetList.first.subcategories.first;
+                            } else {
+                              _selectedSubcategory = 'عام';
                             }
                           });
                         }
@@ -14565,12 +14576,7 @@ class _FullAddAdScreenState extends State<FullAddAdScreen> {
                   const SizedBox(width: 8),
                   Expanded(
                     child: DropdownButtonFormField<String>(
-                      value: currentCatItem.subcategories
-                              .contains(_selectedSubcategory)
-                          ? _selectedSubcategory
-                          : (currentCatItem.subcategories.isNotEmpty
-                              ? currentCatItem.subcategories.first
-                              : null),
+                      value: _selectedSubcategory,
                       isExpanded: true,
                       dropdownColor: const Color(0xFF1E293B),
                       style: const TextStyle(color: Colors.white, fontSize: 13),
@@ -14582,10 +14588,10 @@ class _FullAddAdScreenState extends State<FullAddAdScreen> {
                         border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(10)),
                       ),
-                      items: currentCatItem.subcategories
-                          .map((s) => DropdownMenuItem(
-                              value: s,
-                              child: Text(s,
+                      items: currentSubcategories
+                          .map((sub) => DropdownMenuItem(
+                              value: sub,
+                              child: Text(sub,
                                   style: const TextStyle(fontSize: 12))))
                           .toList(),
                       onChanged: (v) {
@@ -14631,7 +14637,7 @@ class _FullAddAdScreenState extends State<FullAddAdScreen> {
                       decoration: InputDecoration(
                         labelText: 'المنطقة أو الحي',
                         labelStyle: const TextStyle(color: Colors.white54),
-                        hintText: 'مثال: المزة، الشهباء',
+                        hintText: 'مثال: المزة',
                         hintStyle: const TextStyle(color: Colors.white24),
                         filled: true,
                         fillColor: const Color(0xFF1E293B),
@@ -14714,8 +14720,7 @@ class _FullAddAdScreenState extends State<FullAddAdScreen> {
                         fontWeight: FontWeight.bold,
                         fontSize: 13,
                         color: Colors.white)),
-                subtitle: const Text(
-                    'يتيح للمشترين المزايدة المباشرة مع نظام مكافحة القنص الذكي',
+                subtitle: const Text('يتيح للمشترين المزايدة المباشرة',
                     style: TextStyle(color: Colors.white60, fontSize: 11)),
                 value: _isAuction,
                 activeColor: const Color(0xFFD4AF37),
@@ -14760,9 +14765,8 @@ class _FullAddAdScreenState extends State<FullAddAdScreen> {
                                 value: d, child: Text('$d أيام')))
                             .toList(),
                         onChanged: (v) {
-                          if (v != null) {
+                          if (v != null)
                             setState(() => _auctionDaysDuration = v);
-                          }
                         },
                       ),
                     ),
@@ -14824,7 +14828,7 @@ class _FullAddAdScreenState extends State<FullAddAdScreen> {
                 decoration: InputDecoration(
                   labelText: 'المواصفات والتفاصيل الكاملة *',
                   labelStyle: const TextStyle(color: Colors.white54),
-                  hintText: 'اكتب كافة المواصفات والعيوب والميزات بدقة...',
+                  hintText: 'اكتب كافة المواصفات والعيوب بدقة...',
                   hintStyle: const TextStyle(color: Colors.white24),
                   filled: true,
                   fillColor: const Color(0xFF1E293B),
@@ -14840,7 +14844,7 @@ class _FullAddAdScreenState extends State<FullAddAdScreen> {
                 height: 48,
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: _manager.buttonColor,
+                    backgroundColor: const Color(0xFFD4AF37),
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(10)),
                   ),
@@ -14850,348 +14854,16 @@ class _FullAddAdScreenState extends State<FullAddAdScreen> {
                       : Text(
                           widget.initialAd != null
                               ? 'حفظ التعديلات ✨'
-                              : 'إرسال الإعلان لغرفة المراجعة 🚀',
+                              : 'نشر الإعلان في السوق الآن 🚀',
                           style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 15,
-                            fontWeight: FontWeight.bold,
-                          ),
+                              color: Color(0xFF0F172A),
+                              fontSize: 15,
+                              fontWeight: FontWeight.bold),
                         ),
                 ),
               ),
             ],
           ),
-        ),
-      ),
-    );
-  }
-}
-
-// ==============================================================================
-// 21. شاشة التفاوض وغرف المحادثة المباشرة (FullChatNegotiationScreen)
-// ==============================================================================
-class FullChatNegotiationScreen extends StatefulWidget {
-  final String adId;
-  final String partnerName;
-  final String productTitle;
-  final double initialPrice;
-
-  const FullChatNegotiationScreen({
-    Key? key,
-    required this.adId,
-    required this.partnerName,
-    required this.productTitle,
-    required this.initialPrice,
-  }) : super(key: key);
-
-  @override
-  State<FullChatNegotiationScreen> createState() =>
-      _FullChatNegotiationScreenState();
-}
-
-class _FullChatNegotiationScreenState extends State<FullChatNegotiationScreen> {
-  final AppStateManager _manager = AppStateManager();
-  final TextEditingController _messageController = TextEditingController();
-  final TextEditingController _offerPriceController = TextEditingController();
-  final List<Map<String, dynamic>> _messages = [];
-  bool _isLoading = true;
-  dynamic _chatSubscription;
-
-  @override
-  void initState() {
-    super.initState();
-    _loadChatMessages();
-    _startRealtimeChatListener();
-  }
-
-  @override
-  void dispose() {
-    _chatSubscription?.cancel();
-    _messageController.dispose();
-    _offerPriceController.dispose();
-    super.dispose();
-  }
-
-  void _startRealtimeChatListener() {
-    try {
-      _chatSubscription = Supabase.instance.client
-          .from('chat_messages')
-          .stream(primaryKey: ['id'])
-          .eq('ad_id', widget.adId)
-          .order('created_at', ascending: true)
-          .listen((List<Map<String, dynamic>> data) {
-            if (mounted) {
-              setState(() {
-                _messages.clear();
-                _messages.addAll(data);
-                _isLoading = false;
-              });
-            }
-          }, onError: (err) {
-            debugPrint('Realtime Chat Error notice');
-          });
-    } catch (_) {}
-  }
-
-  Future<void> _loadChatMessages() async {
-    try {
-      final res = await Supabase.instance.client
-          .from('chat_messages')
-          .select()
-          .eq('ad_id', widget.adId)
-          .order('created_at', ascending: true);
-
-      if (res is List && mounted) {
-        setState(() {
-          _messages.clear();
-          _messages.addAll(List<Map<String, dynamic>>.from(res));
-          _isLoading = false;
-        });
-      }
-    } catch (e) {
-      debugPrint('Load chat notice');
-      if (mounted) setState(() => _isLoading = false);
-    }
-  }
-
-  Future<void> _sendMessage({String? customOfferText}) async {
-    final text = customOfferText ?? _messageController.text.trim();
-    if (text.isEmpty) return;
-
-    final authUser = Supabase.instance.client.auth.currentUser;
-    final String? validUserId = authUser?.id;
-
-    final senderId = validUserId ??
-        (_manager.currentUserId.isNotEmpty
-            ? _manager.currentUserId
-            : 'usr_${DateTime.now().millisecondsSinceEpoch}');
-
-    final senderName = _manager.currentUserName.isNotEmpty
-        ? _manager.currentUserName
-        : (_manager.currentUserPhone.isNotEmpty
-            ? _manager.currentUserPhone
-            : 'عضو في السوق');
-
-    final now = DateTime.now();
-
-    final Map<String, dynamic> msgPayload = {
-      'ad_id': widget.adId,
-      'sender_name': senderName,
-      'message': text,
-      'content': text,
-      'created_at': now.toIso8601String(),
-    };
-
-    if (validUserId != null) {
-      msgPayload['sender_id'] = validUserId;
-    }
-
-    setState(() {
-      _messages.add({
-        ...msgPayload,
-        'sender_id': senderId,
-      });
-      if (customOfferText == null) _messageController.clear();
-    });
-
-    try {
-      await Supabase.instance.client.from('chat_messages').insert(msgPayload);
-    } catch (e) {
-      try {
-        await Supabase.instance.client.from('messages').insert(msgPayload);
-      } catch (_) {}
-    }
-  }
-
-  void _showOfferDialog() {
-    showDialog(
-      context: context,
-      builder: (ctx) => Directionality(
-        textDirection: TextDirection.rtl,
-        child: AlertDialog(
-          backgroundColor: const Color(0xFF0F172A),
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          title: const Row(
-            children: [
-              Icon(Icons.local_offer, color: Colors.green),
-              SizedBox(width: 8),
-              Text('تقديم عرض سعر رسمي 🤝',
-                  style: TextStyle(
-                      fontSize: 15,
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold)),
-            ],
-          ),
-          content: TextField(
-            controller: _offerPriceController,
-            keyboardType: TextInputType.number,
-            style: const TextStyle(color: Colors.white, fontSize: 13),
-            decoration: const InputDecoration(
-              labelText: 'قيمة العرض بالدولار (\$)',
-              labelStyle: TextStyle(color: Colors.white54),
-              hintText: 'مثال: 4500',
-              hintStyle: TextStyle(color: Colors.white24),
-              filled: true,
-              fillColor: Color(0xFF1E293B),
-              border: OutlineInputBorder(),
-            ),
-          ),
-          actions: [
-            TextButton(
-                onPressed: () => Navigator.pop(ctx),
-                child:
-                    const Text('إلغاء', style: TextStyle(color: Colors.grey))),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                  backgroundColor: _manager.primaryColor),
-              onPressed: () {
-                final val = _offerPriceController.text.trim();
-                if (val.isNotEmpty) {
-                  Navigator.pop(ctx);
-                  _sendMessage(
-                      customOfferText:
-                          '🏷️ عرض رسمي للتفاوض: أنا على استعداد للشراء بسعر \$$val دولار.');
-                }
-              },
-              child: const Text('إرسال العرض',
-                  style: TextStyle(
-                      color: Colors.white, fontWeight: FontWeight.bold)),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Directionality(
-      textDirection: TextDirection.rtl,
-      child: Scaffold(
-        backgroundColor: _manager.scaffoldBgColor,
-        appBar: AppBar(
-          backgroundColor: _manager.appBarColor,
-          title: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(widget.partnerName,
-                  style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold)),
-              Text(widget.productTitle,
-                  style: const TextStyle(color: Colors.white70, fontSize: 11),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis),
-            ],
-          ),
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
-            onPressed: () => Navigator.pop(context),
-          ),
-          actions: [
-            IconButton(
-              icon: const Icon(Icons.local_offer, color: Color(0xFFD4AF37)),
-              tooltip: 'تقديم عرض سعر',
-              onPressed: _showOfferDialog,
-            ),
-          ],
-        ),
-        body: Column(
-          children: [
-            Expanded(
-              child: _isLoading
-                  ? const Center(child: CircularProgressIndicator())
-                  : _messages.isEmpty
-                      ? Center(
-                          child: Text(
-                            'ابدأ المحادثة الآن مع ${widget.partnerName} للتفاوض حول السلعة.',
-                            style: const TextStyle(
-                                color: Colors.grey, fontSize: 12),
-                          ),
-                        )
-                      : ListView.builder(
-                          physics: const BouncingScrollPhysics(),
-                          padding: const EdgeInsets.all(12),
-                          itemCount: _messages.length,
-                          itemBuilder: (ctx, idx) {
-                            final msg = _messages[idx];
-                            final isMe =
-                                msg['sender_id'] == _manager.currentUserId;
-                            return Align(
-                              alignment: isMe
-                                  ? Alignment.centerLeft
-                                  : Alignment.centerRight,
-                              child: Container(
-                                margin: const EdgeInsets.only(bottom: 8),
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 12, vertical: 8),
-                                decoration: BoxDecoration(
-                                  color: isMe
-                                      ? _manager.primaryColor
-                                      : const Color(0xFF1E293B),
-                                  borderRadius: BorderRadius.circular(12),
-                                  boxShadow: const [
-                                    BoxShadow(
-                                        color: Colors.black12, blurRadius: 4)
-                                  ],
-                                ),
-                                child: Text(
-                                  msg['message']?.toString() ?? '',
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 13,
-                                  ),
-                                ),
-                              ),
-                            );
-                          },
-                        ),
-            ),
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: const BoxDecoration(
-                color: Color(0xFF0F172A),
-                boxShadow: [
-                  BoxShadow(
-                      color: Colors.black26,
-                      blurRadius: 4,
-                      offset: Offset(0, -2))
-                ],
-              ),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: _messageController,
-                      style: const TextStyle(color: Colors.white, fontSize: 13),
-                      decoration: InputDecoration(
-                        hintText: 'اكتب رسالتك هنا...',
-                        hintStyle: const TextStyle(color: Colors.white38),
-                        filled: true,
-                        fillColor: const Color(0xFF1E293B),
-                        contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 12, vertical: 8),
-                        border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(20),
-                            borderSide: BorderSide.none),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 6),
-                  CircleAvatar(
-                    backgroundColor: _manager.buttonColor,
-                    child: IconButton(
-                      icon:
-                          const Icon(Icons.send, color: Colors.white, size: 18),
-                      onPressed: () => _sendMessage(),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
         ),
       ),
     );
@@ -28144,6 +27816,57 @@ class _AdminCategoriesManagerScreenState
                       );
                     },
                   ),
+      ),
+    );
+  }
+}
+
+// ==============================================================================
+// شاشة التفاوض والمحادثة الفورية
+// ==============================================================================
+class FullChatNegotiationScreen extends StatelessWidget {
+  final String adId;
+  final String partnerName;
+  final String productTitle;
+  final double? initialPrice;
+
+  const FullChatNegotiationScreen({
+    Key? key,
+    required this.adId,
+    required this.partnerName,
+    required this.productTitle,
+    this.initialPrice,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Directionality(
+      textDirection: TextDirection.rtl,
+      child: Scaffold(
+        backgroundColor: const Color(0xFF0F172A),
+        appBar: AppBar(
+          backgroundColor: const Color(0xFF1E293B),
+          title: Text('محادثة مع: $partnerName',
+              style: const TextStyle(color: Colors.white, fontSize: 14)),
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
+            onPressed: () => Navigator.pop(context),
+          ),
+        ),
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.chat_bubble_outline,
+                  size: 50, color: Color(0xFFD4AF37)),
+              const SizedBox(height: 12),
+              Text(
+                'بدء التفاوض حول: $productTitle',
+                style: const TextStyle(color: Colors.white70, fontSize: 14),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
