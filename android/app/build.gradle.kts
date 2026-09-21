@@ -14,10 +14,13 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
 
+    kotlinOptions {
+        jvmTarget = "17"
+    }
+
     defaultConfig {
         applicationId = "com.example.syria_market_2028"
-        // 🎙️ تم تثبيت minSdk على 21 كحد أدنى لضمان عمل المايك والصوت بدون مشاكل
-        minSdk = 21
+        minSdk = flutter.minSdkVersion
         targetSdk = 34
         versionCode = flutter.versionCode
         versionName = flutter.versionName
@@ -25,14 +28,11 @@ android {
 
     buildTypes {
         release {
+            // توقيع مؤقت باستخدام debug لتسهيل البناء التجريبي
             signingConfig = signingConfigs.getByName("debug")
+            isMinifyEnabled = false
+            isShrinkResources = false
         }
-    }
-}
-
-kotlin {
-    compilerOptions {
-        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
     }
 }
 
