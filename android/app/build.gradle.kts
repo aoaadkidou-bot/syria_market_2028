@@ -6,7 +6,7 @@ plugins {
 
 android {
     namespace = "com.example.syria_market_2028"
-    compileSdk = flutter.compileSdkVersion
+    compileSdk = 34
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
@@ -16,8 +16,9 @@ android {
 
     defaultConfig {
         applicationId = "com.example.syria_market_2028"
-        minSdk = flutter.minSdkVersion
-        targetSdk = flutter.targetSdkVersion
+        // 🎙️ تم تثبيت minSdk على 21 كحد أدنى لضمان عمل المايك والصوت بدون مشاكل
+        minSdk = 21
+        targetSdk = 34
         versionCode = flutter.versionCode
         versionName = flutter.versionName
     }
